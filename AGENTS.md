@@ -49,8 +49,12 @@ npm run lint
 npm run test
 npm run test:coverage
 npm run test:rls           # obrigatório sempre que uma tabela/policy for tocada
-supabase db reset
-supabase db push
+supabase start              # sobe o Supabase local via Docker (Postgres, Auth, Storage, Studio)
+supabase status              # mostra URL/anon key/service_role key locais (para o .env.local)
+supabase stop                 # derruba o Supabase local
+supabase migration new <nome>  # cria uma nova migration versionada
+supabase db reset            # reaplica TODAS as migrations do zero no banco local (Docker)
+supabase db push              # aplica migrations pendentes no projeto REMOTO (produção) — nunca automático
 npm run seed:super-admin -- --email=... --senha=...   # bootstrap de instância nova
 ```
 

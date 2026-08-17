@@ -16,7 +16,41 @@ cd sgct
 npm install
 ```
 
-## 3. Criar o Projeto Supabase
+## 2bis. Ambiente de Desenvolvimento Local (Docker + Supabase CLI) — antes da Seção 3
+
+Esta seção é separada de propósito: a Seção 3 cria a instância **real** (nuvem — SaaS compartilhado ou produção auto-hospedada); esta aqui é o ambiente onde você (ou o agente no Antigravity) desenvolve e testa, **sem tocar em dado real de nenhuma Estaca**.
+
+Pré-requisito adicional: [Docker Desktop](https://www.docker.com/products/docker-desktop) instalado e rodando.
+
+```bash
+npm install -g supabase
+supabase init          # só na primeira vez, cria a pasta supabase/ se ainda não existir
+supabase start          # sobe Postgres + Auth + Storage + Studio localmente via Docker
+```
+
+Ao final do `supabase start`, o terminal imprime a URL e as chaves locais. Copie para o seu `.env.local` (que já deve existir a partir de `cp .env.example .env.local`, ver Seção 5):
+```bash
+supabase status
+# API URL          -> NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+# anon key         -> NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# service_role key -> SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+**Fluxo do dia a dia:**
+```bash
+supabase migration new nome_da_migration   # cria um novo arquivo em supabase/migrations/
+# edite o arquivo SQL, incluindo RLS no mesmo arquivo (Artigo II da constituição)
+supabase db reset                           # reaplica TODAS as migrations do zero no banco local
+npm run test:rls                            # roda contra o banco local, nunca contra produção
+```
+
+`supabase db reset` é destrutivo **só no banco local** (Docker) — apaga e recria tudo a partir das migrations versionadas. Seguro rodar quantas vezes precisar. **Nunca** rode `supabase db push` (Seção 3/7) apontando para o projeto remoto até o CI passar (lint + test + `test:rls`) e o "Definition of Done" do `tasks.md` da spec estar satisfeito — essa é a fronteira entre desenvolvimento local e produção neste projeto.
+
+```bash
+supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
+```
+
+## 3. Criar o Projeto Supabase (instância remota — SaaS compartilhado ou produção auto-hospedada)
 1. Crie um novo projeto no dashboard do Supabase (plano Free).
 2. Em Project Settings -> API, copie:
    - Project URL -> NEXT_PUBLIC_SUPABASE_URL
