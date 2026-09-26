@@ -1,14 +1,28 @@
 /**
- * Implementação Supabase do ProfileRepository para use-cases de bootstrap/tenant.
- * Artigo I: vive em infrastructure/
+ * Implementação Supabase do ProfileRepository.
+ * Artigo I: vive em infrastructure/ e implementa domain/interfaces/profile-repository.ts
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile } from "@/domain/types/tenant";
-import type { ProfileRepository } from "@/use-cases/tenant/create-bootstrap-admin-estaca";
+import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
 
 export class SupabaseProfileRepository implements ProfileRepository {
   constructor(private readonly supabase: SupabaseClient) {}
+
+  async findById(id: string): Promise<Profile | null> {
+    const { data, error } = await this.supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Erro ao buscar perfil: ${error.message}`);
+    }
+
+    return data as Profile | null;
+  }
 
   async insert(
     data: Omit<Profile, "is_minor" | "last_login_at" | "created_at">
@@ -38,5 +52,40 @@ export class SupabaseProfileRepository implements ProfileRepository {
     }
 
     return created as Profile;
+  }
+
+  async updateRole(id: string, role: Profile["role"]): Promise<Profile> {
+    const { data, error } = await this.supabase
+      .from("profiles")
+      .update({ role })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar papel do usuário: ${error.message}`);
+    }
+
+    return data as Profile;
+  }
+
+  async deactivateInactive(cutoffDate: Date): Promise<{ deactivatedCount: number }> {
+    const isoCutoff = cutoffDate.toISOString();
+
+    // Inativa contas cujo último login foi anterior à data de corte,
+    // ou que nunca logaram e foram criadas antes da data de corte.
+    const { data, error } = await this.supabase
+      .from("profiles")
+      .update({ is_active: false })
+      .eq("is_active", true)
+      .neq("role", "super_admin")
+      .or(`last_login_at.lt.${isoCutoff},and(last_login_at.is.null,created_at.lt.${isoCutoff})`)
+      .select("id");
+
+    if (error) {
+      throw new Error(`Erro ao inativar contas inativas: ${error.message}`);
+    }
+
+    return { deactivatedCount: data?.length ?? 0 };
   }
 }
