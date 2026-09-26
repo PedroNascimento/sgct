@@ -1,9 +1,10 @@
-import type { Linter } from "eslint";
+import nextConfig from "eslint-config-next";
 
-const config: Linter.Config[] = [
+const config = [
   {
-    extends: ["next/core-web-vitals", "next/typescript"],
-  } as unknown as Linter.Config,
+    ignores: [".next/**", "node_modules/**", "coverage/**", "dist/**"],
+  },
+  ...nextConfig,
 ];
 
 export default config;
