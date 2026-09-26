@@ -121,11 +121,12 @@ export async function middleware(request: NextRequest) {
 
   // ── Verificar se é rota autenticada ──────────────────────────────────────
   const remainingPath = "/" + segments.slice(1).join("/");
-  const isAuthRoute = remainingPath.startsWith("/auth") ||
-                      remainingPath.startsWith("/admin");
+  const isLoginRoute = remainingPath.startsWith("/auth/login") || remainingPath.startsWith("/login");
+  const isAuthRoute = (remainingPath.startsWith("/auth") ||
+                      remainingPath.startsWith("/admin")) && !isLoginRoute;
 
   if (!isAuthRoute) {
-    // Rota pública — sem checagem de sessão necessária
+    // Rota pública (incluindo tela de login/cadastro) — sem bloqueio de sessão
     return response;
   }
 
