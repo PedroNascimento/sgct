@@ -14,8 +14,12 @@ import {
 } from "@/infrastructure/supabase/server";
 import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
+import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { SupabaseAuthPort } from "@/infrastructure/supabase/supabase-auth-port";
 import { createWardAdmin } from "@/use-cases/auth/create-ward-admin";
+import { createCaravan } from "@/use-cases/caravan/create-caravan";
+import { updateCaravanStatus } from "@/use-cases/caravan/update-caravan-status";
+import type { CaravanStatus } from "@/domain/types/caravan";
 
 export type AdminActionState = {
   success: boolean;
@@ -71,3 +75,120 @@ export async function createWardAdminAction(
     };
   }
 }
+
+export async function createCaravanAction(
+  _prevState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session?.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = sessionData.session.user;
+    const role = user.app_metadata?.role;
+    if (role !== "admin_estaca") {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const departureDate = formData.get("departureDate") as string;
+    const returnDate = (formData.get("returnDate") as string) || undefined;
+    const priceStandard = Number(formData.get("priceStandard"));
+    const priceOfficiant = Number(formData.get("priceOfficiant"));
+    const seatLimit = formData.get("seatLimit") ? Number(formData.get("seatLimit")) : 50;
+    const waitlistLimit = formData.get("waitlistLimit") ? Number(formData.get("waitlistLimit")) : 5;
+    const registrationDeadline = formData.get("registrationDeadline") as string;
+    const minQuorum = formData.get("minQuorum") ? Number(formData.get("minQuorum")) : 48;
+    const quorumCheckDate = formData.get("quorumCheckDate") as string;
+
+    const rawBoarding = formData.get("boardingPointsJson") as string;
+    let boardingPoints = [];
+    try {
+      boardingPoints = JSON.parse(rawBoarding || "[]");
+    } catch {
+      throw new Error("Formato inválido dos pontos de embarque.");
+    }
+
+    const serviceClient = createSupabaseServiceClient();
+    const caravanRepository = new SupabaseCaravanRepository(serviceClient);
+    const profileRepository = new SupabaseProfileRepository(serviceClient);
+
+    const created = await createCaravan(
+      {
+        departureDate,
+        returnDate,
+        priceStandard,
+        priceOfficiant,
+        seatLimit,
+        waitlistLimit,
+        registrationDeadline,
+        minQuorum,
+        quorumCheckDate,
+        boardingPoints,
+      },
+      user.id,
+      { caravanRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/calendario");
+    revalidatePath("/[estaca_slug]/calendario");
+    return {
+      success: true,
+      message: `Caravana com saída em ${created.departure_date} cadastrada com sucesso!`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao cadastrar caravana.",
+    };
+  }
+}
+
+export async function updateCaravanStatusAction(
+  _prevState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session?.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = sessionData.session.user;
+    const role = user.app_metadata?.role;
+    if (role !== "admin_estaca") {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const caravanId = formData.get("caravanId") as string;
+    const status = formData.get("status") as CaravanStatus;
+
+    const serviceClient = createSupabaseServiceClient();
+    const caravanRepository = new SupabaseCaravanRepository(serviceClient);
+    const profileRepository = new SupabaseProfileRepository(serviceClient);
+
+    const updated = await updateCaravanStatus(
+      { caravanId, status },
+      user.id,
+      { caravanRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/calendario");
+    revalidatePath("/[estaca_slug]/calendario");
+    return {
+      success: true,
+      message: `Status da caravana atualizado para "${updated.status}".`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao atualizar status da caravana.",
+    };
+  }
+}
+

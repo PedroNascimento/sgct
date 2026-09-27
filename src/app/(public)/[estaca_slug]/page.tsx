@@ -31,8 +31,14 @@ export default async function EstacaPublicPage({ params }: Props) {
 
         <div className="mt-8 flex flex-col space-y-3">
           <a
-            href={`/${estaca_slug}/cadastro`}
+            href={`/${estaca_slug}/calendario`}
             className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-md shadow-sm transition"
+          >
+            Ver Calendário de Caravanas
+          </a>
+          <a
+            href={`/${estaca_slug}/cadastro`}
+            className="w-full py-2.5 px-4 bg-white hover:bg-gray-50 border border-blue-600 text-blue-600 font-medium text-sm rounded-md shadow-sm transition"
           >
             Cadastrar-se na Caravana
           </a>
