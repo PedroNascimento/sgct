@@ -6,11 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:rls": "jest --testPathPattern=rls --no-coverage",
-    "seed:super-admin": "tsx scripts/seed-bootstrap.ts"
+    "seed:super-admin": "tsx scripts/seed-bootstrap.ts",
+    "seed:dev": "tsx scripts/seed-dev.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
