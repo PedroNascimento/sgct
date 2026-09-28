@@ -19,6 +19,9 @@ import { SupabaseAuthPort } from "@/infrastructure/supabase/supabase-auth-port";
 import { createWardAdmin } from "@/use-cases/auth/create-ward-admin";
 import { createCaravan } from "@/use-cases/caravan/create-caravan";
 import { updateCaravanStatus } from "@/use-cases/caravan/update-caravan-status";
+import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
+import { validateWeeklyTransfers } from "@/use-cases/payment/validate-weekly-transfers";
+import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
 import type { CaravanStatus } from "@/domain/types/caravan";
 
 export type AdminActionState = {
@@ -188,6 +191,86 @@ export async function updateCaravanStatusAction(
     return {
       success: false,
       error: err instanceof Error ? err.message : "Erro ao atualizar status da caravana.",
+    };
+  }
+}
+
+export async function confirmWardPaymentAction(
+  reservationId: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session?.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = sessionData.session.user;
+    const serviceClient = createSupabaseServiceClient();
+    const reservationRepo = new SupabaseReservationRepository(serviceClient);
+    const profileRepo = new SupabaseProfileRepository(serviceClient);
+
+    const updated = await confirmWardPayment(
+      { reservationId, adminId: user.id },
+      { reservationRepository: reservationRepo, profileRepository: profileRepo }
+    );
+
+    revalidatePath("/[estaca_slug]/ala/reservas");
+    return {
+      success: true,
+      message: `Pagamento da reserva confirmado com sucesso (status: ${updated.status}).`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao confirmar pagamento.",
+    };
+  }
+}
+
+export async function validateWeeklyTransfersAction(
+  caravanId: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session?.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = sessionData.session.user;
+    const serviceClient = createSupabaseServiceClient();
+    const reservationRepo = new SupabaseReservationRepository(serviceClient);
+    const caravanRepo = new SupabaseCaravanRepository(serviceClient);
+    const profileRepo = new SupabaseProfileRepository(serviceClient);
+
+    const result = await validateWeeklyTransfers(
+      { caravanId, adminId: user.id },
+      {
+        reservationRepository: reservationRepo,
+        caravanRepository: caravanRepo,
+        profileRepository: profileRepo,
+      }
+    );
+
+    if (result.skipped) {
+      return {
+        success: false,
+        message: result.reason,
+      };
+    }
+
+    revalidatePath("/[estaca_slug]/estaca/validacao-semanal");
+    return {
+      success: true,
+      message: `Transferências validadas! ${result.confirmed?.length ?? 0} assentos confirmados, ${result.waitlisted?.length ?? 0} em lista de espera.`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao validar transferências semanais.",
     };
   }
 }
