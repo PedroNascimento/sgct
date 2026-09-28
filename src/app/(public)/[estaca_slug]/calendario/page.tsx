@@ -206,12 +206,18 @@ export default async function PublicCalendarioPage({ params }: Props) {
                     </div>
                   </div>
 
-                  <Link
-                    href={`/${estaca_slug}/cadastro`}
-                    className="inline-flex justify-center items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition"
-                  >
-                    Inscrever-se Nesta Caravana →
-                  </Link>
+                  {caravan.status === "open" ? (
+                    <Link
+                      href={`/${estaca_slug}/caravanas/${caravan.id}/reservar`}
+                      className="inline-flex justify-center items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition"
+                    >
+                      Reservar Assento →
+                    </Link>
+                  ) : (
+                    <span className="inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-400 font-medium text-xs rounded-lg cursor-not-allowed">
+                      Inscrições Fechadas
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

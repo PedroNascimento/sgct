@@ -9,8 +9,10 @@ const config = {
       testMatch: [
         "<rootDir>/src/**/__tests__/rls/**/*.test.ts",
         "<rootDir>/src/**/__tests__/integration/**/*.test.ts",
+        "<rootDir>/src/**/__tests__/unit/**/*.test.ts",
         "<rootDir>/src/use-cases/**/*.test.ts",
         "<rootDir>/src/domain/**/*.test.ts",
+        "<rootDir>/src/infrastructure/**/*.test.ts",
       ],
       transform: {
         "^.+\\.tsx?$": ["ts-jest", { tsconfig: "./tsconfig.jest.json" }],
