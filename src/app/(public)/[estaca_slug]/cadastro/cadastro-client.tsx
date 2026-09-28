@@ -10,7 +10,7 @@ import {
 } from "./actions";
 
 interface Props {
-  stakeId: string;
+  stakeSlug: string;
   stakeName: string;
   wards: Ward[];
 }
@@ -19,21 +19,21 @@ const initialState: ActionState = {
   success: false,
 };
 
-export function CadastroClient({ stakeId, stakeName, wards }: Props) {
+export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
   const [tab, setTab] = useState<"member" | "minor" | "guest">("member");
 
   const [memberState, memberAction, isMemberPending] = useActionState(
-    registerMemberAction.bind(null, stakeId),
+    registerMemberAction.bind(null, stakeSlug),
     initialState
   );
 
   const [minorState, minorAction, isMinorPending] = useActionState(
-    registerMinorAction.bind(null, stakeId),
+    registerMinorAction.bind(null, stakeSlug),
     initialState
   );
 
   const [guestState, guestAction, isGuestPending] = useActionState(
-    registerGuestAction.bind(null, stakeId),
+    registerGuestAction.bind(null, stakeSlug),
     initialState
   );
 

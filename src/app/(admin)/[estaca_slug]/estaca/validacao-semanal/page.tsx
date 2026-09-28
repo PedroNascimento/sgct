@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient, createSupabaseServiceClient } from "@/infrastructure/supabase/server";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { validateWeeklyTransfersAction } from "@/app/(admin)/[estaca_slug]/actions";
 
 interface Props {
@@ -13,13 +13,13 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
   const { estaca_slug } = await params;
 
   const serverClient = await createSupabaseServerClient();
-  const { data: sessionData } = await serverClient.auth.getSession();
+  const { data: userData } = await serverClient.auth.getUser();
 
-  if (!sessionData.session?.user) {
+  if (!userData.user) {
     redirect(`/${estaca_slug}/auth/login`);
   }
 
-  const user = sessionData.session.user;
+  const user = userData.user;
   const role = user.app_metadata?.role;
   const stakeId = user.app_metadata?.stake_id;
 
@@ -27,7 +27,7 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
     redirect(`/${estaca_slug}`);
   }
 
-  const supabase = createSupabaseServiceClient();
+  const supabase = serverClient;
 
   // Busca caravanas abertas da Estaca
   const { data: caravans } = await supabase

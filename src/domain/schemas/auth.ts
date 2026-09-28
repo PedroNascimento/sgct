@@ -67,3 +67,12 @@ export const signUpGuestSchema = z.object({
 });
 
 export type SignUpGuestInput = z.infer<typeof signUpGuestSchema>;
+
+export const updateOwnProfileSchema = z.object({
+  fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
+  cpf: z.string().trim().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  phone: z.string().trim().regex(/^\d{10,11}$/, "Telefone deve conter 10 ou 11 dígitos."),
+  sexo: z.enum(["masculino", "feminino"]),
+});
+
+export type UpdateOwnProfileInput = z.infer<typeof updateOwnProfileSchema>;

@@ -43,6 +43,7 @@
     "**/*.spec.tsx",
     "src/__tests__/**",
     "src/jest.setup.*",
-    "scripts/**"
+    "scripts/**",
+    "supabase/functions/**"
   ]
 }

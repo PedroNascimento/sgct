@@ -19,9 +19,6 @@ const DEFAULT_STAKE = process.env.NEXT_PUBLIC_DEFAULT_STAKE ?? "natal";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Prefixos de rota que exigem autenticação
-const AUTH_ROUTES = ["/(auth)", "/(admin)", "/(super-admin)"];
-
 // Cache simples de slug → stake_id (em memória do edge runtime)
 // Stakes mudam raramente; invalidação não é crítica para MVP.
 const slugCache = new Map<string, { stake_id: string; is_active: boolean } | null>();
@@ -85,12 +82,17 @@ export async function middleware(request: NextRequest) {
 
   // ── Extrair slug da URL ───────────────────────────────────────────────────
   // Padrão: /[estaca_slug]/... ou /(super-admin)/...
-  const isSuperAdminRoute = pathname.startsWith("/super-admin");
+  const isSuperAdminRoute =
+    pathname === "/estacas" ||
+    pathname.startsWith("/estacas/") ||
+    pathname === "/admins" ||
+    pathname.startsWith("/admins/") ||
+    pathname.startsWith("/super-admin");
 
   // Super-admin não tem slug de Estaca na rota
   if (isSuperAdminRoute) {
-    const session = await supabase.auth.getSession();
-    const claims = session.data.session?.user?.app_metadata;
+    const { data: { user }, error } = await supabase.auth.getUser();
+    const claims = error ? undefined : user?.app_metadata;
 
     if (!claims || claims.role !== "super_admin") {
       return new NextResponse("Acesso negado.", { status: 403 });
@@ -122,8 +124,14 @@ export async function middleware(request: NextRequest) {
   // ── Verificar se é rota autenticada ──────────────────────────────────────
   const remainingPath = "/" + segments.slice(1).join("/");
   const isLoginRoute = remainingPath.startsWith("/auth/login") || remainingPath.startsWith("/login");
-  const isAuthRoute = (remainingPath.startsWith("/auth") ||
-                      remainingPath.startsWith("/admin")) && !isLoginRoute;
+  const isAuthRoute =
+    (remainingPath.startsWith("/auth") ||
+      remainingPath.startsWith("/admin") ||
+      remainingPath.startsWith("/estaca") ||
+      remainingPath.startsWith("/ala") ||
+      remainingPath.startsWith("/conta") ||
+      remainingPath.startsWith("/caravana/")) &&
+    !isLoginRoute;
 
   if (!isAuthRoute) {
     // Rota pública (incluindo tela de login/cadastro) — sem bloqueio de sessão
@@ -133,8 +141,8 @@ export async function middleware(request: NextRequest) {
   // ── T000.14: Checagem crítica anti-vazamento cross-stake ─────────────────
   // Artigo II: se há sessão E a rota é autenticada, comparar claim.stake_id
   // com o stake_id resolvido do slug. Se forem diferentes → 403.
-  const session = await supabase.auth.getSession();
-  const claims = session.data.session?.user?.app_metadata;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  const claims = error ? undefined : user?.app_metadata;
 
   if (!claims) {
     // Sem sessão → redirecionar para login
@@ -144,7 +152,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 🔴 CHECAGEM CRÍTICA: stake do JWT deve corresponder ao slug da rota
-  if (claims.stake_id && claims.stake_id !== resolvedStakeId) {
+  if (claims.stake_id !== resolvedStakeId) {
     // Usuário autenticado tentando acessar rota de OUTRA Estaca → 403
     return new NextResponse("Acesso negado: você não pertence a esta Estaca.", {
       status: 403,
@@ -152,12 +160,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Verificação de role por sub-rota ─────────────────────────────────────
-  if (remainingPath.startsWith("/admin/estaca") && claims.role !== "admin_estaca") {
+  if (
+    (remainingPath.startsWith("/admin/estaca") || remainingPath.startsWith("/estaca")) &&
+    claims.role !== "admin_estaca"
+  ) {
     return new NextResponse("Acesso negado: requer perfil Admin Estaca.", { status: 403 });
   }
 
   if (
-    remainingPath.startsWith("/admin/ala") &&
+    (remainingPath.startsWith("/admin/ala") || remainingPath.startsWith("/ala")) &&
     claims.role !== "admin_ala" &&
     claims.role !== "admin_estaca"
   ) {

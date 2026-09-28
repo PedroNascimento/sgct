@@ -36,7 +36,8 @@ const caravanIdSchema = z.string().uuid("ID da caravana inválido.");
 
 export async function recalculateCaravanRanking(
   caravanId: string,
-  deps: RecalculateCaravanRankingDependencies
+  deps: RecalculateCaravanRankingDependencies,
+  confirmedAt: string = new Date().toISOString()
 ): Promise<RecalculateCaravanRankingResult> {
   const validCaravanId = caravanIdSchema.parse(caravanId);
   const { reservationRepository, caravanRepository } = deps;
@@ -117,7 +118,7 @@ export async function recalculateCaravanRanking(
         reason: isWithinCapacity
           ? "confirmed_within_capacity"
           : "exceeded_capacity_waitlisted",
-        timestamp: new Date().toISOString(),
+        timestamp: confirmedAt,
       });
     }
 
@@ -125,7 +126,7 @@ export async function recalculateCaravanRanking(
       id: reservation.id,
       status: newStatus,
       confirmation_rank: rank,
-      confirmed_at: reservation.confirmed_at ?? new Date().toISOString(),
+      confirmed_at: reservation.confirmed_at ?? confirmedAt,
     });
   });
 

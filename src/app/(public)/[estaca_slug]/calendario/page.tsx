@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
@@ -21,7 +21,7 @@ export const revalidate = 60; // ISR — revalida a cada 60 segundos
 export default async function PublicCalendarioPage({ params }: Props) {
   const { estaca_slug } = await params;
 
-  const supabase = createSupabaseServiceClient();
+  const supabase = await createSupabaseServerClient();
   const stakeRepo = new SupabaseStakeRepository(supabase);
   const caravanRepo = new SupabaseCaravanRepository(supabase);
 

@@ -125,7 +125,7 @@ export function ReservationForm({
 
     const seatAttempted = selectedSeat;
 
-    const result = await createReservationAction(userProfile.id, {
+    const result = await createReservationAction({
       caravanId: caravan.id,
       seatNumber: seatAttempted,
       boardingPointId: boardingPointId || null,
@@ -158,12 +158,20 @@ export function ReservationForm({
 
     // Se informou criança de colo, cadastra no manifesto (US-003.3)
     if (hasLapChild && lapChildName && lapChildBirthDate) {
-      await addManifestEntryAction(userProfile.id, {
+      const manifestResult = await addManifestEntryAction({
         reservationId: createdReservation.id,
         fullName: lapChildName,
         birthDate: lapChildBirthDate,
         filiation: lapChildFiliation || userProfile.full_name,
       });
+      if (!manifestResult.success) {
+        setErrorMessage(
+          manifestResult.error ||
+            "A reserva foi criada, mas não foi possível adicionar a criança ao manifesto."
+        );
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     setSuccessReservationId(createdReservation.id);

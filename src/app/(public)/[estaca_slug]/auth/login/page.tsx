@@ -29,8 +29,12 @@ export default function LoginPage() {
     }
 
     const role = data.user?.app_metadata?.role;
-    if (role === "admin_estaca" || role === "admin_ala") {
-      router.push(`/${slug}/admin`);
+    if (role === "super_admin") {
+      router.push("/estacas");
+    } else if (role === "admin_estaca") {
+      router.push(`/${slug}/estaca/calendario`);
+    } else if (role === "admin_ala") {
+      router.push(`/${slug}/ala/reservas`);
     } else {
       router.push(`/${slug}`);
     }

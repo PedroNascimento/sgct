@@ -24,13 +24,13 @@ export default function SuperAdminLayout({
           </div>
           <nav className="flex space-x-4">
             <Link
-              href="/super-admin/estacas"
+              href="/estacas"
               className="text-sm font-medium text-gray-700 hover:text-blue-600 transition"
             >
               Estacas
             </Link>
             <Link
-              href="/super-admin/admins"
+              href="/admins"
               className="text-sm font-medium text-gray-700 hover:text-blue-600 transition"
             >
               Administradores de Estaca

@@ -25,7 +25,7 @@ export default async function AdminsPage() {
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-sm text-yellow-800">
           Nenhuma Estaca cadastrada ainda.{" "}
           <Link
-            href="/super-admin/estacas"
+            href="/estacas"
             className="font-semibold underline hover:text-yellow-900"
           >
             Cadastre uma Estaca primeiro

@@ -48,7 +48,7 @@ Middleware é a **primeira** camada, não a única — RLS no banco é a camada 
 | Upload de formulário de menor | 5 uploads / hora por usuário | Evita abuso do Storage |
 | Requisições gerais autenticadas | 100 / minuto por usuário (limite generoso, "guarda-chuva") | Proteção geral contra scraping/abuso |
 
-**Implementação sugerida:** middleware de rate limiting baseado em Upstash Redis (tem free tier compatível com Vercel Edge) ou, alternativa mais simples sem dependência extra, uma tabela `rate_limit_events` no próprio Supabase com contagem por janela deslizante — mais barato, sem novo serviço externo, adequado à filosofia de custo zero do projeto.
+**Implementação atual (specs 000–004):** a criação de reserva usa `check_reservation_rate_limit()`, contador atômico por `auth.uid()` persistido no PostgreSQL. Assim, o limite de 10/minuto é compartilhado entre todas as instâncias da aplicação e falha de forma fechada quando o banco não pode validá-lo. Os demais limites da tabela entram nas specs correspondentes aos seus fluxos.
 
 ⚠️ **Atenção especial ao momento de abertura de inscrições:** como a reserva é competitiva entre 6 Alas para 50 assentos, é esperado um pico real de tráfego legítimo no horário anunciado de abertura. O rate limit de criação de reserva deve ser generoso o suficiente para não bloquear um usuário real tentando de novo após uma falha de rede, mas restritivo o bastante para impedir automação. Testar esse cenário de carga antes de cada abertura de caravana popular é recomendado (ver Sprint 10 em `docs/SPRINTS.md`).
 

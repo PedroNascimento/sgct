@@ -117,15 +117,9 @@ describe("validateWeeklyTransfers (T004.4 e T004.5)", () => {
     mockProfileRepository.findById.mockResolvedValueOnce(adminEstacaProfile);
     mockCaravanRepository.findById.mockResolvedValue(caravan);
 
-    mockReservationRepository.findByCaravanAndStatuses
-      .mockResolvedValueOnce([pagoAlaReservation]) // Busca reservas com status pago_ala
-      .mockResolvedValueOnce([
-        {
-          ...pagoAlaReservation,
-          status: "confirmado",
-          confirmed_at: "2026-10-14T09:00:00Z",
-        },
-      ]); // Chamada do recálculo de ranking
+    mockReservationRepository.findByCaravanAndStatuses.mockResolvedValueOnce([
+      pagoAlaReservation,
+    ]);
 
     mockReservationRepository.updateBatch.mockImplementation(async (updates) =>
       updates.map((u) => ({
@@ -153,6 +147,15 @@ describe("validateWeeklyTransfers (T004.4 e T004.5)", () => {
     expect(result.confirmed).toHaveLength(1);
     expect(result.confirmed[0].status).toBe("confirmado");
     expect(result.confirmed[0].confirmation_rank).toBe(1);
+    expect(mockReservationRepository.updateBatch).toHaveBeenCalledTimes(1);
+    expect(mockReservationRepository.updateBatch).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: pagoAlaReservation.id,
+        status: "confirmado",
+        confirmation_rank: 1,
+        confirmed_at: "2026-10-14T09:00:00.000Z",
+      }),
+    ]);
   });
 
   it("não executa validação automática na semana do próprio embarque (T004.5 / US-004.2)", async () => {

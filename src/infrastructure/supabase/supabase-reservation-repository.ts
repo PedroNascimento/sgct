@@ -107,17 +107,15 @@ export class SupabaseReservationRepository implements ReservationRepository {
   }
 
   async getSeatOccupancy(caravanId: string, stakeId: string): Promise<SeatOccupancy[]> {
-    const { data, error } = await this.supabase
-      .from("v_seat_occupancy")
-      .select("stake_id, caravan_id, seat_number, occupancy_status")
-      .eq("caravan_id", caravanId)
-      .eq("stake_id", stakeId);
+    const { data, error } = await this.supabase.rpc("get_seat_occupancy", {
+      target_caravan_id: caravanId,
+    });
 
     if (error) {
       throw new Error(`Erro ao consultar ocupação de assentos: ${error.message}`);
     }
 
-    return (data ?? []) as SeatOccupancy[];
+    return ((data ?? []) as SeatOccupancy[]).filter((row) => row.stake_id === stakeId);
   }
 
   async addManifestEntry(data: CreateManifestEntryData): Promise<PassengerManifestEntry> {
@@ -227,16 +225,19 @@ export class SupabaseReservationRepository implements ReservationRepository {
       confirmed_at?: string | null;
     }>
   ): Promise<Reservation[]> {
-    const results: Reservation[] = [];
-    for (const item of updates) {
-      const updated = await this.updateStatus(item.id, {
-        status: item.status,
-        confirmation_rank: item.confirmation_rank,
-        confirmed_at: item.confirmed_at,
-      });
-      results.push(updated);
+    if (updates.length === 0) {
+      return [];
     }
-    return results;
+
+    const { data, error } = await this.supabase.rpc("update_reservations_batch", {
+      updates_payload: updates,
+    });
+
+    if (error) {
+      throw new Error(`Erro ao atualizar reservas em lote: ${error.message}`);
+    }
+
+    return (data ?? []) as Reservation[];
   }
 
   async findPendingExpired(

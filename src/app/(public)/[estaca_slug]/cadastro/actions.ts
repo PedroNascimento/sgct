@@ -5,13 +5,7 @@
  * Spec 001 — Artigo I e Artigo V.
  */
 
-import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
-import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
-import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
-import { SupabaseAuthPort } from "@/infrastructure/supabase/supabase-auth-port";
-import { signUpMember } from "@/use-cases/auth/sign-up-member";
-import { signUpMinor } from "@/use-cases/auth/sign-up-minor";
-import { signUpGuest } from "@/use-cases/auth/sign-up-guest";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 export type ActionState = {
   success: boolean;
@@ -20,7 +14,7 @@ export type ActionState = {
 };
 
 export async function registerMemberAction(
-  stakeId: string,
+  stakeSlug: string,
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -32,16 +26,11 @@ export async function registerMemberAction(
     const sexo = formData.get("sexo") as "masculino" | "feminino";
     const wardId = formData.get("wardId") as string;
 
-    const supabase = createSupabaseServiceClient();
-    const wardRepository = new SupabaseWardRepository(supabase);
-    const profileRepository = new SupabaseProfileRepository(supabase);
-    const authPort = new SupabaseAuthPort(supabase);
-
-    await signUpMember(
-      { email, password, fullName, birthDate, sexo, wardId },
-      { authPort, wardRepository, profileRepository },
-      stakeId
-    );
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.functions.invoke("provision-user", {
+      body: { operation: "register_member", stakeSlug, email, password, fullName, birthDate, sexo, wardId },
+    });
+    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
 
     return {
       success: true,
@@ -56,7 +45,7 @@ export async function registerMemberAction(
 }
 
 export async function registerMinorAction(
-  stakeId: string,
+  stakeSlug: string,
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -70,25 +59,15 @@ export async function registerMinorAction(
     const guardianId = (formData.get("guardianId") as string) || undefined;
     const consent = formData.get("parentalConsent") === "on";
 
-    const supabase = createSupabaseServiceClient();
-    const wardRepository = new SupabaseWardRepository(supabase);
-    const profileRepository = new SupabaseProfileRepository(supabase);
-    const authPort = new SupabaseAuthPort(supabase);
-
-    await signUpMinor(
-      {
-        email,
-        password,
-        fullName,
-        birthDate,
-        sexo,
-        wardId,
-        guardianId: guardianId || undefined,
-        parentalConsent: consent as true,
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.functions.invoke("provision-user", {
+      body: {
+        operation: "register_minor", stakeSlug, email, password, fullName,
+        birthDate, sexo, wardId, guardianId: guardianId || undefined,
+        parentalConsent: consent,
       },
-      { authPort, wardRepository, profileRepository },
-      stakeId
-    );
+    });
+    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
 
     return {
       success: true,
@@ -103,7 +82,7 @@ export async function registerMinorAction(
 }
 
 export async function registerGuestAction(
-  stakeId: string,
+  stakeSlug: string,
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -116,15 +95,14 @@ export async function registerGuestAction(
     const homeStakeName = formData.get("homeStakeName") as string;
     const homeWardName = formData.get("homeWardName") as string;
 
-    const supabase = createSupabaseServiceClient();
-    const profileRepository = new SupabaseProfileRepository(supabase);
-    const authPort = new SupabaseAuthPort(supabase);
-
-    await signUpGuest(
-      { email, password, fullName, birthDate, sexo, homeStakeName, homeWardName },
-      stakeId,
-      { authPort, profileRepository }
-    );
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.functions.invoke("provision-user", {
+      body: {
+        operation: "register_guest", stakeSlug, email, password, fullName,
+        birthDate, sexo, homeStakeName, homeWardName,
+      },
+    });
+    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
 
     return {
       success: true,

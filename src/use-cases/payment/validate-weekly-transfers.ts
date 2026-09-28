@@ -93,29 +93,12 @@ export async function validateWeeklyTransfers(
     }
   }
 
-  // 4. Busca reservas que estão em 'pago_ala' para transicionar para 'confirmado'
-  const pagoAlaReservations = await reservationRepository.findByCaravanAndStatuses(
-    caravan.id,
-    ["pago_ala"]
-  );
-
-  const confirmedAtStr = now.toISOString();
-
-  if (pagoAlaReservations.length > 0) {
-    const updates = pagoAlaReservations.map((r) => ({
-      id: r.id,
-      status: "confirmado" as const,
-      confirmed_at: confirmedAtStr,
-    }));
-
-    await reservationRepository.updateBatch(updates);
-  }
-
-  // 5. Recalcula o ranking da caravana com todas as reservas confirmadas
+  // 4. Recalcula ranking e confirma reservas em uma única atualização em lote.
+  // O repositório executa o lote dentro de uma única transação no banco.
   const rankingResult = await recalculateCaravanRanking(caravan.id, {
     reservationRepository,
     caravanRepository,
-  });
+  }, now.toISOString());
 
   return {
     skipped: false,

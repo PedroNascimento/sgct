@@ -26,6 +26,7 @@ Pré-requisito adicional: [Docker Desktop](https://www.docker.com/products/docke
 npm install -g supabase
 supabase init          # só na primeira vez, cria a pasta supabase/ se ainda não existir
 supabase start          # sobe Postgres + Auth + Storage + Studio localmente via Docker
+supabase functions serve # mantém as Edge Functions locais disponíveis em outro terminal
 ```
 
 Ao final do `supabase start`, o terminal imprime a URL e as chaves locais. Copie para o seu `.env.local` (que já deve existir a partir de `cp .env.example .env.local`, ver Seção 5):
@@ -66,9 +67,14 @@ supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
    ```bash
    supabase db push
    ```
-5. Habilite pg_cron em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md secao 6) foram criados pelas migrations.
-6. Configure o Auth Hook custom_access_token_hook em Authentication -> Hooks (aponta para a funcao ja criada pela migration — ver docs/DATABASE_SCHEMA.md secao 8).
-7. Crie o bucket privado minor-forms em Storage (as migrations ja aplicam as policies; so o bucket em si precisa ser criado manualmente na primeira vez).
+5. Publique a Edge Function de provisionamento de usuários. Ela é a única fronteira de request que recebe `service_role`; as Server Actions nunca recebem essa chave:
+   ```bash
+   supabase functions deploy provision-user --no-verify-jwt
+   ```
+   A função faz sua própria validação de JWT nas operações administrativas e mantém públicas somente as operações de autocadastro.
+6. Habilite pg_cron em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md secao 6) foram criados pelas migrations.
+7. Configure o Auth Hook custom_access_token_hook em Authentication -> Hooks (aponta para a funcao ja criada pela migration — ver docs/DATABASE_SCHEMA.md secao 8).
+8. Crie o bucket privado minor-forms em Storage (as migrations ja aplicam as policies; so o bucket em si precisa ser criado manualmente na primeira vez).
 
 ## 4. Configurar o Resend
 1. Crie uma conta gratuita em resend.com.
@@ -97,7 +103,7 @@ Esse script (scripts/seed-super-admin.ts):
 2. Insere a profile correspondente com role = 'super_admin' e stake_id = null (intencional — ver Artigo II.f da constituicao).
 3. Imprime no terminal um link de login temporario.
 
-Depois de logado como super_admin, acesse /super-admin/estacas para cadastrar a Estaca (nome + slug) e /super-admin/admins para cadastrar o primeiro admin_estaca dela — esse admin, a partir dai, gerencia tudo pela interface normal, sem precisar mais do super_admin.
+Depois de logado como super_admin, acesse `/estacas` para cadastrar a Estaca (nome + slug) e `/admins` para cadastrar o primeiro `admin_estaca` dela — esse admin, a partir dai, gerencia tudo pela interface normal, sem precisar mais do super_admin.
 
 Atencao: se sua instancia vai atender uma unica Estaca (caso mais comum de auto-hospedagem), o slug cadastrado aqui deve ser exatamente o mesmo valor de NEXT_PUBLIC_DEFAULT_STAKE.
 

@@ -9,5 +9,9 @@ export interface ProfileRepository {
   findById(id: string): Promise<Profile | null>;
   insert(data: Omit<Profile, "is_minor" | "last_login_at" | "created_at">): Promise<Profile>;
   updateRole(id: string, role: Profile["role"]): Promise<Profile>;
+  updateOwnContact?(
+    id: string,
+    data: Pick<Profile, "full_name" | "cpf" | "phone" | "sexo">
+  ): Promise<Profile>;
   deactivateInactive(cutoffDate: Date): Promise<{ deactivatedCount: number }>;
 }

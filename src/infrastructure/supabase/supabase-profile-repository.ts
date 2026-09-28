@@ -69,6 +69,24 @@ export class SupabaseProfileRepository implements ProfileRepository {
     return data as Profile;
   }
 
+  async updateOwnContact(
+    id: string,
+    data: Pick<Profile, "full_name" | "cpf" | "phone" | "sexo">
+  ): Promise<Profile> {
+    const { data: updated, error } = await this.supabase
+      .from("profiles")
+      .update(data)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar perfil: ${error.message}`);
+    }
+
+    return updated as Profile;
+  }
+
   async deactivateInactive(cutoffDate: Date): Promise<{ deactivatedCount: number }> {
     const isoCutoff = cutoffDate.toISOString();
 

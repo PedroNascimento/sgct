@@ -10,13 +10,9 @@
 import { revalidatePath } from "next/cache";
 import {
   createSupabaseServerClient,
-  createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
-import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
-import { SupabaseAuthPort } from "@/infrastructure/supabase/supabase-auth-port";
-import { createWardAdmin } from "@/use-cases/auth/create-ward-admin";
 import { createCaravan } from "@/use-cases/caravan/create-caravan";
 import { updateCaravanStatus } from "@/use-cases/caravan/update-caravan-status";
 import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
@@ -36,13 +32,13 @@ export async function createWardAdminAction(
 ): Promise<AdminActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
 
-    const user = sessionData.session.user;
+    const user = userData.user;
     const role = user.app_metadata?.role;
     if (role !== "admin_estaca") {
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
@@ -55,16 +51,14 @@ export async function createWardAdminAction(
     const birthDate = formData.get("birthDate") as string;
     const sexo = (formData.get("sexo") as "masculino" | "feminino") || undefined;
 
-    const serviceClient = createSupabaseServiceClient();
-    const wardRepository = new SupabaseWardRepository(serviceClient);
-    const profileRepository = new SupabaseProfileRepository(serviceClient);
-    const authPort = new SupabaseAuthPort(serviceClient);
-
-    const createdAdmin = await createWardAdmin(
-      { wardId, email, fullName, password, birthDate, sexo },
-      user.id,
-      { authPort, wardRepository, profileRepository }
-    );
+    const { data, error } = await supabase.functions.invoke("provision-user", {
+      body: {
+        operation: "create_ward_admin", wardId, email, fullName,
+        password, birthDate, sexo,
+      },
+    });
+    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao criar Admin da Ala.");
+    const createdAdmin = data.profile as { full_name: string };
 
     revalidatePath("/admin");
     return {
@@ -85,13 +79,13 @@ export async function createCaravanAction(
 ): Promise<AdminActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
 
-    const user = sessionData.session.user;
+    const user = userData.user;
     const role = user.app_metadata?.role;
     if (role !== "admin_estaca") {
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
@@ -115,9 +109,8 @@ export async function createCaravanAction(
       throw new Error("Formato inválido dos pontos de embarque.");
     }
 
-    const serviceClient = createSupabaseServiceClient();
-    const caravanRepository = new SupabaseCaravanRepository(serviceClient);
-    const profileRepository = new SupabaseProfileRepository(serviceClient);
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
 
     const created = await createCaravan(
       {
@@ -156,13 +149,13 @@ export async function updateCaravanStatusAction(
 ): Promise<AdminActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
 
-    const user = sessionData.session.user;
+    const user = userData.user;
     const role = user.app_metadata?.role;
     if (role !== "admin_estaca") {
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
@@ -171,9 +164,8 @@ export async function updateCaravanStatusAction(
     const caravanId = formData.get("caravanId") as string;
     const status = formData.get("status") as CaravanStatus;
 
-    const serviceClient = createSupabaseServiceClient();
-    const caravanRepository = new SupabaseCaravanRepository(serviceClient);
-    const profileRepository = new SupabaseProfileRepository(serviceClient);
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
 
     const updated = await updateCaravanStatus(
       { caravanId, status },
@@ -200,16 +192,15 @@ export async function confirmWardPaymentAction(
 ): Promise<AdminActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
 
-    const user = sessionData.session.user;
-    const serviceClient = createSupabaseServiceClient();
-    const reservationRepo = new SupabaseReservationRepository(serviceClient);
-    const profileRepo = new SupabaseProfileRepository(serviceClient);
+    const user = userData.user;
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
 
     const updated = await confirmWardPayment(
       { reservationId, adminId: user.id },
@@ -234,17 +225,16 @@ export async function validateWeeklyTransfersAction(
 ): Promise<AdminActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
 
-    if (sessionError || !sessionData.session?.user) {
+    if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
 
-    const user = sessionData.session.user;
-    const serviceClient = createSupabaseServiceClient();
-    const reservationRepo = new SupabaseReservationRepository(serviceClient);
-    const caravanRepo = new SupabaseCaravanRepository(serviceClient);
-    const profileRepo = new SupabaseProfileRepository(serviceClient);
+    const user = userData.user;
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const caravanRepo = new SupabaseCaravanRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
 
     const result = await validateWeeklyTransfers(
       { caravanId, adminId: user.id },

@@ -42,7 +42,7 @@ export async function createSupabaseServerClient() {
 /**
  * Cliente Supabase com service_role.
  * ⚠️ NUNCA use este cliente em código que roda no client-side.
- * Use APENAS em: Server Actions de bootstrap, scripts de seed, Edge Functions.
+ * Use APENAS em jobs internos autenticados e scripts de seed/migração.
  *
  * Artigo V: service_role key só em contextos server-side confiáveis.
  */

@@ -42,6 +42,14 @@ const config = {
     "!src/**/*.test.ts",
     "!src/**/*.d.ts",
   ],
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 60,
+      functions: 80,
+      lines: 80,
+    },
+  },
 };
 
 module.exports = config;

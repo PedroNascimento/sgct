@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
-import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
 import { CadastroClient } from "./cadastro-client";
+import type { Ward } from "@/domain/types/ward";
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -20,9 +20,8 @@ export const dynamic = "force-dynamic";
 export default async function CadastroPage({ params }: Props) {
   const { estaca_slug } = await params;
 
-  const supabase = createSupabaseServiceClient();
+  const supabase = await createSupabaseServerClient();
   const stakeRepo = new SupabaseStakeRepository(supabase);
-  const wardRepo = new SupabaseWardRepository(supabase);
 
   const stake = await resolveStakeFromSlug(estaca_slug, stakeRepo);
   if (!stake) {
@@ -30,7 +29,19 @@ export default async function CadastroPage({ params }: Props) {
   }
 
   // Lista exclusivamente as Alas da Estaca resolvida
-  const wards = await wardRepo.findByStakeId(stake.id);
+  const { data: wardsData, error: wardsError } = await supabase.rpc(
+    "get_public_wards",
+    { target_stake_slug: estaca_slug }
+  );
+  if (wardsError) {
+    throw new Error(`Erro ao carregar Alas públicas: ${wardsError.message}`);
+  }
+  const wards = (wardsData ?? []).map((ward: { id: string; name: string }) => ({
+    id: ward.id,
+    stake_id: stake.id,
+    name: ward.name,
+    created_at: "",
+  })) as Ward[];
 
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -45,7 +56,7 @@ export default async function CadastroPage({ params }: Props) {
       </div>
 
       <CadastroClient
-        stakeId={stake.id}
+        stakeSlug={estaca_slug}
         stakeName={stake.name}
         wards={wards}
       />

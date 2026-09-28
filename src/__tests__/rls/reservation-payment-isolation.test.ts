@@ -46,6 +46,7 @@ describe("RLS — Isolamento de Confirmação de Pagamento de Reserva (T004.2)",
   let clientAdminA1: SupabaseClient;
   let clientAdminA2: SupabaseClient;
   let clientAdminB1: SupabaseClient;
+  let clientMemberA1: SupabaseClient;
 
   const timestamp = Date.now();
   const PWD = "senha-segura-rls-123";
@@ -241,6 +242,9 @@ describe("RLS — Isolamento de Confirmação de Pagamento de Reserva (T004.2)",
     await svc.auth.admin.updateUserById(adminB1UserId, {
       app_metadata: { role: "admin_ala", stake_id: stakeBId, ward_id: wardB1Id },
     });
+    await svc.auth.admin.updateUserById(memberA1UserId, {
+      app_metadata: { role: "member", stake_id: stakeAId, ward_id: wardA1Id },
+    });
 
     // 7. Autenticar os clientes Supabase para cada Admin
     clientAdminA1 = anonClient();
@@ -251,6 +255,9 @@ describe("RLS — Isolamento de Confirmação de Pagamento de Reserva (T004.2)",
 
     clientAdminB1 = anonClient();
     await clientAdminB1.auth.signInWithPassword({ email: emailB1, password: PWD });
+
+    clientMemberA1 = anonClient();
+    await clientMemberA1.auth.signInWithPassword({ email: emailMember, password: PWD });
   }, 30000);
 
   afterAll(async () => {
@@ -306,6 +313,24 @@ describe("RLS — Isolamento de Confirmação de Pagamento de Reserva (T004.2)",
     expect(data?.length ?? 0).toBe(0);
 
     // Confirma que a reserva continua pendente
+    const { data: currentRes } = await svc
+      .from("reservations")
+      .select("status")
+      .eq("id", reservationA1Id)
+      .single();
+    expect(currentRes?.status).toBe("pendente");
+  });
+
+  it("bloqueia membro tentando alterar diretamente o status da própria reserva", async () => {
+    const { data, error } = await clientMemberA1
+      .from("reservations")
+      .update({ status: "confirmado" })
+      .eq("id", reservationA1Id)
+      .select();
+
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+
     const { data: currentRes } = await svc
       .from("reservations")
       .select("status")

@@ -174,31 +174,17 @@ export class SupabaseCaravanRepository implements CaravanRepository {
         .order("boarding_time", { ascending: true });
 
       // 3. Buscar status agregado de reservas (sem expor quem reservou nem Ala — US-002.2)
-      const { data: reservations } = await this.supabase
-        .from("reservations")
-        .select("status")
-        .eq("caravan_id", caravan.id);
-
-      let confirmedCount = 0;
-      let validatingCount = 0;
-      let waitlistCount = 0;
-
-      if (reservations) {
-        for (const res of reservations) {
-          if (res.status === "confirmado" || res.status === "presente") {
-            confirmedCount++;
-          } else if (
-            res.status === "pendente" ||
-            res.status === "pago_ala" ||
-            res.status === "aguardando_auxilio" ||
-            res.status === "aguardando_transferencia_interestaca"
-          ) {
-            validatingCount++;
-          } else if (res.status === "lista_espera") {
-            waitlistCount++;
-          }
-        }
+      const { data: countRows, error: countsError } = await this.supabase.rpc(
+        "get_public_caravan_counts",
+        { target_caravan_id: caravan.id }
+      );
+      if (countsError) {
+        throw new Error(`Erro ao carregar ocupação pública: ${countsError.message}`);
       }
+      const counts = countRows?.[0];
+      const confirmedCount = Number(counts?.confirmed_seats ?? 0);
+      const validatingCount = Number(counts?.validating_seats ?? 0);
+      const waitlistCount = Number(counts?.waitlist_seats ?? 0);
 
       const availableSeats = Math.max(
         0,

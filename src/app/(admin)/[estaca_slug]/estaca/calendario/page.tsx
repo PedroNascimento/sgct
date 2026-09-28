@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminCalendarioPage({ params }: Props) {
   const { estaca_slug } = await params;
 
-  const supabase = createSupabaseServiceClient();
+  const supabase = await createSupabaseServerClient();
   const stakeRepo = new SupabaseStakeRepository(supabase);
   const caravanRepo = new SupabaseCaravanRepository(supabase);
 

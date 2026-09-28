@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
@@ -19,7 +19,7 @@ interface Props {
 export default async function ReservarPage({ params }: Props) {
   const { estaca_slug, caravan_id } = await params;
 
-  const supabase = createSupabaseServiceClient();
+  const supabase = await createSupabaseServerClient();
   const stakeRepo = new SupabaseStakeRepository(supabase);
   const caravanRepo = new SupabaseCaravanRepository(supabase);
   const reservationRepo = new SupabaseReservationRepository(supabase);
@@ -69,7 +69,6 @@ export default async function ReservarPage({ params }: Props) {
     .map((s) => s.seat_number);
 
   // 5. Usuário Autenticado
-  // Para fins de demonstração ou fluxo real, checamos sessão ou usamos perfil mock/seed
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -77,19 +76,6 @@ export default async function ReservarPage({ params }: Props) {
   let userProfile = null;
   if (user) {
     userProfile = await profileRepo.findById(user.id);
-  } else {
-    // Se não há sessão aberta no client, buscar o primeiro perfil de membro ativo da estaca para dev/teste
-    // ou exibir tela de login
-    const { data: memberProfiles } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("stake_id", stake.id)
-      .eq("role", "member")
-      .limit(1);
-
-    if (memberProfiles && memberProfiles.length > 0) {
-      userProfile = memberProfiles[0];
-    }
   }
 
   if (!userProfile) {
@@ -102,7 +88,7 @@ export default async function ReservarPage({ params }: Props) {
           </p>
           <div className="flex flex-col gap-3">
             <Link
-              href={`/${estaca_slug}/auth`}
+              href={`/${estaca_slug}/auth/login`}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
             >
               Fazer Login

@@ -140,8 +140,8 @@ async function main() {
 Próximos passos:
   1. Acesse a aplicação em http://localhost:3000
   2. Faça login com: ${email}
-  3. Acesse /super-admin/estacas para cadastrar suas Estacas
-  4. Acesse /super-admin/admins para cadastrar o primeiro admin_estaca
+  3. Acesse /estacas para cadastrar suas Estacas
+  4. Acesse /admins para cadastrar o primeiro admin_estaca
      de cada Estaca (esse admin gerencia tudo depois, sem depender de você)
 
 IMPORTANTE: Após o primeiro login, considere alterar sua senha.

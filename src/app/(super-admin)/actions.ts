@@ -11,13 +11,9 @@
 import { revalidatePath } from "next/cache";
 import {
   createSupabaseServerClient,
-  createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
-import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
-import { SupabaseAuthAdmin } from "@/infrastructure/supabase/supabase-auth-admin";
 import { createStake } from "@/use-cases/tenant/create-stake";
-import { createBootstrapAdminEstaca } from "@/use-cases/tenant/create-bootstrap-admin-estaca";
 
 /**
  * Garante que o chamador atual possui a role super_admin.
@@ -25,18 +21,18 @@ import { createBootstrapAdminEstaca } from "@/use-cases/tenant/create-bootstrap-
  */
 async function assertSuperAdmin() {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getUser();
 
-  if (error || !data.session?.user) {
+  if (error || !data.user) {
     throw new Error("Não autenticado.");
   }
 
-  const role = data.session.user.app_metadata?.role;
+  const role = data.user.app_metadata?.role;
   if (role !== "super_admin") {
     throw new Error("Acesso negado: requer perfil Super Admin.");
   }
 
-  return data.session.user;
+  return data.user;
 }
 
 export type ActionState = {
@@ -58,12 +54,12 @@ export async function createStakeAction(
     const name = formData.get("name") as string;
     const slug = formData.get("slug") as string;
 
-    const serviceClient = createSupabaseServiceClient();
-    const stakeRepo = new SupabaseStakeRepository(serviceClient);
+    const supabase = await createSupabaseServerClient();
+    const stakeRepo = new SupabaseStakeRepository(supabase);
 
     const stake = await createStake({ name, slug }, stakeRepo);
 
-    revalidatePath("/super-admin/estacas");
+    revalidatePath("/estacas");
     return {
       success: true,
       message: `Estaca "${stake.name}" cadastrada com sucesso!`,
@@ -94,17 +90,17 @@ export async function createBootstrapAdminEstacaAction(
     const password = formData.get("password") as string;
     const birthDate = formData.get("birthDate") as string;
 
-    const serviceClient = createSupabaseServiceClient();
-    const authAdmin = new SupabaseAuthAdmin(serviceClient);
-    const profileRepo = new SupabaseProfileRepository(serviceClient);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.functions.invoke("provision-user", {
+      body: {
+        operation: "create_bootstrap_admin", stakeId, email, fullName,
+        password, birthDate,
+      },
+    });
+    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao criar Admin de Estaca.");
+    const profile = data.profile as { full_name: string };
 
-    const profile = await createBootstrapAdminEstaca(
-      { stakeId, email, fullName, password, birthDate },
-      authAdmin,
-      profileRepo
-    );
-
-    revalidatePath("/super-admin/admins");
+    revalidatePath("/admins");
     return {
       success: true,
       message: `Admin de Estaca "${profile.full_name}" criado com sucesso!`,
@@ -126,8 +122,9 @@ export async function createBootstrapAdminEstacaAction(
  */
 export async function getStakesList() {
   try {
-    const serviceClient = createSupabaseServiceClient();
-    const stakeRepo = new SupabaseStakeRepository(serviceClient);
+    await assertSuperAdmin();
+    const supabase = await createSupabaseServerClient();
+    const stakeRepo = new SupabaseStakeRepository(supabase);
     return await stakeRepo.findAll();
   } catch {
     return [];
