@@ -8,11 +8,13 @@ import type {
   Reservation,
   PassengerManifestEntry,
   SeatOccupancy,
+  ReservationStatus,
 } from "@/domain/types/reservation";
 import type {
   ReservationRepository,
   CreateReservationData,
   CreateManifestEntryData,
+  UpdateReservationStatusData,
 } from "@/domain/interfaces/reservation-repository";
 
 export class SupabaseReservationRepository implements ReservationRepository {
@@ -170,5 +172,98 @@ export class SupabaseReservationRepository implements ReservationRepository {
     }
 
     return (data ?? []) as PassengerManifestEntry[];
+  }
+
+  async updateStatus(
+    id: string,
+    data: UpdateReservationStatusData
+  ): Promise<Reservation> {
+    const updatePayload: Record<string, unknown> = {
+      status: data.status,
+    };
+    if (data.confirmed_at !== undefined) {
+      updatePayload.confirmed_at = data.confirmed_at;
+    }
+    if (data.confirmation_rank !== undefined) {
+      updatePayload.confirmation_rank = data.confirmation_rank;
+    }
+
+    const { data: updated, error } = await this.supabase
+      .from("reservations")
+      .update(updatePayload)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar status da reserva: ${error.message}`);
+    }
+
+    return updated as Reservation;
+  }
+
+  async findByCaravanAndStatuses(
+    caravanId: string,
+    statuses: ReservationStatus[]
+  ): Promise<Reservation[]> {
+    const { data, error } = await this.supabase
+      .from("reservations")
+      .select("*")
+      .eq("caravan_id", caravanId)
+      .in("status", statuses);
+
+    if (error) {
+      throw new Error(`Erro ao buscar reservas por status: ${error.message}`);
+    }
+
+    return (data ?? []) as Reservation[];
+  }
+
+  async updateBatch(
+    updates: Array<{
+      id: string;
+      status: ReservationStatus;
+      confirmation_rank?: number | null;
+      confirmed_at?: string | null;
+    }>
+  ): Promise<Reservation[]> {
+    const results: Reservation[] = [];
+    for (const item of updates) {
+      const updated = await this.updateStatus(item.id, {
+        status: item.status,
+        confirmation_rank: item.confirmation_rank,
+        confirmed_at: item.confirmed_at,
+      });
+      results.push(updated);
+    }
+    return results;
+  }
+
+  async findPendingExpired(
+    referenceDate: string,
+    daysBeforeDeparture: number
+  ): Promise<Reservation[]> {
+    const { data, error } = await this.supabase
+      .from("reservations")
+      .select("*, caravans!inner(departure_date)")
+      .eq("status", "pendente");
+
+    if (error) {
+      throw new Error(`Erro ao buscar reservas pendentes expiradas: ${error.message}`);
+    }
+
+    const ref = new Date(referenceDate);
+    const thresholdMs = daysBeforeDeparture * 24 * 60 * 60 * 1000;
+
+    return ((data ?? []) as any[])
+      .filter((r) => {
+        const departure = new Date(r.caravans.departure_date);
+        const diffMs = departure.getTime() - ref.getTime();
+        return diffMs <= thresholdMs;
+      })
+      .map((r) => {
+        const { caravans, ...reservation } = r;
+        return reservation as Reservation;
+      });
   }
 }

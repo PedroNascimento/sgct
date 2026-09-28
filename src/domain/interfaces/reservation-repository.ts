@@ -40,12 +40,29 @@ export interface CreateManifestEntryData {
   filiation: string;
 }
 
+export interface UpdateReservationStatusData {
+  status: ReservationStatus;
+  confirmed_at?: string | null;
+  confirmation_rank?: number | null;
+}
+
 export interface ReservationRepository {
   create(data: CreateReservationData): Promise<Reservation>;
   findById(id: string): Promise<Reservation | null>;
   findByUserId(userId: string): Promise<Reservation[]>;
   findByCaravanId(caravanId: string): Promise<Reservation[]>;
+  findByCaravanAndStatuses(caravanId: string, statuses: ReservationStatus[]): Promise<Reservation[]>;
   getSeatOccupancy(caravanId: string, stakeId: string): Promise<SeatOccupancy[]>;
   addManifestEntry(data: CreateManifestEntryData): Promise<PassengerManifestEntry>;
   getManifestEntriesByReservationId(reservationId: string): Promise<PassengerManifestEntry[]>;
+  updateStatus(id: string, data: UpdateReservationStatusData): Promise<Reservation>;
+  updateBatch(
+    updates: Array<{
+      id: string;
+      status: ReservationStatus;
+      confirmation_rank?: number | null;
+      confirmed_at?: string | null;
+    }>
+  ): Promise<Reservation[]>;
+  findPendingExpired(referenceDate: string, daysBeforeDeparture: number): Promise<Reservation[]>;
 }
