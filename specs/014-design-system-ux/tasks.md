@@ -14,3 +14,12 @@
 - [x] T014.12 — Coletar, validar e persistir o telefone de WhatsApp no cadastro inicial.
 
 **Definition of Done:** critérios da spec atendidos, nenhuma regra de negócio alterada, testes/lint/build verdes e telas principais utilizáveis em 320 px sem rolagem horizontal indevida.
+
+- [x] T014.13 — Estrutura única, lateral fixa/recolhível, gaveta mobile acessível e menu superior de conta.
+- [x] T014.14 — Integrar áreas de membro, administração e plataforma; alternância bidirecional apenas para papéis autorizados.
+- [ ] T014.15 — Refinar superfícies, formulários, tabelas e hierarquia preservando cores e tipografia.
+- [ ] T014.16 — Validar interações, lint, build e responsividade.
+
+Validação parcial: 17 testes de componentes passaram, incluindo navegação e resumo dos gráficos. Lint dos componentes alterados passou. Validação visual responsiva ainda pendente; checagem global encontra erros preexistentes no Super Admin e no formulário de equipe.
+
+Recharts e Lucide React instalados por solicitação explícita. Gráficos integrados aos painéis da Estaca e Ala; biblioteca compartilhada de ícones migrada para Lucide.

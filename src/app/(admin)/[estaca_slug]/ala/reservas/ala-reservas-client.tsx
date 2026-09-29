@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
 import { confirmWardPaymentAction } from "@/app/(admin)/[estaca_slug]/actions";
 
@@ -61,7 +62,7 @@ export function AlaReservasClient({
   const pagosAla = filteredByCaravan.filter((r) => r.status === "pago_ala");
   const confirmados = filteredByCaravan.filter((r) => r.status === "confirmado");
   const waitlist = filteredByCaravan.filter(
-    (r) => r.status === "waitlist" || r.status === "aguardando_vaga"
+    (r) => r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga"
   );
   const totalInscritos = filteredByCaravan.length;
 
@@ -72,7 +73,7 @@ export function AlaReservasClient({
     if (statusFilter === "pago_ala") return r.status === "pago_ala";
     if (statusFilter === "confirmado") return r.status === "confirmado";
     if (statusFilter === "waitlist")
-      return r.status === "waitlist" || r.status === "aguardando_vaga";
+      return r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga";
     return true;
   });
 
@@ -98,17 +99,17 @@ export function AlaReservasClient({
           <h2 className="text-sm font-bold uppercase tracking-wider text-[#53575b]">
             Caravana Selecionada
           </h2>
-          <p className="text-xs text-[#707478]">
+          <p className="text-sm text-[#707478]">
             Consulte as inscrições dos membros da sua Ala por viagem.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {caravans.length > 1 && (
             <button
               type="button"
               onClick={() => setSelectedCaravanId("all")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                 selectedCaravanId === "all"
                   ? "bg-brand-900 text-white"
                   : "bg-[#eff0f0] text-[#3a3d40] hover:bg-brand-50"
@@ -123,103 +124,99 @@ export function AlaReservasClient({
               key={c.id}
               type="button"
               onClick={() => setSelectedCaravanId(c.id)}
-              className={`rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+              className={`rounded-lg px-3.5 py-2 text-sm font-bold transition-all ${
                 selectedCaravanId === c.id
                   ? "bg-brand-900 text-white shadow-xs"
                   : "bg-white border border-[#d0d3d3] text-[#3a3d40] hover:bg-brand-50"
               }`}
             >
-              🚌 Viagem de {formatDate(c.departure_date)}
+              Viagem de {formatDate(c.departure_date)}
             </button>
           ))}
         </div>
       </div>
 
+      <ReservationsChart reservations={filteredByCaravan} />
+
       {/* Cards de Métricas (Dashboard da Ala) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {/* Card 1: Aguardando Pagamento */}
-        <div
+        <button type="button" aria-pressed={statusFilter === "pendente"}
           onClick={() => setStatusFilter("pendente")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
+          className={`text-left cursor-pointer rounded-2xl border p-5 transition-all ${
             statusFilter === "pendente"
               ? "border-warning-500 bg-warning-50/70 ring-2 ring-warning-400"
               : "border-[#e0e2e2] bg-white hover:border-warning-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-warning-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-warning-700">
               Aguardando Pgto
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-warning-100 text-xs font-bold text-warning-800">
-              🟡
-            </span>
+
           </div>
           <p className="mt-3 text-3xl font-black text-[#212225]">{pendentes.length}</p>
-          <p className="mt-1 text-xs text-[#53575b]">Aguardam comprovação na Ala</p>
-        </div>
+          <p className="mt-1 text-sm text-[#53575b]">Aguardam comprovação na Ala</p>
+        </button>
 
         {/* Card 2: Pago Ala */}
-        <div
+        <button type="button" aria-pressed={statusFilter === "pago_ala"}
           onClick={() => setStatusFilter("pago_ala")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
+          className={`text-left cursor-pointer rounded-2xl border p-5 transition-all ${
             statusFilter === "pago_ala"
               ? "border-brand-500 bg-brand-50/70 ring-2 ring-brand-400"
               : "border-[#e0e2e2] bg-white hover:border-brand-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
               Pago na Ala
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-800">
-              🔵
-            </span>
+
           </div>
           <p className="mt-3 text-3xl font-black text-[#212225]">{pagosAla.length}</p>
-          <p className="mt-1 text-xs text-[#53575b]">Aguardando repasse da Estaca</p>
-        </div>
+          <p className="mt-1 text-sm text-[#53575b]">Aguardando repasse da Estaca</p>
+        </button>
 
         {/* Card 3: Confirmados */}
-        <div
+        <button type="button" aria-pressed={statusFilter === "confirmado"}
           onClick={() => setStatusFilter("confirmado")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
+          className={`text-left cursor-pointer rounded-2xl border p-5 transition-all ${
             statusFilter === "confirmado"
               ? "border-success-500 bg-success-50/70 ring-2 ring-success-400"
               : "border-[#e0e2e2] bg-white hover:border-success-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-success-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-success-700">
               Confirmados
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-success-100 text-xs font-bold text-success-800">
-              🟢
-            </span>
+
           </div>
           <p className="mt-3 text-3xl font-black text-[#212225]">{confirmados.length}</p>
-          <p className="mt-1 text-xs text-[#53575b]">Assentos garantidos</p>
-        </div>
+          <p className="mt-1 text-sm text-[#53575b]">Assentos garantidos</p>
+        </button>
 
         {/* Card 4: Fila de Espera */}
-        <div
+        <button type="button" aria-pressed={statusFilter === "waitlist"}
           onClick={() => setStatusFilter("waitlist")}
-          className={`cursor-pointer rounded-2xl border p-5 transition-all ${
+          className={`text-left cursor-pointer rounded-2xl border p-5 transition-all ${
             statusFilter === "waitlist"
-              ? "border-indigo-500 bg-indigo-50/70 ring-2 ring-indigo-400"
-              : "border-[#e0e2e2] bg-white hover:border-indigo-300"
+              ? "border-brand-500 bg-brand-50/70 ring-2 ring-brand-400"
+              : "border-[#e0e2e2] bg-white hover:border-brand-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
               Fila de Espera
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-800">
               ⏳
             </span>
           </div>
           <p className="mt-3 text-3xl font-black text-[#212225]">{waitlist.length}</p>
-          <p className="mt-1 text-xs text-[#53575b]">Excedentes aguardando vaga</p>
-        </div>
+          <p className="mt-1 text-sm text-[#53575b]">Excedentes aguardando vaga</p>
+        </button>
       </div>
 
       {/* Filtros de Abas */}
@@ -227,7 +224,7 @@ export function AlaReservasClient({
         <button
           type="button"
           onClick={() => setStatusFilter("all")}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
             statusFilter === "all"
               ? "bg-[#212225] text-white"
               : "bg-white text-[#53575b] hover:bg-[#eff0f0]"
@@ -238,7 +235,7 @@ export function AlaReservasClient({
         <button
           type="button"
           onClick={() => setStatusFilter("pendente")}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
             statusFilter === "pendente"
               ? "bg-warning-700 text-white"
               : "bg-white text-[#53575b] hover:bg-warning-50"
@@ -249,7 +246,7 @@ export function AlaReservasClient({
         <button
           type="button"
           onClick={() => setStatusFilter("pago_ala")}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
             statusFilter === "pago_ala"
               ? "bg-brand-700 text-white"
               : "bg-white text-[#53575b] hover:bg-brand-50"
@@ -260,7 +257,7 @@ export function AlaReservasClient({
         <button
           type="button"
           onClick={() => setStatusFilter("confirmado")}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
             statusFilter === "confirmado"
               ? "bg-success-700 text-white"
               : "bg-white text-[#53575b] hover:bg-success-50"
@@ -271,10 +268,10 @@ export function AlaReservasClient({
         <button
           type="button"
           onClick={() => setStatusFilter("waitlist")}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
             statusFilter === "waitlist"
-              ? "bg-indigo-700 text-white"
-              : "bg-white text-[#53575b] hover:bg-indigo-50"
+              ? "bg-brand-700 text-white"
+              : "bg-white text-[#53575b] hover:bg-brand-50"
           }`}
         >
           Lista de Espera ({waitlist.length})
@@ -288,11 +285,11 @@ export function AlaReservasClient({
             <h2 className="text-lg font-bold text-[#212225]">
               Membros Inscritos da {wardName}
             </h2>
-            <p className="text-xs text-[#53575b]">
+            <p className="text-sm text-[#53575b]">
               Listagem ordenada por posição de inscrição e assento.
             </p>
           </div>
-          <span className="text-xs font-bold text-brand-900 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-200">
+          <span className="text-sm font-bold text-brand-900 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-200">
             {displayedReservations.length} encontrado(s)
           </span>
         </div>
@@ -328,13 +325,13 @@ export function AlaReservasClient({
                       <td className="px-5 py-4">
                         {res.seat_number ? (
                           <div className="flex items-center gap-2">
-                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-xs">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-sm">
                               {res.seat_number}
                             </span>
-                            <span className="text-xs text-[#707478]">Poltrona</span>
+                            <span className="text-sm text-[#707478]">Poltrona</span>
                           </div>
                         ) : (
-                          <span className="sgct-chip border-indigo-200 bg-indigo-50 text-indigo-700">
+                          <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-700">
                             Fila #{index + 1}
                           </span>
                         )}
@@ -343,7 +340,7 @@ export function AlaReservasClient({
                       {/* Nome do Membro */}
                       <td className="px-5 py-4">
                         <p className="font-bold text-[#212225]">{res.profiles?.full_name}</p>
-                        <p className="text-xs font-mono text-[#53575b]">
+                        <p className="text-sm font-mono text-[#53575b]">
                           CPF: {res.profiles?.cpf || "Não informado"}
                         </p>
                         {isOwnReservation && (
@@ -360,12 +357,12 @@ export function AlaReservasClient({
                             href={`https://wa.me/55${res.profiles.phone.replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs text-success-700 font-medium hover:underline"
+                            className="inline-flex items-center gap-1.5 text-sm text-success-700 font-medium hover:underline"
                           >
                             <span>💬</span> {res.profiles.phone}
                           </a>
                         ) : (
-                          <span className="text-xs text-[#707478]">—</span>
+                          <span className="text-sm text-[#707478]">—</span>
                         )}
                       </td>
 
@@ -374,7 +371,7 @@ export function AlaReservasClient({
                         <p className="font-bold text-brand-900">
                           {formatCurrency(Number(res.payment_amount))}
                         </p>
-                        <span className="text-xs text-[#53575b]">
+                        <span className="text-sm text-[#53575b]">
                           {res.category === "officiant" ? "Oficiante" : "Padrão"}
                         </span>
                       </td>
@@ -382,22 +379,22 @@ export function AlaReservasClient({
                       {/* Status */}
                       <td className="px-5 py-4">
                         {res.status === "pendente" && (
-                          <span className="sgct-chip border-warning-200 bg-warning-50 text-warning-800 font-semibold">
-                            🟡 Aguardando Pgto
+                          <span className="sgct-chip border-warning-200 bg-warning-50 text-warning-700 font-semibold">
+                             Aguardando Pgto
                           </span>
                         )}
                         {res.status === "pago_ala" && (
                           <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
-                            🔵 Pago na Ala
+                             Pago na Ala
                           </span>
                         )}
                         {res.status === "confirmado" && (
-                          <span className="sgct-chip border-success-200 bg-success-50 text-success-800 font-semibold">
-                            🟢 Confirmado
+                          <span className="sgct-chip border-success-200 bg-success-50 text-success-700 font-semibold">
+                             Confirmado
                           </span>
                         )}
                         {(res.status === "waitlist" || res.status === "aguardando_vaga") && (
-                          <span className="sgct-chip border-indigo-200 bg-indigo-50 text-indigo-800 font-semibold">
+                          <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
                             ⏳ Lista de Espera
                           </span>
                         )}
@@ -415,13 +412,13 @@ export function AlaReservasClient({
                               type="button"
                               disabled={isSubmitting === res.id}
                               onClick={() => handleConfirmPayment(res.id)}
-                              className="inline-flex min-h-9 items-center rounded-lg bg-success-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-success-800 transition-colors disabled:opacity-50"
+                              className="inline-flex min-h-9 items-center rounded-lg bg-success-700 px-3.5 py-1.5 text-sm font-bold text-white shadow-xs hover:bg-success-700 transition-colors disabled:opacity-50"
                             >
                               {isSubmitting === res.id ? "Confirmando..." : "Confirmar Pgto"}
                             </button>
                           )
                         ) : (
-                          <span className="text-xs text-[#707478]">
+                          <span className="text-sm text-[#707478]">
                             {res.status === "pago_ala"
                               ? "Aguardando Estaca"
                               : res.status === "confirmado"

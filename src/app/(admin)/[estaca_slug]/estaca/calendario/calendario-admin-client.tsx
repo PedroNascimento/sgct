@@ -8,7 +8,9 @@ import {
   editCaravanAction,
   type AdminActionState,
 } from "../../actions";
+import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
+import { CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards } from "lucide-react";
 
 export interface ReservationDetail {
   id: string;
@@ -114,7 +116,7 @@ export function CalendarioAdminClient({
   );
   const pendentes = caravanReservations.filter((r) => r.status === "pendente");
   const waitlist = caravanReservations.filter(
-    (r) => r.status === "waitlist" || r.status === "aguardando_vaga"
+    (r) => r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga"
   );
   const totalInscritos = caravanReservations.length;
 
@@ -137,7 +139,7 @@ export function CalendarioAdminClient({
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-[#e0e2e2] shadow-xs">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-brand-800">
+              <p className="text-sm font-bold uppercase tracking-wider text-brand-800">
                 Dashboard de Inscrições
               </p>
               <h2 className="text-xl font-bold text-[#212225] mt-0.5">
@@ -152,13 +154,13 @@ export function CalendarioAdminClient({
                   key={c.id}
                   type="button"
                   onClick={() => setSelectedCaravanId(c.id)}
-                  className={`rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+                  className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
                     selectedCaravanId === c.id
                       ? "bg-brand-900 text-white shadow-sm"
                       : "bg-[#eff0f0] text-[#3a3d40] hover:bg-brand-50"
                   }`}
                 >
-                  🚌 {formatDate(c.departure_date)}
+                  {formatDate(c.departure_date)}
                 </button>
               ))}
             </div>
@@ -167,37 +169,39 @@ export function CalendarioAdminClient({
           {/* Cards de Métricas */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div className="rounded-2xl border border-[#e0e2e2] bg-white p-5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#53575b]">
+              <span className="text-sm font-bold uppercase tracking-wider text-[#53575b]">
                 Total de Inscritos
               </span>
               <p className="mt-2 text-3xl font-black text-[#212225]">{totalInscritos}</p>
-              <p className="mt-1 text-xs text-[#707478]">Passageiros na viagem</p>
+              <p className="mt-1 text-sm text-[#707478]">Passageiros na viagem</p>
             </div>
 
             <div className="rounded-2xl border border-success-200 bg-success-50/50 p-5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-success-800">
+              <span className="text-sm font-bold uppercase tracking-wider text-success-700">
                 Já Pagou
               </span>
-              <p className="mt-2 text-3xl font-black text-success-900">{pagos.length}</p>
-              <p className="mt-1 text-xs text-success-700">Confirmados ou repassados pela Ala</p>
+              <p className="mt-2 text-3xl font-black text-success-700">{pagos.length}</p>
+              <p className="mt-1 text-sm text-success-700">Confirmados ou repassados pela Ala</p>
             </div>
 
             <div className="rounded-2xl border border-warning-200 bg-warning-50/50 p-5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-warning-800">
+              <span className="text-sm font-bold uppercase tracking-wider text-warning-700">
                 Falta Pagar
               </span>
-              <p className="mt-2 text-3xl font-black text-warning-900">{pendentes.length}</p>
-              <p className="mt-1 text-xs text-warning-700">Aguardando comprovação na Ala</p>
+              <p className="mt-2 text-3xl font-black text-warning-700">{pendentes.length}</p>
+              <p className="mt-1 text-sm text-warning-700">Aguardando comprovação na Ala</p>
             </div>
 
-            <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-800">
+            <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 shadow-xs">
+              <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
                 Fila de Espera
               </span>
-              <p className="mt-2 text-3xl font-black text-indigo-900">{waitlist.length}</p>
-              <p className="mt-1 text-xs text-indigo-700">Aguardando vaga excedente</p>
+              <p className="mt-2 text-3xl font-black text-brand-900">{waitlist.length}</p>
+              <p className="mt-1 text-sm text-brand-700">Aguardando vaga excedente</p>
             </div>
           </div>
+
+          <ReservationsChart reservations={caravanReservations} />
 
           {/* Tabela de Inscritos na Caravana */}
           <div className="sgct-card overflow-hidden">
@@ -206,7 +210,7 @@ export function CalendarioAdminClient({
                 <h3 className="text-lg font-bold text-[#212225]">
                   Passageiros Inscritos ({caravanReservations.length})
                 </h3>
-                <p className="text-xs text-[#53575b]">
+                <p className="text-sm text-[#53575b]">
                   Listagem organizada por poltrona/ordem de inscrição.
                 </p>
               </div>
@@ -217,7 +221,31 @@ export function CalendarioAdminClient({
                 Nenhum membro inscrito nesta caravana ainda.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="divide-y divide-[#e0e2e2] md:hidden">
+                {caravanReservations.map((res, idx) => (
+                  <article key={res.id} className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="break-words text-lg font-bold text-[#212225]">{res.profiles?.full_name}</p>
+                        <p className="mt-1 flex items-center gap-2 text-sm text-[#53575b]"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />{res.wards?.name}</p>
+                      </div>
+                      {res.seat_number ? <span className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 px-2 font-bold text-brand-900" aria-label={`Assento ${res.seat_number}`}>{res.seat_number}</span> : <span className="sgct-chip shrink-0 border-brand-200 bg-brand-50 text-brand-700">Fila #{idx + 1}</span>}
+                    </div>
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-[#f7f8f8] p-4">
+                      <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><Phone className="h-4 w-4" aria-hidden="true" />Contato</dt><dd className="mt-1 break-all font-semibold">{res.profiles?.phone || "Não informado"}</dd></div>
+                      <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><WalletCards className="h-4 w-4" aria-hidden="true" />Valor</dt><dd className="mt-1 font-semibold text-brand-900">{formatCurrency(Number(res.payment_amount))}</dd><dd className="text-sm text-[#53575b]">{res.category === "officiant" ? "Oficiante" : "Padrão"}</dd></div>
+                    </dl>
+                    <div>
+                      {res.status === "confirmado" && <span className="sgct-chip border-success-200 bg-success-50 font-semibold text-success-700">Confirmado</span>}
+                      {res.status === "pago_ala" && <span className="sgct-chip border-brand-200 bg-brand-50 font-semibold text-brand-800">Pago na Ala — validar</span>}
+                      {res.status === "pendente" && <span className="sgct-chip border-warning-200 bg-warning-50 font-semibold text-warning-700">Falta pagar</span>}
+                      {["lista_espera", "waitlist", "aguardando_vaga"].includes(res.status) && <span className="sgct-chip border-brand-200 bg-brand-50 font-semibold text-brand-800">Lista de espera</span>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
                 <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
                   <thead className="bg-[#f7f8f8] text-[#3a3d40]">
                     <tr>
@@ -234,11 +262,11 @@ export function CalendarioAdminClient({
                       <tr key={res.id} className="hover:bg-brand-50/40">
                         <td className="px-5 py-3.5">
                           {res.seat_number ? (
-                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-xs">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-sm">
                               {res.seat_number}
                             </span>
                           ) : (
-                            <span className="sgct-chip border-indigo-200 bg-indigo-50 text-indigo-700">
+                            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-700">
                               Fila #{idx + 1}
                             </span>
                           )}
@@ -249,7 +277,7 @@ export function CalendarioAdminClient({
                         <td className="px-5 py-3.5 text-[#3a3d40]">
                           {res.wards?.name}
                         </td>
-                        <td className="px-5 py-3.5 text-xs text-[#53575b]">
+                        <td className="px-5 py-3.5 text-sm text-[#53575b]">
                           {res.profiles?.phone || "Não informado"}
                         </td>
                         <td className="px-5 py-3.5">
@@ -262,23 +290,23 @@ export function CalendarioAdminClient({
                         </td>
                         <td className="px-5 py-3.5">
                           {res.status === "confirmado" && (
-                            <span className="sgct-chip border-success-200 bg-success-50 text-success-800 font-semibold">
-                              🟢 Confirmado
+                            <span className="sgct-chip border-success-200 bg-success-50 text-success-700 font-semibold">
+                               Confirmado
                             </span>
                           )}
                           {res.status === "pago_ala" && (
                             <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
-                              🔵 Pago na Ala (Validar)
+                               Pago na Ala (Validar)
                             </span>
                           )}
                           {res.status === "pendente" && (
-                            <span className="sgct-chip border-warning-200 bg-warning-50 text-warning-800 font-semibold">
-                              🟡 Falta Pagar
+                            <span className="sgct-chip border-warning-200 bg-warning-50 text-warning-700 font-semibold">
+                               Falta Pagar
                             </span>
                           )}
-                          {(res.status === "waitlist" || res.status === "aguardando_vaga") && (
-                            <span className="sgct-chip border-indigo-200 bg-indigo-50 text-indigo-800 font-semibold">
-                              ⏳ Lista de Espera
+                          {(["lista_espera", "waitlist", "aguardando_vaga"].includes(res.status)) && (
+                            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
+                              Lista de espera
                             </span>
                           )}
                         </td>
@@ -287,6 +315,7 @@ export function CalendarioAdminClient({
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </div>
         </section>
@@ -297,7 +326,7 @@ export function CalendarioAdminClient({
         <section className="rounded-2xl border-2 border-brand-500 bg-white p-6 shadow-lg space-y-6">
           <div className="flex items-center justify-between border-b border-[#e0e2e2] pb-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-800">
+              <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
                 Edição de Viagem
               </span>
               <h3 className="text-xl font-bold text-[#212225] mt-0.5">
@@ -446,7 +475,7 @@ export function CalendarioAdminClient({
               <button
                 type="submit"
                 disabled={isEditPending}
-                className="sgct-button bg-brand-900 text-white hover:bg-brand-950"
+                className="sgct-button bg-brand-900 text-white hover:bg-brand-800"
               >
                 {isEditPending ? "Salvando alterações..." : "Salvar Alterações"}
               </button>
@@ -644,9 +673,32 @@ export function CalendarioAdminClient({
             Nenhuma caravana cadastrada ainda.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="space-y-4 md:hidden">
+            {initialCaravans.map((caravan) => (
+              <article key={caravan.id} className="rounded-xl border border-[#e0e2e2] bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div><p className="text-sm font-semibold uppercase tracking-wide text-brand-700">Saída</p><h3 className="mt-1 text-xl font-bold">{formatDate(caravan.departure_date)}</h3><p className="text-sm text-[#53575b]">Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}</p></div>
+                  <span className={`sgct-chip shrink-0 ${statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"}`}>{statusLabels[caravan.status]?.label ?? caravan.status}</span>
+                </div>
+                <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-[#e0e2e2] py-4">
+                  <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><WalletCards className="h-4 w-4" aria-hidden="true" />Valores</dt><dd className="mt-1 font-semibold text-brand-900">{formatCurrency(caravan.price_standard)}</dd><dd className="text-sm text-[#53575b]">Oficiante: {formatCurrency(caravan.price_officiant)}</dd></div>
+                  <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><UsersRound className="h-4 w-4" aria-hidden="true" />Capacidade</dt><dd className="mt-1 font-semibold">{caravan.seat_limit} assentos</dd><dd className="text-sm text-[#53575b]">Espera: {caravan.waitlist_limit}</dd></div>
+                  <div className="col-span-2"><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><CalendarClock className="h-4 w-4" aria-hidden="true" />Prazos</dt><dd className="mt-1 text-sm">Inscrições até {formatDate(caravan.registration_deadline)}</dd><dd className="text-sm text-[#53575b]">Verificação de quórum: {formatDate(caravan.quorum_check_date)}</dd></div>
+                </dl>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setEditingCaravan(caravan)} className="sgct-button-secondary w-full"><Pencil className="h-5 w-5" aria-hidden="true" />Editar</button>
+                  {caravan.status !== "cancelled" && caravan.status !== "completed" ? <form action={updateAction}>
+                    <input type="hidden" name="caravanId" value={caravan.id} /><input type="hidden" name="status" value="cancelled" />
+                    <button type="submit" disabled={isUpdatePending} className="sgct-button w-full border border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-100" onClick={(event) => { if (!confirm("Tem certeza que deseja cancelar esta caravana?")) event.preventDefault(); }}>Cancelar</button>
+                  </form> : <span />}
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#f7f8f8] border-b border-[#e0e2e2] text-xs font-semibold text-[#53575b] uppercase tracking-wider">
+              <thead className="bg-[#f7f8f8] border-b border-[#e0e2e2] text-sm font-semibold text-[#53575b] uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Saída / Retorno</th>
                   <th className="py-3 px-4">Preços (Padrão / Oficiante)</th>
@@ -663,7 +715,7 @@ export function CalendarioAdminClient({
                       <div className="font-bold text-[#212225]">
                         {formatDate(caravan.departure_date)}
                       </div>
-                      <div className="text-xs text-[#53575b]">
+                      <div className="text-sm text-[#53575b]">
                         Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
                       </div>
                     </td>
@@ -671,21 +723,21 @@ export function CalendarioAdminClient({
                       <div className="font-semibold text-brand-900">
                         {formatCurrency(caravan.price_standard)}
                       </div>
-                      <div className="text-xs text-[#53575b]">
+                      <div className="text-sm text-[#53575b]">
                         Oficiante: {formatCurrency(caravan.price_officiant)}
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div>{caravan.seat_limit} assentos</div>
-                      <div className="text-xs text-[#53575b]">
+                      <div className="text-sm text-[#53575b]">
                         Espera: {caravan.waitlist_limit}
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="text-xs">
+                      <div className="text-sm">
                         Inscrição até: {formatDate(caravan.registration_deadline)}
                       </div>
-                      <div className="text-xs text-[#53575b]">
+                      <div className="text-sm text-[#53575b]">
                         Quórum: {formatDate(caravan.quorum_check_date)}
                       </div>
                     </td>
@@ -702,9 +754,9 @@ export function CalendarioAdminClient({
                       <button
                         type="button"
                         onClick={() => setEditingCaravan(caravan)}
-                        className="inline-flex items-center rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-900 hover:bg-brand-100 transition-colors"
+                        className="inline-flex items-center rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-bold text-brand-900 hover:bg-brand-100 transition-colors"
                       >
-                        ✏️ Editar
+                        <Pencil className="h-4 w-4" aria-hidden="true" />Editar
                       </button>
 
                       {caravan.status !== "cancelled" && caravan.status !== "completed" && (
@@ -714,7 +766,7 @@ export function CalendarioAdminClient({
                           <button
                             type="submit"
                             disabled={isUpdatePending}
-                            className="inline-flex items-center rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors"
+                            className="inline-flex items-center rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-sm font-bold text-danger-700 hover:bg-danger-100 transition-colors"
                             onClick={(e) => {
                               if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
                                 e.preventDefault();
@@ -731,6 +783,7 @@ export function CalendarioAdminClient({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
     </div>

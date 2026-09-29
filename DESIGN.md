@@ -284,6 +284,15 @@ No desktop, usar navegação lateral. No mobile, usar cabeçalho compacto e menu
 
 ## 7. Componentes
 
+### Estrutura visual dos painéis
+
+- Lateral única em `brand-900`, fixa em desktop, com destino ativo em `brand-600` e botão de recolher; modo compacto conserva ícones e nomes acessíveis.
+- Cabeçalho claro com contexto à esquerda e conta à direita. Perfil, saída e alternância membro/admin ficam no mesmo menu; alternar visão nunca altera permissões.
+- Em telas menores que 1024 px, a lateral vira gaveta modal com foco contido, Escape e restauração de foco.
+- Superfícies brancas com bordas neutras sutis, raios de 12–16 px, sombras suaves, métricas alinhadas e espaçamento regular. Preservar Source Sans 3 e todos os tokens de cor existentes.
+- Formulários extensos de gestão podem ser recolhidos com título explícito; a tela mantém as informações operacionais em primeiro plano.
+
+
 ### 7.1 Botões
 
 - altura mínima: 48 px;
@@ -660,3 +669,8 @@ O design system analisado **funciona como referência**, principalmente em cor, 
 - identidade local sem copiar ou sugerir endosso oficial.
 
 O objetivo visual não é impressionar pela decoração. É fazer com que qualquer membro consiga concluir uma inscrição com confiança, compreender o estado da viagem e saber exatamente o que fazer em seguida.
+
+## Bibliotecas de apresentação
+
+- **Lucide React:** biblioteca de ícones, centralizada em `src/components/ui/icons.tsx`. Ícones decorativos ficam ocultos de leitores de tela; controles mantêm nomes acessíveis.
+- **Recharts:** gráficos responsivos dos painéis da Estaca e Ala. Usar cores existentes, valores reais da seleção e resumo textual equivalente. Não inventar tendências nem confundir pagamento na Ala com confirmação pela Estaca.
