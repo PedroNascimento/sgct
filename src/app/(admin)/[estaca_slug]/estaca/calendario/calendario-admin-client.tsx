@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { Caravan } from "@/domain/types/caravan";
 import {
   createCaravanAction,
@@ -10,7 +11,7 @@ import {
 } from "../../actions";
 import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
-import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards } from "lucide-react";
+import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards, X } from "lucide-react";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 
 export interface ReservationDetail {
@@ -46,11 +47,15 @@ interface BoardingPointDraft {
   boardingTime: string;
 }
 
+const emptySubscribe = () => () => {};
+
 export function CalendarioAdminClient({
   stakeSlug: _stakeSlug,
   initialCaravans,
   initialReservations,
 }: Props) {
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+
   const [createState, createAction, isCreatePending] = useActionState(
     createCaravanAction,
     initialState
@@ -68,6 +73,34 @@ export function CalendarioAdminClient({
 
   // Caravana em edição
   const [editingCaravan, setEditingCaravan] = useState<Caravan | null>(null);
+
+  // Fechar modal de edição após sucesso na Server Action
+  const [prevEditState, setPrevEditState] = useState(editState);
+  if (editState !== prevEditState) {
+    setPrevEditState(editState);
+    if (editState?.success) {
+      setEditingCaravan(null);
+    }
+  }
+
+  // Fechar modal com tecla Escape e travar scroll do body
+  useEffect(() => {
+    if (editingCaravan) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && editingCaravan) {
+        setEditingCaravan(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [editingCaravan]);
 
   // Caravana selecionada para o Dashboard de inscritos
   const [selectedCaravanId, setSelectedCaravanId] = useState<string>(
@@ -370,167 +403,195 @@ export function CalendarioAdminClient({
         </section>
       )}
 
-      {/* MODAL / FORMULÁRIO DE EDIÇÃO DE CARAVANA */}
-      {editingCaravan && (
-        <section className="rounded-2xl border-2 border-brand-500 bg-white p-6 shadow-lg space-y-6">
-          <div className="flex items-center justify-between border-b border-[#e0e2e2] pb-4">
-            <div>
-              <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                Edição de Viagem
-              </span>
-              <h3 className="text-xl font-bold text-[#212225] mt-0.5">
-                Editar Caravana de {formatDate(editingCaravan.departure_date)}
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditingCaravan(null)}
-              className="rounded-lg p-2 text-[#707478] hover:bg-[#eff0f0] transition-colors"
-            >
-              ✕ Fechar
-            </button>
-          </div>
-
-          <form action={editAction} className="space-y-6">
-            <input type="hidden" name="caravanId" value={editingCaravan.id} />
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <label className="sgct-label">Data de Saída *</label>
-                <input
-                  type="date"
-                  name="departureDate"
-                  defaultValue={editingCaravan.departure_date}
-                  required
-                  className="sgct-input"
-                />
+      {/* MODAL DE EDIÇÃO DE CARAVANA */}
+      {editingCaravan && isMounted && typeof document !== "undefined" && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-edit-caravan-title"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingCaravan(null);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-4xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl border border-[#e0e2e2] my-auto max-h-[90vh] overflow-y-auto">
+            {/* Header do Modal */}
+            <div className="flex items-start justify-between border-b border-[#e0e2e2] pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-200">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-800">
+                    Edição de Viagem
+                  </span>
+                  <h3 id="modal-edit-caravan-title" className="text-xl font-bold text-[#212225]">
+                    Editar Caravana de {formatDate(editingCaravan.departure_date)}
+                  </h3>
+                </div>
               </div>
-
-              <div>
-                <label className="sgct-label">Data de Retorno</label>
-                <input
-                  type="date"
-                  name="returnDate"
-                  defaultValue={editingCaravan.return_date || ""}
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Preço Padrão (R$) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="priceStandard"
-                  defaultValue={editingCaravan.price_standard}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Preço Oficiante (R$) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="priceOfficiant"
-                  defaultValue={editingCaravan.price_officiant}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Limite de Assentos *</label>
-                <input
-                  type="number"
-                  name="seatLimit"
-                  defaultValue={editingCaravan.seat_limit}
-                  min={1}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Vagas na Fila de Espera</label>
-                <input
-                  type="number"
-                  name="waitlistLimit"
-                  defaultValue={editingCaravan.waitlist_limit}
-                  min={0}
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Prazo de Inscrição *</label>
-                <input
-                  type="date"
-                  name="registrationDeadline"
-                  defaultValue={editingCaravan.registration_deadline}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Verificação de Quórum *</label>
-                <input
-                  type="date"
-                  name="quorumCheckDate"
-                  defaultValue={editingCaravan.quorum_check_date}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Quórum Mínimo *</label>
-                <input
-                  type="number"
-                  name="minQuorum"
-                  defaultValue={editingCaravan.min_quorum}
-                  min={1}
-                  required
-                  className="sgct-input"
-                />
-              </div>
-
-              <div>
-                <label className="sgct-label">Status da Caravana *</label>
-                <select
-                  name="status"
-                  defaultValue={editingCaravan.status}
-                  className="sgct-select"
-                >
-                  <option value="open">Inscrições abertas (open)</option>
-                  <option value="quorum_pending">Aguardando quórum (quorum_pending)</option>
-                  <option value="confirmed">Confirmada (confirmed)</option>
-                  <option value="completed">Realizada (completed)</option>
-                  <option value="cancelled">Cancelada (cancelled)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-[#e0e2e2]">
               <button
                 type="button"
                 onClick={() => setEditingCaravan(null)}
-                className="sgct-button-secondary"
+                aria-label="Fechar modal de edição"
+                className="rounded-lg p-2 text-[#707478] hover:bg-[#eff0f0] hover:text-[#212225] transition-colors cursor-pointer"
               >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isEditPending}
-                className="sgct-button bg-brand-900 text-white hover:bg-brand-800"
-              >
-                {isEditPending ? "Salvando alterações..." : "Salvar Alterações"}
+                <X className="h-5 w-5" />
               </button>
             </div>
-          </form>
-        </section>
+
+            {/* Mensagem de Erro, se houver */}
+            {editState?.error && (
+              <div className="mb-6 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">
+                <p className="font-semibold">Erro ao salvar caravana:</p>
+                <p>{editState.error}</p>
+              </div>
+            )}
+
+            <form action={editAction} className="space-y-6">
+              <input type="hidden" name="caravanId" value={editingCaravan.id} />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label className="sgct-label">Data de Saída *</label>
+                  <input
+                    type="date"
+                    name="departureDate"
+                    defaultValue={editingCaravan.departure_date}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Data de Retorno</label>
+                  <input
+                    type="date"
+                    name="returnDate"
+                    defaultValue={editingCaravan.return_date || ""}
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Preço Padrão (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="priceStandard"
+                    defaultValue={editingCaravan.price_standard}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Preço Oficiante (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="priceOfficiant"
+                    defaultValue={editingCaravan.price_officiant}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Limite de Assentos *</label>
+                  <input
+                    type="number"
+                    name="seatLimit"
+                    defaultValue={editingCaravan.seat_limit}
+                    min={1}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Vagas na Fila de Espera</label>
+                  <input
+                    type="number"
+                    name="waitlistLimit"
+                    defaultValue={editingCaravan.waitlist_limit}
+                    min={0}
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Prazo de Inscrição *</label>
+                  <input
+                    type="date"
+                    name="registrationDeadline"
+                    defaultValue={editingCaravan.registration_deadline}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Verificação de Quórum *</label>
+                  <input
+                    type="date"
+                    name="quorumCheckDate"
+                    defaultValue={editingCaravan.quorum_check_date}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Quórum Mínimo *</label>
+                  <input
+                    type="number"
+                    name="minQuorum"
+                    defaultValue={editingCaravan.min_quorum}
+                    min={1}
+                    required
+                    className="sgct-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="sgct-label">Status da Caravana *</label>
+                  <select
+                    name="status"
+                    defaultValue={editingCaravan.status}
+                    className="sgct-select"
+                  >
+                    <option value="open">Inscrições abertas (open)</option>
+                    <option value="quorum_pending">Aguardando quórum (quorum_pending)</option>
+                    <option value="confirmed">Confirmada (confirmed)</option>
+                    <option value="completed">Realizada (completed)</option>
+                    <option value="cancelled">Cancelada (cancelled)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-[#e0e2e2]">
+                <button
+                  type="button"
+                  onClick={() => setEditingCaravan(null)}
+                  className="sgct-button-secondary w-full sm:w-auto"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditPending}
+                  className="sgct-button-primary w-full sm:w-auto"
+                >
+                  {isEditPending ? "Salvando alterações..." : "Salvar Alterações"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Formulário de Cadastro de Nova Caravana */}
