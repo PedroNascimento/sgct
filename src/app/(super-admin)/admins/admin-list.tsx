@@ -3,22 +3,80 @@
 import { useState, useTransition, useMemo } from "react";
 import { Search, X, Users, Shield, UserCheck } from "lucide-react";
 import { AdminEstacaItem, toggleAdminStatusAction, updateAdminRoleAction } from "../actions";
+import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
 export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
   const [isPending, startTransition] = useTransition();
+  const { feedbackModal, showConfirm, showError, showSuccess } = useFeedbackModal();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "member">("all");
 
   const handleToggleStatus = (admin: AdminEstacaItem) => {
-    startTransition(async () => {
-      await toggleAdminStatusAction(admin.id, !admin.is_active);
+    const actionName = admin.is_active ? "desativar" : "ativar";
+    showConfirm({
+      title: admin.is_active ? "Desativar Administrador" : "Ativar Administrador",
+      message: (
+        <span>
+          Deseja realmente {actionName} o acesso de{" "}
+          <strong className="text-[#212225]">{admin.full_name}</strong>?
+        </span>
+      ),
+      confirmLabel: admin.is_active ? "Sim, Desativar" : "Sim, Ativar",
+      confirmVariant: admin.is_active ? "warning" : "primary",
+      onConfirm: async () => {
+        const res = await toggleAdminStatusAction(admin.id, !admin.is_active);
+        if (res && !res.success) {
+          showError({
+            title: "Erro ao alterar status",
+            message: res.error || "Não foi possível alterar o status do administrador.",
+          });
+        } else {
+          showSuccess({
+            title: "Status Atualizado",
+            message: `O acesso de ${admin.full_name} foi ${admin.is_active ? "desativado" : "ativado"} com sucesso.`,
+          });
+        }
+      },
     });
   };
 
   const handleToggleRole = (admin: AdminEstacaItem) => {
-    const nextRole = admin.role === "admin_estaca" ? "member" : "admin_estaca";
-    startTransition(async () => {
-      await updateAdminRoleAction(admin.id, nextRole);
+    const isDemote = admin.role === "admin_estaca";
+    const nextRole = isDemote ? "member" : "admin_estaca";
+    showConfirm({
+      title: isDemote ? "Revogar Permissão de Admin" : "Promover a Admin de Estaca",
+      message: (
+        <span>
+          {isDemote ? (
+            <>
+              Deseja revogar a permissão de Admin de Estaca de{" "}
+              <strong className="text-[#212225]">{admin.full_name}</strong>?
+              <br className="mb-2" />
+              O usuário retornará ao perfil Padrão e perderá o acesso ao painel da Estaca.
+            </>
+          ) : (
+            <>
+              Deseja promover <strong className="text-[#212225]">{admin.full_name}</strong> a Admin de Estaca?
+            </>
+          )}
+        </span>
+      ),
+      confirmLabel: isDemote ? "Sim, Revogar" : "Sim, Promover",
+      confirmVariant: isDemote ? "danger" : "primary",
+      onConfirm: async () => {
+        const res = await updateAdminRoleAction(admin.id, nextRole);
+        if (res && !res.success) {
+          showError({
+            title: "Erro ao alterar perfil",
+            message: res.error || "Não foi possível alterar o perfil do administrador.",
+          });
+        } else {
+          showSuccess({
+            title: "Perfil Atualizado",
+            message: `O perfil de ${admin.full_name} foi alterado com sucesso.`,
+          });
+        }
+      },
     });
   };
 
@@ -342,6 +400,8 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
           </div>
         </>
       )}
+      {/* Modal de confirmações e alertas */}
+      {feedbackModal}
     </section>
   );
 }

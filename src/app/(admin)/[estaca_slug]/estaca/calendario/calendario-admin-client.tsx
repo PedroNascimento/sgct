@@ -13,6 +13,7 @@ import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
 import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards, X } from "lucide-react";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
+import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
 export interface ReservationDetail {
   id: string;
@@ -74,6 +75,9 @@ export function CalendarioAdminClient({
   // Caravana em edição
   const [editingCaravan, setEditingCaravan] = useState<Caravan | null>(null);
 
+  // Hook de Modal de Feedback (Confirmações, Alertas e Erros)
+  const { feedbackModal, showConfirm } = useFeedbackModal();
+
   // Fechar modal de edição após sucesso na Server Action
   const [prevEditState, setPrevEditState] = useState(editState);
   if (editState !== prevEditState) {
@@ -82,6 +86,29 @@ export function CalendarioAdminClient({
       setEditingCaravan(null);
     }
   }
+
+  const handleCancelCaravan = (caravan: Caravan) => {
+    showConfirm({
+      title: "Cancelar Caravana",
+      message: (
+        <span>
+          Tem certeza que deseja cancelar a caravana com saída em{" "}
+          <strong className="text-[#212225]">{formatDate(caravan.departure_date)}</strong>?
+          <br className="mb-2" />
+          Esta ação encerrará as inscrições e marcará a viagem como cancelada.
+        </span>
+      ),
+      confirmLabel: "Sim, Cancelar Caravana",
+      cancelLabel: "Voltar",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        const formData = new FormData();
+        formData.append("caravanId", caravan.id);
+        formData.append("status", "cancelled");
+        await updateAction(formData);
+      },
+    });
+  };
 
   // Fechar modal com tecla Escape e travar scroll do body
   useEffect(() => {
@@ -858,23 +885,15 @@ export function CalendarioAdminClient({
                     Editar
                   </button>
                   {caravan.status !== "cancelled" && caravan.status !== "completed" ? (
-                    <form action={updateAction} className="w-full">
-                      <input type="hidden" name="caravanId" value={caravan.id} />
-                      <input type="hidden" name="status" value="cancelled" />
-                      <button
-                        type="submit"
-                        disabled={isUpdatePending}
-                        className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors shadow-2xs disabled:opacity-50"
-                        onClick={(event) => {
-                          if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
-                            event.preventDefault();
-                          }
-                        }}
-                      >
-                        <Ban className="h-4 w-4" aria-hidden="true" />
-                        Cancelar
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      disabled={isUpdatePending}
+                      onClick={() => handleCancelCaravan(caravan)}
+                      className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors shadow-2xs disabled:opacity-50"
+                    >
+                      <Ban className="h-4 w-4" aria-hidden="true" />
+                      Cancelar
+                    </button>
                   ) : <div />}
                 </div>
               </article>
@@ -961,23 +980,15 @@ export function CalendarioAdminClient({
                         </button>
 
                         {caravan.status !== "cancelled" && caravan.status !== "completed" && (
-                          <form action={updateAction} className="inline-block">
-                            <input type="hidden" name="caravanId" value={caravan.id} />
-                            <input type="hidden" name="status" value="cancelled" />
-                            <button
-                              type="submit"
-                              disabled={isUpdatePending}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50 shadow-2xs"
-                              onClick={(e) => {
-                                if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
-                                  e.preventDefault();
-                                }
-                              }}
-                            >
-                              <Ban className="h-3.5 w-3.5" aria-hidden="true" />
-                              <span>Cancelar</span>
-                            </button>
-                          </form>
+                          <button
+                            type="button"
+                            disabled={isUpdatePending}
+                            onClick={() => handleCancelCaravan(caravan)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50 shadow-2xs cursor-pointer"
+                          >
+                            <Ban className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Cancelar</span>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -989,6 +1000,9 @@ export function CalendarioAdminClient({
           </>
         )}
       </section>
+
+      {/* Modal de confirmação e alertas de ação */}
+      {feedbackModal}
     </div>
   );
 }

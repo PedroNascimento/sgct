@@ -7,6 +7,7 @@ import {
   demoteWardAdminAction,
   toggleWardMemberStatusAction,
 } from "../../actions";
+import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
 interface Props {
   members: EstacaMemberItem[];
@@ -14,21 +15,72 @@ interface Props {
 
 export function WardAdminList({ members }: Props) {
   const [isPending, startTransition] = useTransition();
+  const { feedbackModal, showConfirm, showError, showSuccess } = useFeedbackModal();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "member">("all");
 
   const handleDemote = (member: EstacaMemberItem) => {
-    if (!confirm(`Deseja revogar a permissão de Admin de Ala de "${member.full_name}"?`)) {
-      return;
-    }
-    startTransition(async () => {
-      await demoteWardAdminAction(member.id);
+    showConfirm({
+      title: "Revogar Acesso de Admin",
+      message: (
+        <span>
+          Deseja revogar a permissão de Admin de Ala de{" "}
+          <strong className="text-[#212225]">{member.full_name}</strong>?
+          <br className="mb-2" />
+          O membro retornará ao perfil Padrão e não poderá mais gerenciar reservas da Ala.
+        </span>
+      ),
+      confirmLabel: "Sim, Revogar Acesso",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        const res = await demoteWardAdminAction(member.id);
+        if (res && !res.success) {
+          showError({
+            title: "Erro ao revogar permissão",
+            message: res.error || "Não foi possível revogar o acesso.",
+          });
+        } else {
+          showSuccess({
+            title: "Acesso Revogado",
+            message: `A permissão de Admin de Ala de ${member.full_name} foi revogada com sucesso.`,
+          });
+        }
+      },
     });
   };
 
   const handleToggleStatus = (member: EstacaMemberItem) => {
-    startTransition(async () => {
-      await toggleWardMemberStatusAction(member.id, !member.is_active);
+    const actionName = member.is_active ? "desativar" : "ativar";
+    showConfirm({
+      title: member.is_active ? "Desativar Membro" : "Ativar Membro",
+      message: (
+        <span>
+          Deseja realmente {actionName} o cadastro de{" "}
+          <strong className="text-[#212225]">{member.full_name}</strong>?
+          {member.is_active && (
+            <>
+              <br className="mb-2" />
+              O membro não conseguirá fazer login ou se inscrever em caravanas enquanto estiver desativado.
+            </>
+          )}
+        </span>
+      ),
+      confirmLabel: member.is_active ? "Sim, Desativar" : "Sim, Ativar",
+      confirmVariant: member.is_active ? "warning" : "primary",
+      onConfirm: async () => {
+        const res = await toggleWardMemberStatusAction(member.id, !member.is_active);
+        if (res && !res.success) {
+          showError({
+            title: "Erro ao alterar status",
+            message: res.error || "Não foi possível alterar o status do membro.",
+          });
+        } else {
+          showSuccess({
+            title: "Status Atualizado",
+            message: `O cadastro de ${member.full_name} foi ${member.is_active ? "desativado" : "ativado"} com sucesso.`,
+          });
+        }
+      },
     });
   };
 
@@ -347,6 +399,8 @@ export function WardAdminList({ members }: Props) {
           </div>
         </>
       )}
+      {/* Modal de confirmações e avisos */}
+      {feedbackModal}
     </section>
   );
 }

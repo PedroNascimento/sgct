@@ -8,6 +8,7 @@ import {
   validateWeeklyTransfersAction,
 } from "../../actions";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
+import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
 interface PassengerItem {
   id: string;
@@ -36,6 +37,7 @@ export function ValidacaoSemanalClient({
   caravans: CaravanValidationItem[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const { feedbackModal, showConfirm, showError, showSuccess } = useFeedbackModal();
   const [revealedCpfIds, setRevealedCpfIds] = useState<Set<string>>(new Set());
 
   const allPassengers = caravans.flatMap((c) => c.pagoAlaList);
@@ -60,40 +62,90 @@ export function ValidacaoSemanalClient({
     }
   };
 
-  const handleValidateBatch = (caravanId: string) => {
-    if (!confirm("Confirmar a validação em lote de todas as transferências desta caravana?")) {
-      return;
-    }
-    startTransition(async () => {
-      const res = await validateWeeklyTransfersAction(caravanId);
-      if (!res.success) {
-        alert(res.message || res.error || "Erro ao validar transferências.");
-      }
+  const handleValidateBatch = (caravanId: string, count: number) => {
+    showConfirm({
+      title: "Validar Transferências em Lote",
+      message: (
+        <span>
+          Deseja confirmar a validação de todas as <strong className="text-[#212225]">{count} transferência(s)</strong> desta caravana?
+          <br className="mb-2" />
+          Os assentos serão confirmados definitivamente para a viagem ao Templo.
+        </span>
+      ),
+      confirmLabel: `Validar em Lote (${count})`,
+      confirmVariant: "primary",
+      onConfirm: async () => {
+        const res = await validateWeeklyTransfersAction(caravanId);
+        if (!res.success) {
+          showError({
+            title: "Erro ao validar transferências",
+            message: res.message || res.error || "Erro ao validar transferências.",
+          });
+        } else {
+          showSuccess({
+            title: "Transferências Validadas",
+            message: res.message || "Todas as transferências em lote foram validadas com sucesso.",
+          });
+        }
+      },
     });
   };
 
-  const handleConfirmSingle = (reservationId: string) => {
-    startTransition(async () => {
-      const res = await confirmSingleTransferAction(reservationId);
-      if (!res.success) {
-        alert(res.error || "Erro ao confirmar transferência.");
-      }
+  const handleConfirmSingle = (reservationId: string, passengerName: string) => {
+    showConfirm({
+      title: "Confirmar Transferência",
+      message: (
+        <span>
+          Confirmar o repasse de <strong className="text-[#212225]">{passengerName}</strong>?
+          <br className="mb-2" />
+          A vaga do membro será confirmada pela Estaca.
+        </span>
+      ),
+      confirmLabel: "Confirmar Vaga",
+      confirmVariant: "primary",
+      onConfirm: async () => {
+        const res = await confirmSingleTransferAction(reservationId);
+        if (!res.success) {
+          showError({
+            title: "Erro ao confirmar transferência",
+            message: res.error || "Não foi possível confirmar o repasse.",
+          });
+        } else {
+          showSuccess({
+            title: "Transferência Confirmada",
+            message: `A vaga de ${passengerName} foi confirmada com sucesso!`,
+          });
+        }
+      },
     });
   };
 
   const handleReject = (reservationId: string, passengerName: string) => {
-    if (
-      !confirm(
-        `Deseja realmente recusar o pagamento de "${passengerName}"? A reserva retornará para a Ala realizar uma nova conferência.`
-      )
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      const res = await rejectTransferAction(reservationId);
-      if (!res.success) {
-        alert(res.error || "Erro ao recusar repasse.");
-      }
+    showConfirm({
+      title: "Recusar Repasse de Pagamento",
+      message: (
+        <span>
+          Deseja realmente recusar o repasse de <strong className="text-[#212225]">{passengerName}</strong>?
+          <br className="mb-2" />
+          A reserva retornará para a Ala realizar uma nova conferência.
+        </span>
+      ),
+      confirmLabel: "Sim, Recusar Repasse",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        const res = await rejectTransferAction(reservationId);
+        if (!res.success) {
+          showError({
+            title: "Erro ao recusar repasse",
+            message: res.error || "Não foi possível recusar o repasse.",
+          });
+        } else {
+          showSuccess({
+            title: "Repasse Recusado",
+            message: `O repasse de ${passengerName} foi recusado e devolvido à Ala.`,
+          });
+        }
+      },
     });
   };
 
@@ -136,7 +188,7 @@ export function ValidacaoSemanalClient({
                   <button
                     type="button"
                     disabled={isPending}
-                    onClick={() => handleValidateBatch(caravan.id)}
+                    onClick={() => handleValidateBatch(caravan.id, caravan.pagoAlaCount)}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-950 transition-colors disabled:opacity-50"
                   >
                     {isPending ? "Validando..." : `Validar todos em lote (${caravan.pagoAlaCount})`}
@@ -195,7 +247,7 @@ export function ValidacaoSemanalClient({
                           <button
                             type="button"
                             disabled={isPending}
-                            onClick={() => handleConfirmSingle(passenger.id)}
+                            onClick={() => handleConfirmSingle(passenger.id, passenger.profiles?.full_name)}
                             className="inline-flex items-center rounded-lg bg-success-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-success-800 transition-colors shadow-2xs disabled:opacity-50"
                           >
                             ✓ Validar
@@ -218,6 +270,9 @@ export function ValidacaoSemanalClient({
           )}
         </section>
       ))}
+
+      {/* Modal de Feedback (Erros, Alertas e Confirmações) */}
+      {feedbackModal}
     </div>
   );
 }

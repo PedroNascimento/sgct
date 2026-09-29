@@ -5,6 +5,7 @@ import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
 import { confirmWardPaymentAction } from "@/app/(admin)/[estaca_slug]/actions";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
+import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
 interface ReservationItem {
   id: string;
@@ -103,18 +104,47 @@ export function AlaReservasClient({
     }
   };
 
-  const handleConfirmPayment = async (reservationId: string) => {
-    try {
-      setIsSubmitting(reservationId);
-      const res = await confirmWardPaymentAction(reservationId);
-      if (!res.success) {
-        alert(res.error || "Erro ao confirmar pagamento.");
-      }
-    } catch {
-      alert("Falha na comunicação ao confirmar pagamento.");
-    } finally {
-      setIsSubmitting(null);
-    }
+  const { feedbackModal, showConfirm, showError, showSuccess } = useFeedbackModal();
+
+  const handleConfirmPayment = (reservation: ReservationItem) => {
+    showConfirm({
+      title: "Confirmar Pagamento na Ala",
+      message: (
+        <span>
+          Confirmar o recebimento do pagamento de{" "}
+          <strong className="text-[#212225]">{reservation.profiles?.full_name}</strong> no valor de{" "}
+          <strong className="text-brand-900">{formatCurrency(Number(reservation.payment_amount))}</strong>?
+          <br className="mb-2" />
+          A reserva passará ao status <em>Pago na Ala</em> e aguardará validação pela Estaca.
+        </span>
+      ),
+      confirmLabel: "Sim, Confirmar Pagamento",
+      confirmVariant: "primary",
+      onConfirm: async () => {
+        try {
+          setIsSubmitting(reservation.id);
+          const res = await confirmWardPaymentAction(reservation.id);
+          if (!res.success) {
+            showError({
+              title: "Erro ao confirmar pagamento",
+              message: res.error || "Não foi possível confirmar o pagamento.",
+            });
+          } else {
+            showSuccess({
+              title: "Pagamento Confirmado!",
+              message: `O pagamento de ${reservation.profiles?.full_name} foi registrado e encaminhado para validação da Estaca.`,
+            });
+          }
+        } catch {
+          showError({
+            title: "Erro de comunicação",
+            message: "Falha na comunicação com o servidor ao confirmar pagamento.",
+          });
+        } finally {
+          setIsSubmitting(null);
+        }
+      },
+    });
   };
 
   return (
@@ -450,8 +480,8 @@ export function AlaReservasClient({
                             <button
                               type="button"
                               disabled={isSubmitting === res.id}
-                              onClick={() => handleConfirmPayment(res.id)}
-                              className="inline-flex min-h-9 items-center rounded-lg bg-success-700 px-3.5 py-1.5 text-sm font-bold text-white shadow-xs hover:bg-success-700 transition-colors disabled:opacity-50"
+                              onClick={() => handleConfirmPayment(res)}
+                              className="inline-flex min-h-9 items-center rounded-lg bg-success-700 px-3.5 py-1.5 text-sm font-bold text-white shadow-xs hover:bg-success-800 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                               {isSubmitting === res.id ? "Confirmando..." : "Confirmar Pgto"}
                             </button>
@@ -474,6 +504,8 @@ export function AlaReservasClient({
           </div>
         )}
       </section>
+      {/* Modal de confirmações, alertas e erros */}
+      {feedbackModal}
     </div>
   );
 }
