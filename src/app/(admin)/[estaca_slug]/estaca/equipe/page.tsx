@@ -39,7 +39,6 @@ export default async function EstacaEquipePage({ params }: Props) {
     .from("wards")
     .select("id, name")
     .eq("stake_id", stake.id)
-    .eq("is_active", true)
     .order("name", { ascending: true });
 
   // Buscar Admins de Ala já cadastrados

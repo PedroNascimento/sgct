@@ -265,3 +265,204 @@ export async function validateWeeklyTransfersAction(
   }
 }
 
+/**
+ * Edita dados de uma caravana existente (Admin Estaca).
+ */
+export async function editCaravanAction(
+  _prevState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const caravanId = formData.get("caravanId") as string;
+    const departureDate = formData.get("departureDate") as string;
+    const returnDate = (formData.get("returnDate") as string) || null;
+    const priceStandard = Number(formData.get("priceStandard"));
+    const priceOfficiant = Number(formData.get("priceOfficiant"));
+    const seatLimit = Number(formData.get("seatLimit") || 50);
+    const waitlistLimit = Number(formData.get("waitlistLimit") || 5);
+    const registrationDeadline = formData.get("registrationDeadline") as string;
+    const minQuorum = Number(formData.get("minQuorum") || 48);
+    const quorumCheckDate = formData.get("quorumCheckDate") as string;
+    const status = formData.get("status") as string;
+
+    // Verificar se a caravana pertence à mesma Estaca
+    const { data: existingCaravan } = await supabase
+      .from("caravans")
+      .select("id, stake_id")
+      .eq("id", caravanId)
+      .single();
+
+    if (!existingCaravan || existingCaravan.stake_id !== userStakeId) {
+      throw new Error("Caravana não encontrada ou não pertence à sua Estaca.");
+    }
+
+    const { error: updateError } = await supabase
+      .from("caravans")
+      .update({
+        departure_date: departureDate,
+        return_date: returnDate,
+        price_standard: priceStandard,
+        price_officiant: priceOfficiant,
+        seat_limit: seatLimit,
+        waitlist_limit: waitlistLimit,
+        registration_deadline: registrationDeadline,
+        min_quorum: minQuorum,
+        quorum_check_date: quorumCheckDate,
+        status,
+      })
+      .eq("id", caravanId);
+
+    if (updateError) {
+      throw new Error(`Falha ao atualizar caravana: ${updateError.message}`);
+    }
+
+    revalidatePath("/[estaca_slug]/estaca/calendario");
+    return {
+      success: true,
+      message: "Caravana atualizada com sucesso!",
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao editar caravana.",
+    };
+  }
+}
+
+/**
+ * Confirma individualmente uma transferência semanal (Admin Estaca).
+ */
+export async function confirmSingleTransferAction(
+  reservationId: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    // Buscar reserva e validar Estaca
+    const { data: reservation } = await supabase
+      .from("reservations")
+      .select("id, stake_id, status")
+      .eq("id", reservationId)
+      .single();
+
+    if (!reservation || reservation.stake_id !== userStakeId) {
+      throw new Error("Reserva não encontrada ou não pertence à sua Estaca.");
+    }
+
+    if (reservation.status !== "pago_ala") {
+      throw new Error(`Apenas reservas com status 'pago_ala' podem ser confirmadas.`);
+    }
+
+    const { error: updateError } = await supabase
+      .from("reservations")
+      .update({
+        status: "confirmado",
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq("id", reservationId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    revalidatePath("/[estaca_slug]/estaca/validacao-semanal");
+    return {
+      success: true,
+      message: "Transferência individual confirmada com sucesso!",
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao confirmar transferência.",
+    };
+  }
+}
+
+/**
+ * Recusa/devolve um repasse para a Ala reavaliar (Admin Estaca).
+ */
+export async function rejectTransferAction(
+  reservationId: string,
+  reason?: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    // Buscar reserva e validar Estaca
+    const { data: reservation } = await supabase
+      .from("reservations")
+      .select("id, stake_id, status")
+      .eq("id", reservationId)
+      .single();
+
+    if (!reservation || reservation.stake_id !== userStakeId) {
+      throw new Error("Reserva não encontrada ou não pertence à sua Estaca.");
+    }
+
+    // Retorna status para pendente para a Ala conferir novamente
+    const { error: updateError } = await supabase
+      .from("reservations")
+      .update({
+        status: "pendente",
+      })
+      .eq("id", reservationId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    revalidatePath("/[estaca_slug]/estaca/validacao-semanal");
+    revalidatePath("/[estaca_slug]/ala/reservas");
+    return {
+      success: true,
+      message: "Repasse recusado e retornado para a Ala realizar nova conferência.",
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao recusar repasse.",
+    };
+  }
+}
+

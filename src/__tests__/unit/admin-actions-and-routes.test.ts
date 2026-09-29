@@ -6,6 +6,9 @@ import {
   createWardAdminAction,
   confirmWardPaymentAction,
   validateWeeklyTransfersAction,
+  editCaravanAction,
+  confirmSingleTransferAction,
+  rejectTransferAction,
 } from "@/app/(admin)/[estaca_slug]/actions";
 import { superAdminSignOutAction } from "@/app/auth-actions";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
@@ -37,6 +40,7 @@ describe("Server Actions Administrativas e de Acesso", () => {
   const mockGetUser = jest.fn();
   const mockInvoke = jest.fn();
   const mockSignOut = jest.fn();
+  const mockFrom = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,6 +52,7 @@ describe("Server Actions Administrativas e de Acesso", () => {
       functions: {
         invoke: mockInvoke,
       },
+      from: mockFrom,
     });
   });
 
@@ -220,6 +225,117 @@ describe("Server Actions Administrativas e de Acesso", () => {
 
       expect(mockSignOut).toHaveBeenCalled();
       expect(redirect).toHaveBeenCalledWith("/super-admin/login");
+    });
+  });
+
+  describe("editCaravanAction", () => {
+    it("falha quando usuário não é admin_estaca", async () => {
+      mockGetUser.mockResolvedValue({
+        data: { user: { id: "user-1", app_metadata: { role: "member" } } },
+        error: null,
+      });
+
+      const formData = new FormData();
+      formData.append("caravanId", "caravan-123");
+
+      const result = await editCaravanAction({ success: false }, formData);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Acesso negado");
+    });
+
+    it("edita a caravana com sucesso quando solicitada por admin_estaca da mesma Estaca", async () => {
+      const stakeId = "stake-123";
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: "admin-1",
+            app_metadata: { role: "admin_estaca", stake_id: stakeId },
+          },
+        },
+        error: null,
+      });
+
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: "caravan-123", stake_id: stakeId },
+              error: null,
+            }),
+          }),
+        }),
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      });
+
+      const formData = new FormData();
+      formData.append("caravanId", "caravan-123");
+      formData.append("departureDate", "2026-11-20");
+      formData.append("priceStandard", "150.00");
+      formData.append("priceOfficiant", "135.00");
+      formData.append("seatLimit", "48");
+      formData.append("status", "open");
+
+      const result = await editCaravanAction({ success: false }, formData);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("atualizada com sucesso");
+    });
+  });
+
+  describe("confirmSingleTransferAction e rejectTransferAction", () => {
+    const stakeId = "stake-123";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: "admin-1",
+            app_metadata: { role: "admin_estaca", stake_id: stakeId },
+          },
+        },
+        error: null,
+      });
+    });
+
+    it("confirma transferência individual com sucesso para reserva pago_ala", async () => {
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: "res-123", stake_id: stakeId, status: "pago_ala" },
+              error: null,
+            }),
+          }),
+        }),
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      });
+
+      const result = await confirmSingleTransferAction("res-123");
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("confirmada com sucesso");
+    });
+
+    it("rejeita e retorna repasse para a Ala reavaliar", async () => {
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: "res-123", stake_id: stakeId, status: "pago_ala" },
+              error: null,
+            }),
+          }),
+        }),
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      });
+
+      const result = await rejectTransferAction("res-123");
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("retornado para a Ala");
     });
   });
 });
