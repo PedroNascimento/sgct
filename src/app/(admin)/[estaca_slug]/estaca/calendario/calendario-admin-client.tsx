@@ -10,7 +10,7 @@ import {
 } from "../../actions";
 import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
-import { CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards } from "lucide-react";
+import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards } from "lucide-react";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 
 export interface ReservationDetail {
@@ -286,7 +286,7 @@ export function CalendarioAdminClient({
                   </article>
                 ))}
               </div>
-              <div className="hidden overflow-x-auto md:block">
+              <div className="max-md:hidden overflow-x-auto">
                 <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
                   <thead className="bg-[#f7f8f8] text-[#3a3d40]">
                     <tr>
@@ -704,7 +704,7 @@ export function CalendarioAdminClient({
           <button
             type="submit"
             disabled={isCreatePending}
-            className="sgct-button w-full sm:w-auto"
+            className="sgct-button-primary w-full sm:w-auto"
           >
             {isCreatePending ? "Cadastrando caravana..." : "Cadastrar Caravana"}
           </button>
@@ -712,120 +712,213 @@ export function CalendarioAdminClient({
       </section>
 
       {/* Listagem de Caravanas Existentes com Botão de Edição */}
-      <section className="sgct-card p-5 sm:p-7">
-        <h2 className="mb-5 text-xl font-bold text-[#212225]">
-          Caravanas Cadastradas ({initialCaravans.length})
-        </h2>
+      <section className="sgct-card overflow-hidden">
+        <div className="border-b border-[#e0e2e2] px-6 py-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[#212225]">
+              Caravanas Cadastradas
+            </h2>
+            <p className="text-sm text-[#53575b]">
+              Histórico e programação de viagens ao Templo da Estaca.
+            </p>
+          </div>
+          <span className="text-sm font-bold text-brand-900 bg-brand-50 px-3.5 py-1.5 rounded-full border border-brand-200">
+            {initialCaravans.length} cadastrada(s)
+          </span>
+        </div>
 
         {initialCaravans.length === 0 ? (
-          <p className="py-8 text-center text-base text-[#53575b]">
-            Nenhuma caravana cadastrada ainda.
-          </p>
+          <div className="p-12 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 mb-3">
+              <CalendarClock className="h-6 w-6" />
+            </div>
+            <h3 className="text-base font-bold text-[#212225]">Nenhuma caravana cadastrada</h3>
+            <p className="mt-1 text-sm text-[#53575b]">
+              Cadastre a primeira caravana no formulário acima para abrir inscrições.
+            </p>
+          </div>
         ) : (
           <>
-          <div className="space-y-4 md:hidden">
+          {/* Visualização Mobile (Cards) */}
+          <div className="divide-y divide-[#e0e2e2] md:hidden">
             {initialCaravans.map((caravan) => (
-              <article key={caravan.id} className="rounded-xl border border-[#e0e2e2] bg-white p-5 shadow-sm">
+              <article key={caravan.id} className="p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div><p className="text-sm font-semibold uppercase tracking-wide text-brand-700">Saída</p><h3 className="mt-1 text-xl font-bold">{formatDate(caravan.departure_date)}</h3><p className="text-sm text-[#53575b]">Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}</p></div>
-                  <span className={`sgct-chip shrink-0 ${statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"}`}>{statusLabels[caravan.status]?.label ?? caravan.status}</span>
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 border border-brand-100 text-brand-800">
+                      <CalendarClock className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-brand-800">Saída</p>
+                      <h3 className="text-lg font-bold text-[#212225]">{formatDate(caravan.departure_date)}</h3>
+                      <p className="text-xs text-[#53575b]">Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}</p>
+                    </div>
+                  </div>
+                  <span className={`sgct-chip shrink-0 ${statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"}`}>
+                    {statusLabels[caravan.status]?.label ?? caravan.status}
+                  </span>
                 </div>
-                <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-[#e0e2e2] py-4">
-                  <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><WalletCards className="h-4 w-4" aria-hidden="true" />Valores</dt><dd className="mt-1 font-semibold text-brand-900">{formatCurrency(caravan.price_standard)}</dd><dd className="text-sm text-[#53575b]">Oficiante: {formatCurrency(caravan.price_officiant)}</dd></div>
-                  <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><UsersRound className="h-4 w-4" aria-hidden="true" />Capacidade</dt><dd className="mt-1 font-semibold">{caravan.seat_limit} assentos</dd><dd className="text-sm text-[#53575b]">Espera: {caravan.waitlist_limit}</dd></div>
-                  <div className="col-span-2"><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><CalendarClock className="h-4 w-4" aria-hidden="true" />Prazos</dt><dd className="mt-1 text-sm">Inscrições até {formatDate(caravan.registration_deadline)}</dd><dd className="text-sm text-[#53575b]">Verificação de quórum: {formatDate(caravan.quorum_check_date)}</dd></div>
+
+                <dl className="grid grid-cols-2 gap-3 rounded-xl bg-[#f7f8f8] p-3.5 text-xs">
+                  <div>
+                    <dt className="flex items-center gap-1.5 text-[#53575b] font-medium">
+                      <WalletCards className="h-3.5 w-3.5 text-[#707478]" aria-hidden="true" /> Preços
+                    </dt>
+                    <dd className="mt-1 font-bold text-brand-900">{formatCurrency(caravan.price_standard)}</dd>
+                    <dd className="text-[#53575b]">Oficiante: {formatCurrency(caravan.price_officiant)}</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-1.5 text-[#53575b] font-medium">
+                      <UsersRound className="h-3.5 w-3.5 text-[#707478]" aria-hidden="true" /> Capacidade
+                    </dt>
+                    <dd className="mt-1 font-bold text-[#212225]">{caravan.seat_limit} assentos</dd>
+                    <dd className="text-[#53575b]">Espera: {caravan.waitlist_limit} vagas</dd>
+                  </div>
+                  <div className="col-span-2 pt-2.5 border-t border-[#e0e2e2]">
+                    <dt className="flex items-center gap-1.5 text-[#53575b] font-medium">
+                      <CalendarClock className="h-3.5 w-3.5 text-[#707478]" aria-hidden="true" /> Prazos
+                    </dt>
+                    <dd className="mt-1 text-[#212225]">
+                      Inscrições até: <span className="font-semibold">{formatDate(caravan.registration_deadline)}</span>
+                    </dd>
+                    <dd className="text-[#53575b] mt-0.5">
+                      Verificação de quórum: <span className="font-medium">{formatDate(caravan.quorum_check_date)}</span>
+                    </dd>
+                  </div>
                 </dl>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => setEditingCaravan(caravan)} className="sgct-button-secondary w-full"><Pencil className="h-5 w-5" aria-hidden="true" />Editar</button>
-                  {caravan.status !== "cancelled" && caravan.status !== "completed" ? <form action={updateAction}>
-                    <input type="hidden" name="caravanId" value={caravan.id} /><input type="hidden" name="status" value="cancelled" />
-                    <button type="submit" disabled={isUpdatePending} className="sgct-button w-full border border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-100" onClick={(event) => { if (!confirm("Tem certeza que deseja cancelar esta caravana?")) event.preventDefault(); }}>Cancelar</button>
-                  </form> : <span />}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCaravan(caravan)}
+                    className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-900 hover:bg-brand-100 transition-colors shadow-2xs"
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                    Editar
+                  </button>
+                  {caravan.status !== "cancelled" && caravan.status !== "completed" ? (
+                    <form action={updateAction} className="w-full">
+                      <input type="hidden" name="caravanId" value={caravan.id} />
+                      <input type="hidden" name="status" value="cancelled" />
+                      <button
+                        type="submit"
+                        disabled={isUpdatePending}
+                        className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors shadow-2xs disabled:opacity-50"
+                        onClick={(event) => {
+                          if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        <Ban className="h-4 w-4" aria-hidden="true" />
+                        Cancelar
+                      </button>
+                    </form>
+                  ) : <div />}
                 </div>
               </article>
             ))}
           </div>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#f7f8f8] border-b border-[#e0e2e2] text-sm font-semibold text-[#53575b] uppercase tracking-wider">
+
+          {/* Visualização Desktop (Tabela) */}
+          <div className="max-md:hidden overflow-x-auto">
+            <table className="min-w-[900px] w-full divide-y divide-[#e0e2e2] text-sm">
+              <thead className="bg-[#f7f8f8] text-[#3a3d40] text-xs font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Saída / Retorno</th>
-                  <th className="py-3 px-4">Preços (Padrão / Oficiante)</th>
-                  <th className="py-3 px-4">Capacidade</th>
-                  <th className="py-3 px-4">Prazos</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Ações</th>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Saída / Retorno</th>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Preços (Padrão / Oficiante)</th>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Capacidade</th>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Prazos</th>
+                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Status</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e0e2e2] bg-white">
                 {initialCaravans.map((caravan) => (
-                  <tr key={caravan.id} className="hover:bg-brand-50/40">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-[#212225]">
-                        {formatDate(caravan.departure_date)}
-                      </div>
-                      <div className="text-sm text-[#53575b]">
-                        Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
+                  <tr key={caravan.id} className="hover:bg-brand-50/40 transition-colors">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="flex items-start gap-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 border border-brand-100 text-brand-800">
+                          <CalendarClock className="h-4 w-4" aria-hidden="true" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-[#212225]">
+                            {formatDate(caravan.departure_date)}
+                          </div>
+                          <div className="text-xs text-[#53575b] mt-0.5">
+                            Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-brand-900">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="font-bold text-brand-900">
                         {formatCurrency(caravan.price_standard)}
                       </div>
-                      <div className="text-sm text-[#53575b]">
-                        Oficiante: {formatCurrency(caravan.price_officiant)}
+                      <div className="text-xs text-[#53575b] mt-0.5 flex items-center gap-1">
+                        <span>Oficiante:</span>
+                        <span className="font-semibold text-[#3a3d40]">{formatCurrency(caravan.price_officiant)}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div>{caravan.seat_limit} assentos</div>
-                      <div className="text-sm text-[#53575b]">
-                        Espera: {caravan.waitlist_limit}
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 font-semibold text-[#212225]">
+                        <UsersRound className="h-4 w-4 text-[#707478]" aria-hidden="true" />
+                        <span>{caravan.seat_limit} assentos</span>
+                      </div>
+                      <div className="text-xs text-[#53575b] mt-0.5">
+                        Espera: <span className="font-medium">{caravan.waitlist_limit} vagas</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="text-sm">
-                        Inscrição até: {formatDate(caravan.registration_deadline)}
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="text-xs text-[#212225]">
+                        <span className="text-[#707478]">Inscrição até:</span>{" "}
+                        <span className="font-medium">{formatDate(caravan.registration_deadline)}</span>
                       </div>
-                      <div className="text-sm text-[#53575b]">
-                        Quórum: {formatDate(caravan.quorum_check_date)}
+                      <div className="text-xs text-[#53575b] mt-0.5">
+                        <span className="text-[#707478]">Quórum:</span>{" "}
+                        <span className="font-medium">{formatDate(caravan.quorum_check_date)}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-5 py-4 whitespace-nowrap">
                       <span
-                        className={`sgct-chip ${
+                        className={`sgct-chip whitespace-nowrap shrink-0 ${
                           statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"
                         }`}
                       >
                         {statusLabels[caravan.status]?.label ?? caravan.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingCaravan(caravan)}
-                        className="inline-flex items-center rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-bold text-brand-900 hover:bg-brand-100 transition-colors"
-                      >
-                        <Pencil className="h-4 w-4" aria-hidden="true" />Editar
-                      </button>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setEditingCaravan(caravan)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-900 hover:bg-brand-100 transition-colors shadow-2xs"
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Editar</span>
+                        </button>
 
-                      {caravan.status !== "cancelled" && caravan.status !== "completed" && (
-                        <form action={updateAction} className="inline-block">
-                          <input type="hidden" name="caravanId" value={caravan.id} />
-                          <input type="hidden" name="status" value="cancelled" />
-                          <button
-                            type="submit"
-                            disabled={isUpdatePending}
-                            className="inline-flex items-center rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-sm font-bold text-danger-700 hover:bg-danger-100 transition-colors"
-                            onClick={(e) => {
-                              if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
-                                e.preventDefault();
-                              }
-                            }}
-                          >
-                            Cancelar
-                          </button>
-                        </form>
-                      )}
+                        {caravan.status !== "cancelled" && caravan.status !== "completed" && (
+                          <form action={updateAction} className="inline-block">
+                            <input type="hidden" name="caravanId" value={caravan.id} />
+                            <input type="hidden" name="status" value="cancelled" />
+                            <button
+                              type="submit"
+                              disabled={isUpdatePending}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50 shadow-2xs"
+                              onClick={(e) => {
+                                if (!confirm("Tem certeza que deseja cancelar esta caravana?")) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                              <Ban className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span>Cancelar</span>
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
