@@ -153,7 +153,7 @@ export function WardAdminList({ members }: Props) {
               }`}
             >
               <UserCheck className="h-3.5 w-3.5 text-[#53575b]" />
-              <span>Perfis Comuns</span>
+              <span>Padrão</span>
               <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                 roleFilter === "member" ? "bg-brand-50 text-brand-700" : "bg-[#e5e7e8] text-[#53575b]"
               }`}>
@@ -217,7 +217,7 @@ export function WardAdminList({ members }: Props) {
                           : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                       }`}
                     >
-                      <span className="truncate">{isAdmin ? "Admin Ala" : "Membro Comum"}</span>
+                      <span className="truncate">{isAdmin ? "Admin Ala" : "Padrão"}</span>
                     </span>
 
                     <span
@@ -239,7 +239,7 @@ export function WardAdminList({ members }: Props) {
                         onClick={() => handleDemote(member)}
                         className="flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50"
                       >
-                        Alterar para Membro
+                        Alterar para Padrão
                       </button>
                     )}
 
@@ -268,7 +268,7 @@ export function WardAdminList({ members }: Props) {
                 <tr>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Nome / E-mail</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Ala</th>
-                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Papel Atual</th>
+                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Perfil</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Status</th>
                   <th scope="col" className="px-6 py-3.5 text-right font-semibold whitespace-nowrap">Ações de Permissão</th>
                 </tr>
@@ -295,7 +295,7 @@ export function WardAdminList({ members }: Props) {
                               : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                           }`}
                         >
-                          {isAdmin ? "Admin Ala" : "Membro Comum"}
+                          {isAdmin ? "Admin Ala" : "Padrão"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -311,16 +311,16 @@ export function WardAdminList({ members }: Props) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                          {/* Ação para Admin de Ala: Rebaixar para Membro Comum */}
+                          {/* Ação para Admin de Ala: Rebaixar para Perfil Padrão */}
                           {isAdmin && (
                             <button
                               type="button"
                               disabled={isPending}
                               onClick={() => handleDemote(member)}
-                              title="Revogar cargo de Admin de Ala e voltar a Membro"
+                              title="Revogar cargo de Admin de Ala e voltar para Perfil Padrão"
                               className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
-                              Alterar para Membro
+                              Alterar para Padrão
                             </button>
                           )}
 

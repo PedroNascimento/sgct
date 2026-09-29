@@ -151,11 +151,11 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
               <p><span className="font-medium">Ala:</span> {foundMember.ward_name}</p>
             )}
             <p>
-              <span className="font-medium">Papel atual:</span>{" "}
+              <span className="font-medium">Perfil:</span>{" "}
               {foundMember.role === "admin_estaca"
                 ? "⚠️ Já é Admin de Estaca"
                 : foundMember.role === "member"
-                ? "Membro comum"
+                ? "Padrão"
                 : foundMember.role}
             </p>
           </div>

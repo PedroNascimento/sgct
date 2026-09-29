@@ -140,12 +140,12 @@ export function WardAdminForm({ wards, stakeId }: Props) {
                 <p><span className="font-medium">Ala atual:</span> {foundMember.ward_name}</p>
               )}
               <p>
-                <span className="font-medium">Papel atual:</span>{" "}
+                <span className="font-medium">Perfil:</span>{" "}
                 {foundMember.role === "admin_ala"
                   ? "⚠️ Já é Admin de Ala"
                   : foundMember.role === "admin_estaca"
                   ? "⚠️ Já é Admin de Estaca"
-                  : "Membro comum"}
+                  : "Padrão"}
               </p>
             </div>
           </div>

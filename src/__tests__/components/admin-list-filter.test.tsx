@@ -70,7 +70,7 @@ describe("AdminList (Super Admin - Busca e Filtros)", () => {
     expect(screen.queryByText("Carlos Silva")).not.toBeInTheDocument();
   });
 
-  it("filtra por Somente Admins e Perfis Comuns", () => {
+  it("filtra por Somente Admins e Padrão", () => {
     render(<AdminList admins={mockAdmins} />);
 
     // Clicar em Somente Admins
@@ -81,8 +81,8 @@ describe("AdminList (Super Admin - Busca e Filtros)", () => {
     expect(screen.queryByText("Mariana Pago")).not.toBeInTheDocument();
     expect(screen.queryByText("Carlos Silva")).not.toBeInTheDocument();
 
-    // Clicar em Perfis Comuns
-    const memberButton = screen.getByRole("button", { name: /Perfis Comuns/i });
+    // Clicar em Padrão (botão de filtro)
+    const memberButton = screen.getByRole("button", { name: /^Padrão/i });
     fireEvent.click(memberButton);
 
     expect(screen.queryByText("Pedro Nascimento")).not.toBeInTheDocument();
@@ -144,11 +144,11 @@ describe("WardAdminList (Admin da Estaca - Busca e Filtros)", () => {
     expect(screen.queryByText("Membro Ala Norte")).not.toBeInTheDocument();
   });
 
-  it("exibe o botão 'Alterar para Membro' apenas para Admin de Ala", () => {
+  it("exibe o botão 'Alterar para Padrão' apenas para Admin de Ala", () => {
     render(<WardAdminList members={mockMembers} />);
 
-    // Líder Ala Sul tem role 'admin_ala', deve ter botões de alterar para membro (mobile e desktop)
-    const alterButtons = screen.getAllByRole("button", { name: /Alterar para Membro/i });
+    // Líder Ala Sul tem role 'admin_ala', deve ter botões de alterar para padrão (mobile e desktop)
+    const alterButtons = screen.getAllByRole("button", { name: /Alterar para Padrão/i });
     expect(alterButtons.length).toBeGreaterThanOrEqual(1);
   });
 });

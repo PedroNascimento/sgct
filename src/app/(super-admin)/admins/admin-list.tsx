@@ -143,7 +143,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
               }`}
             >
               <UserCheck className="h-3.5 w-3.5 text-[#53575b]" />
-              <span>Perfis Comuns</span>
+              <span>Padrão</span>
               <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                 roleFilter === "member" ? "bg-brand-50 text-brand-700" : "bg-[#e5e7e8] text-[#53575b]"
               }`}>
@@ -207,7 +207,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                           : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                       }`}
                     >
-                      <span className="truncate">{isAdmin ? "Admin Estaca" : "Membro Comum"}</span>
+                      <span className="truncate">{isAdmin ? "Admin Estaca" : "Padrão"}</span>
                     </span>
 
                     <span
@@ -232,7 +232,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                           : "border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100"
                       } disabled:opacity-50`}
                     >
-                      {isAdmin ? "Alterar para Membro" : "Promover a Admin"}
+                      {isAdmin ? "Alterar para Padrão" : "Promover a Admin"}
                     </button>
 
                     <button
@@ -260,7 +260,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                 <tr>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Nome / E-mail</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Estaca</th>
-                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Papel Atual</th>
+                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Perfil</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Status</th>
                   <th scope="col" className="px-6 py-3.5 text-right font-semibold whitespace-nowrap">Ações de Permissão</th>
                 </tr>
@@ -288,7 +288,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                               : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                           }`}
                         >
-                          {isAdmin ? "Admin da Estaca" : "Membro Comum"}
+                          {isAdmin ? "Admin da Estaca" : "Padrão"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -309,14 +309,14 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                             type="button"
                             disabled={isPending}
                             onClick={() => handleToggleRole(admin)}
-                            title={isAdmin ? "Rebaixar para membro comum" : "Promover a Admin de Estaca"}
+                            title={isAdmin ? "Rebaixar para perfil padrão" : "Promover a Admin de Estaca"}
                             className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border whitespace-nowrap transition-colors ${
                               isAdmin
                                 ? "border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50"
                                 : "border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100"
                             } disabled:opacity-50`}
                           >
-                            {isAdmin ? "Alterar para Membro" : "Promover a Admin"}
+                            {isAdmin ? "Alterar para Padrão" : "Promover a Admin"}
                           </button>
 
                           {/* Botão de Ativar/Desativar */}
