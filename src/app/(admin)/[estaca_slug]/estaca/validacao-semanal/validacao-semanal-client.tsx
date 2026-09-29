@@ -1,12 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { formatCurrency } from "@/components/ui/format";
 import {
   confirmSingleTransferAction,
   rejectTransferAction,
   validateWeeklyTransfersAction,
 } from "../../actions";
+import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 
 interface PassengerItem {
   id: string;
@@ -14,6 +15,7 @@ interface PassengerItem {
   payment_amount: number;
   profiles: {
     full_name: string;
+    cpf?: string | null;
   };
   wards: {
     name: string;
@@ -34,6 +36,29 @@ export function ValidacaoSemanalClient({
   caravans: CaravanValidationItem[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const [revealedCpfIds, setRevealedCpfIds] = useState<Set<string>>(new Set());
+
+  const allPassengers = caravans.flatMap((c) => c.pagoAlaList);
+  const isAllCpfsRevealed =
+    allPassengers.length > 0 &&
+    allPassengers.every((p) => revealedCpfIds.has(p.id));
+
+  const toggleCpfVisibility = (id: string) => {
+    setRevealedCpfIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllCpfsVisibility = () => {
+    if (isAllCpfsRevealed) {
+      setRevealedCpfIds(new Set());
+    } else {
+      setRevealedCpfIds(new Set(allPassengers.map((p) => p.id)));
+    }
+  };
 
   const handleValidateBatch = (caravanId: string) => {
     if (!confirm("Confirmar a validação em lote de todas as transferências desta caravana?")) {
@@ -101,16 +126,24 @@ export function ValidacaoSemanalClient({
               </p>
             </div>
 
-            {caravan.pagoAlaCount > 0 && (
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => handleValidateBatch(caravan.id)}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-950 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Validando..." : `Validar todos em lote (${caravan.pagoAlaCount})`}
-              </button>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {caravan.pagoAlaCount > 0 && (
+                <>
+                  <CpfVisibilityToggle
+                    allRevealed={isAllCpfsRevealed}
+                    onToggleAll={toggleAllCpfsVisibility}
+                  />
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => handleValidateBatch(caravan.id)}
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-950 transition-colors disabled:opacity-50"
+                  >
+                    {isPending ? "Validando..." : `Validar todos em lote (${caravan.pagoAlaCount})`}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {caravan.pagoAlaCount === 0 ? (
@@ -140,8 +173,16 @@ export function ValidacaoSemanalClient({
                           {passenger.seat_number ?? "—"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-bold text-[#212225]">
-                        {passenger.profiles?.full_name}
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-[#212225]">{passenger.profiles?.full_name}</p>
+                        <div className="mt-0.5">
+                          <MaskedCpf
+                            cpf={passenger.profiles?.cpf}
+                            isRevealed={revealedCpfIds.has(passenger.id)}
+                            onToggle={() => toggleCpfVisibility(passenger.id)}
+                            memberName={passenger.profiles?.full_name}
+                          />
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-[#3a3d40]">
                         {passenger.wards?.name}

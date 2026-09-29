@@ -11,6 +11,7 @@ import {
 import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
 import { CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards } from "lucide-react";
+import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 
 export interface ReservationDetail {
   id: string;
@@ -110,6 +111,32 @@ export function CalendarioAdminClient({
     (r) => r.caravan_id === selectedCaravanId
   );
 
+  const [revealedCpfIds, setRevealedCpfIds] = useState<Set<string>>(new Set());
+
+  const isAllCpfsRevealed =
+    caravanReservations.length > 0 &&
+    caravanReservations.every((r) => revealedCpfIds.has(r.id));
+
+  const toggleCpfVisibility = (id: string) => {
+    setRevealedCpfIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllCpfsVisibility = () => {
+    if (isAllCpfsRevealed) {
+      setRevealedCpfIds(new Set());
+    } else {
+      setRevealedCpfIds(new Set(caravanReservations.map((r) => r.id)));
+    }
+  };
+
   // Métricas do Dashboard da Estaca
   const pagos = caravanReservations.filter(
     (r) => r.status === "confirmado" || r.status === "pago_ala"
@@ -205,7 +232,7 @@ export function CalendarioAdminClient({
 
           {/* Tabela de Inscritos na Caravana */}
           <div className="sgct-card overflow-hidden">
-            <div className="border-b border-[#e0e2e2] px-6 py-4 flex items-center justify-between">
+            <div className="border-b border-[#e0e2e2] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-[#212225]">
                   Passageiros Inscritos ({caravanReservations.length})
@@ -214,6 +241,12 @@ export function CalendarioAdminClient({
                   Listagem organizada por poltrona/ordem de inscrição.
                 </p>
               </div>
+              {caravanReservations.length > 0 && (
+                <CpfVisibilityToggle
+                  allRevealed={isAllCpfsRevealed}
+                  onToggleAll={toggleAllCpfsVisibility}
+                />
+              )}
             </div>
 
             {caravanReservations.length === 0 ? (
@@ -228,6 +261,14 @@ export function CalendarioAdminClient({
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="break-words text-lg font-bold text-[#212225]">{res.profiles?.full_name}</p>
+                        <div className="mt-0.5">
+                          <MaskedCpf
+                            cpf={res.profiles?.cpf}
+                            isRevealed={revealedCpfIds.has(res.id)}
+                            onToggle={() => toggleCpfVisibility(res.id)}
+                            memberName={res.profiles?.full_name}
+                          />
+                        </div>
                         <p className="mt-1 flex items-center gap-2 text-sm text-[#53575b]"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />{res.wards?.name}</p>
                       </div>
                       {res.seat_number ? <span className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 px-2 font-bold text-brand-900" aria-label={`Assento ${res.seat_number}`}>{res.seat_number}</span> : <span className="sgct-chip shrink-0 border-brand-200 bg-brand-50 text-brand-700">Fila #{idx + 1}</span>}
@@ -271,8 +312,16 @@ export function CalendarioAdminClient({
                             </span>
                           )}
                         </td>
-                        <td className="px-5 py-3.5 font-bold text-[#212225]">
-                          {res.profiles?.full_name}
+                        <td className="px-5 py-3.5">
+                          <p className="font-bold text-[#212225]">{res.profiles?.full_name}</p>
+                          <div className="mt-0.5">
+                            <MaskedCpf
+                              cpf={res.profiles?.cpf}
+                              isRevealed={revealedCpfIds.has(res.id)}
+                              onToggle={() => toggleCpfVisibility(res.id)}
+                              memberName={res.profiles?.full_name}
+                            />
+                          </div>
                         </td>
                         <td className="px-5 py-3.5 text-[#3a3d40]">
                           {res.wards?.name}

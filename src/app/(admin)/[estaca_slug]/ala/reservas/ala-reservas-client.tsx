@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
 import { confirmWardPaymentAction } from "@/app/(admin)/[estaca_slug]/actions";
+import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 
 interface ReservationItem {
   id: string;
@@ -50,6 +51,7 @@ export function AlaReservasClient({
   );
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
+  const [revealedCpfIds, setRevealedCpfIds] = useState<Set<string>>(new Set());
 
   // Filtrar por caravana selecionada
   const filteredByCaravan =
@@ -76,6 +78,30 @@ export function AlaReservasClient({
       return r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga";
     return true;
   });
+
+  const isAllCpfsRevealed =
+    displayedReservations.length > 0 &&
+    displayedReservations.every((r) => revealedCpfIds.has(r.id));
+
+  const toggleCpfVisibility = (id: string) => {
+    setRevealedCpfIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllCpfsVisibility = () => {
+    if (isAllCpfsRevealed) {
+      setRevealedCpfIds(new Set());
+    } else {
+      setRevealedCpfIds(new Set(displayedReservations.map((r) => r.id)));
+    }
+  };
 
   const handleConfirmPayment = async (reservationId: string) => {
     try {
@@ -280,7 +306,7 @@ export function AlaReservasClient({
 
       {/* Lista de Membros */}
       <section className="sgct-card overflow-hidden">
-        <div className="border-b border-[#e0e2e2] px-5 py-4 sm:px-6 flex items-center justify-between">
+        <div className="border-b border-[#e0e2e2] px-5 py-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-[#212225]">
               Membros Inscritos da {wardName}
@@ -289,9 +315,17 @@ export function AlaReservasClient({
               Listagem ordenada por posição de inscrição e assento.
             </p>
           </div>
-          <span className="text-sm font-bold text-brand-900 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-200">
-            {displayedReservations.length} encontrado(s)
-          </span>
+          <div className="flex items-center gap-3">
+            {displayedReservations.length > 0 && (
+              <CpfVisibilityToggle
+                allRevealed={isAllCpfsRevealed}
+                onToggleAll={toggleAllCpfsVisibility}
+              />
+            )}
+            <span className="text-sm font-bold text-brand-900 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-200">
+              {displayedReservations.length} encontrado(s)
+            </span>
+          </div>
         </div>
 
         {displayedReservations.length === 0 ? (
@@ -340,9 +374,14 @@ export function AlaReservasClient({
                       {/* Nome do Membro */}
                       <td className="px-5 py-4">
                         <p className="font-bold text-[#212225]">{res.profiles?.full_name}</p>
-                        <p className="text-sm font-mono text-[#53575b]">
-                          CPF: {res.profiles?.cpf || "Não informado"}
-                        </p>
+                        <div className="mt-0.5">
+                          <MaskedCpf
+                            cpf={res.profiles?.cpf}
+                            isRevealed={revealedCpfIds.has(res.id)}
+                            onToggle={() => toggleCpfVisibility(res.id)}
+                            memberName={res.profiles?.full_name}
+                          />
+                        </div>
                         {isOwnReservation && (
                           <span className="inline-block mt-1 text-[11px] font-semibold text-warning-700 bg-warning-50 px-2 py-0.5 rounded border border-warning-200">
                             Sua Reserva (Admin)

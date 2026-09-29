@@ -41,7 +41,7 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
     (caravans ?? []).map(async (c) => {
       const { data: pagoAlaReservations } = await supabase
         .from("reservations")
-        .select("id, payment_amount, seat_number, profiles!inner(full_name), wards!inner(name)")
+        .select("id, payment_amount, seat_number, profiles!inner(full_name, cpf), wards!inner(name)")
         .eq("caravan_id", c.id)
         .eq("status", "pago_ala");
 
