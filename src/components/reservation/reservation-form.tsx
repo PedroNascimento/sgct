@@ -108,16 +108,16 @@ export function ReservationForm({
         </div>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link
-            href={`/${stakeSlug}/calendario`}
+            href={`/${stakeSlug}/minhas-reservas`}
             className="sgct-button-primary"
           >
-            Ver Calendário
+            Acompanhar minha reserva
           </Link>
           <Link
-            href={`/${stakeSlug}`}
+            href={`/${stakeSlug}/calendario`}
             className="sgct-button-secondary"
           >
-            Início
+            Ver calendário
           </Link>
         </div>
       </div>

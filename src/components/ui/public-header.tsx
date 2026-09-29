@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Brand } from "./brand";
-import { CalendarIcon, UserIcon } from "./icons";
+import { BusIcon, CalendarIcon, UserIcon } from "./icons";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { signOutAction } from "@/app/auth-actions";
 
@@ -21,7 +21,7 @@ export async function PublicHeader({ stakeSlug, stakeName }: PublicHeaderProps) 
         <nav aria-label="Navegação principal" className="flex items-center gap-1 sm:gap-2">
           <Link
             href={`/${stakeSlug}/calendario`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700 sm:px-4"
+            className={`min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700 sm:px-4 ${isAuthenticated ? "hidden sm:inline-flex" : "inline-flex"}`}
           >
             <CalendarIcon className="hidden h-5 w-5 min-[360px]:block sm:hidden" />
             <span className="sm:hidden">Viagens</span>
@@ -30,12 +30,19 @@ export async function PublicHeader({ stakeSlug, stakeName }: PublicHeaderProps) 
           {isAuthenticated ? (
             <>
               <Link
+                href={`/${stakeSlug}/minhas-reservas`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:px-4"
+              >
+                <BusIcon className="h-5 w-5" />
+                <span className="sm:hidden">Reservas</span>
+                <span className="hidden sm:inline">Minhas reservas</span>
+              </Link>
+              <Link
                 href={`/${stakeSlug}/conta`}
                 className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#d0d3d3] bg-white px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:px-4"
               >
                 <UserIcon className="h-5 w-5" />
-                <span className="sm:hidden">Conta</span>
-                <span className="hidden sm:inline">Minha conta</span>
+                <span className="sr-only sm:not-sr-only">Minha conta</span>
               </Link>
               <form action={signOutAction.bind(null, stakeSlug)}>
                 <button

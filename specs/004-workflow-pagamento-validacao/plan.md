@@ -5,10 +5,10 @@
 ## Verificação de Conformidade com a Constituição
 | Artigo | Conformidade | Observação |
 |---|---|---|
-| I — Clean Architecture | ✅ | `ConfirmWardPayment`, `ValidateWeeklyTransfers`, `RecalculateCaravanRanking`, `ExpirePendingReservations` em `use-cases/`, testáveis com repositório mockado. |
-| II — Isolamento Multi-Tenant | ✅ | Toda query filtra por `stake_id` (índice primário) e `ward_id`; Admin Ala só confirma pagamento da própria Ala/Estaca. |
+| I — Clean Architecture | ✅ | Regras financeiras e a composição da consulta do membro ficam em `use-cases/`, testáveis com repositórios mockados. |
+| II — Isolamento Multi-Tenant | ✅ | Toda query administrativa filtra por `stake_id`/`ward_id`; a consulta do membro parte do `user.id` autenticado, valida `stake_id` e permanece protegida por RLS. |
 | III — Sem UPDATE direto | ✅ | Transições de status exclusivamente via Server Actions que chamam os use-cases acima. |
-| IV — TDD 80%+ | ✅ | Casos de borda (off-by-one no limite de 50, bloqueio de autoaprovação, exclusão da semana de embarque) exigem teste antes da implementação. |
+| IV — TDD 80%+ | ✅ | Casos de borda financeiros e isolamento da consulta das próprias reservas exigem teste antes da implementação. |
 | V — Segurança por padrão | ✅ | `validate_weekly_transfers` roda via `pg_cron` com `service_role`, nunca exposto como endpoint público sem `CRON_SECRET`. |
 | VI — LGPD | N/A | Sem dado de menor nesta spec. |
 | VII — Nenhuma regra inventada | ✅ | Regras vindas de D01, D15, D17 (`docs/DECISIONS.md`). |
@@ -28,6 +28,9 @@ confirmWardPayment(input: { reservationId: string; adminId: string }): Promise<R
 validateWeeklyTransfers(input: { caravanId: string; adminId: string }): Promise<Reservation[]>
 recalculateCaravanRanking(caravanId: string): Promise<{ confirmed: Reservation[]; waitlisted: Reservation[] }>
 expirePendingReservations(): Promise<{ expiredCount: number }>  // chamado só pelo job pg_cron
+
+// src/use-cases/reservation/
+listOwnReservations(userId: string, stakeId: string): Promise<OwnReservationSummary[]>
 ```
 
 ## Decisões Técnicas Resolvidas (Research)
@@ -39,3 +42,4 @@ D01 (timeout 7 dias / domingo de fechamento), D15 (recálculo automatizado + rev
 - **Fase 3:** `ValidateWeeklyTransfers` + job `pg_cron`, com exclusão explícita da semana de embarque.
 - **Fase 4:** `ExpirePendingReservations` + job diário.
 - **Fase 5:** Integração do evento de notificação (consumido por 008).
+- **Fase 6:** Consulta autenticada das próprias reservas, composição com dados da caravana/embarque e interface responsiva de acompanhamento.
