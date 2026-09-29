@@ -30,6 +30,7 @@ export default async function AdminLayout({
               <>
                 <Link href={`/${estaca_slug}/estaca/calendario`} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700">Caravanas</Link>
                 <Link href={`/${estaca_slug}/estaca/validacao-semanal`} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700">Validação semanal</Link>
+                <Link href={`/${estaca_slug}/estaca/equipe`} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700">Equipe</Link>
               </>
             ) : (
               <Link href={`/${estaca_slug}/ala/reservas`} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700">Pagamentos da Ala</Link>

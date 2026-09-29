@@ -89,14 +89,24 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/admins/") ||
     pathname.startsWith("/super-admin");
 
+  const isSuperAdminLoginRoute = pathname === "/super-admin/login";
+
   // Super-admin não tem slug de Estaca na rota
-  if (isSuperAdminRoute) {
+  if (isSuperAdminRoute && !isSuperAdminLoginRoute) {
     const { data: { user }, error } = await supabase.auth.getUser();
     const claims = error ? undefined : user?.app_metadata;
 
     if (!claims || claims.role !== "super_admin") {
-      return new NextResponse("Acesso negado.", { status: 403 });
+      // Redirecionar para login em vez de retornar 403 puro
+      const url = request.nextUrl.clone();
+      url.pathname = "/super-admin/login";
+      return NextResponse.redirect(url);
     }
+    return response;
+  }
+
+  // Rota de login do super admin é pública
+  if (isSuperAdminLoginRoute) {
     return response;
   }
 
