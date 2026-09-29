@@ -103,11 +103,6 @@ export default async function EstacaPublicPage({ params }: Props) {
           </div>
         </section>
       </main>
-      <footer className="border-t border-[#e0e2e2] bg-white py-6">
-        <div className="sgct-container text-sm text-[#53575b]">
-          SGCT · Sistema de Gestão de Caravanas ao Templo
-        </div>
-      </footer>
     </div>
   );
 }

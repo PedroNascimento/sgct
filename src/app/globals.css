@@ -199,6 +199,8 @@
 }
 
 /* Shared workspace: the same navigation surface for members and administrators. */
+body:has(.workspace-chrome) { --sidebar-width: 272px; }
+body:has(.workspace-chrome[data-collapsed="true"]) { --sidebar-width: 88px; }
 .sgct-page:has(> .workspace-chrome) { --sidebar-width: 272px; padding-top: 80px; }
 .sgct-page:has(> .workspace-chrome[data-collapsed="true"]) { --sidebar-width: 88px; }
 .workspace-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 60; width: 272px; height: 100dvh; display: flex; flex-direction: column; background: var(--color-brand-900); color: white; transition: width 180ms, transform 180ms; transform: translateX(-100%); }
@@ -257,6 +259,7 @@
 @media (min-width: 640px) { .workspace-account-name { display: block; } }
 @media (min-width: 1024px) {
   .sgct-page:has(> .workspace-chrome) { padding-left: var(--sidebar-width); transition: padding-left 180ms; }
+  body:has(.workspace-chrome) .sgct-footer { padding-left: var(--sidebar-width); transition: padding-left 180ms; }
   .workspace-sidebar { width: var(--sidebar-width); transform: none; visibility: visible; }
   .workspace-topbar { left: var(--sidebar-width); padding: 0 32px; transition: left 180ms; }
   .workspace-menu-trigger, .workspace-mobile-close { display: none; }

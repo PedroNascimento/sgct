@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppFooter } from "@/components/ui/app-footer";
 
 export const metadata: Metadata = {
   title: "SGCT — Sistema de Gestão de Caravanas ao Templo",
@@ -13,11 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className="flex min-h-screen flex-col">
         <a href="#conteudo-principal" className="sgct-skip-link">
           Ir para o conteúdo principal
         </a>
-        {children}
+        <div className="flex-1 flex flex-col">{children}</div>
+        <AppFooter />
       </body>
     </html>
   );
