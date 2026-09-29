@@ -262,4 +262,63 @@ describe("Middleware Multi-Tenant", () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe("Rotas do Super Admin", () => {
+    it("permite acesso público a /super-admin/login sem autenticação", async () => {
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+      const request = new NextRequest("http://localhost:3000/super-admin/login");
+      const response = await middleware(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("redireciona para /super-admin/login quando usuário não autenticado tenta acessar /estacas", async () => {
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+      const request = new NextRequest("http://localhost:3000/estacas");
+      const response = await middleware(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3000/super-admin/login");
+    });
+
+    it("redireciona para /super-admin/login quando usuário logado não tem role super_admin", async () => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            app_metadata: {
+              role: "admin_estaca",
+              stake_id: "00000000-0000-0000-0000-000000000001",
+            },
+          },
+        },
+        error: null,
+      });
+
+      const request = new NextRequest("http://localhost:3000/estacas");
+      const response = await middleware(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3000/super-admin/login");
+    });
+
+    it("permite acesso a /estacas quando usuário possui role super_admin", async () => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            app_metadata: {
+              role: "super_admin",
+            },
+          },
+        },
+        error: null,
+      });
+
+      const request = new NextRequest("http://localhost:3000/estacas");
+      const response = await middleware(request);
+
+      expect(response.status).toBe(200);
+    });
+  });
 });

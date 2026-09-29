@@ -11,7 +11,8 @@
     "test:coverage": "jest --coverage",
     "test:rls": "jest --testPathPattern=rls --no-coverage",
     "seed:super-admin": "tsx scripts/seed-bootstrap.ts",
-    "seed:dev": "tsx scripts/seed-dev.ts"
+    "seed:dev": "tsx scripts/seed-dev.ts",
+    "simulate:flow": "tsx scripts/simulate-flow.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
