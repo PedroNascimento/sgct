@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { formatCurrency } from "@/components/ui/format";
+import { formatCurrency, formatDate } from "@/components/ui/format";
 import {
   confirmSingleTransferAction,
   rejectTransferAction,
@@ -119,7 +119,7 @@ export function ValidacaoSemanalClient({
                 Viagem ao Templo
               </span>
               <h2 className="text-xl font-bold text-[#212225] mt-1">
-                Saída em {caravan.departure_date}
+                Saída em {formatDate(caravan.departure_date)}
               </h2>
               <p className="text-xs text-[#53575b] mt-0.5">
                 {caravan.pagoAlaCount} repasse(s) pago(s) na Ala aguardando confirmação da Estaca.

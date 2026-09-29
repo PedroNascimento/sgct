@@ -22,6 +22,7 @@ import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
 import { validateWeeklyTransfers } from "@/use-cases/payment/validate-weekly-transfers";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
 import type { CaravanStatus } from "@/domain/types/caravan";
+import { formatDate } from "@/components/ui/format";
 
 export type AdminActionState = {
   success: boolean;
@@ -230,7 +231,7 @@ export async function createCaravanAction(
     revalidatePath("/[estaca_slug]/calendario");
     return {
       success: true,
-      message: `Caravana com saída em ${created.departure_date} cadastrada com sucesso!`,
+      message: `Caravana com saída em ${formatDate(created.departure_date)} cadastrada com sucesso!`,
     };
   } catch (err: unknown) {
     return {

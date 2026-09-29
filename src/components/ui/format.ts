@@ -1,6 +1,6 @@
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
-  month: "short",
+  month: "2-digit",
   year: "numeric",
   timeZone: "UTC",
 });
@@ -12,7 +12,7 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 
 export function formatDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value.includes("T") ? value : `${value}T12:00:00Z`);
-  return dateFormatter.format(date).replace(/\./g, "");
+  return dateFormatter.format(date);
 }
 
 export function formatCurrency(value: number): string {
