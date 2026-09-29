@@ -142,6 +142,18 @@
     @apply sgct-button border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-[#eff0f0];
   }
 
+  .sgct-button-danger {
+    @apply sgct-button bg-danger-700 text-white shadow-sm hover:bg-[#8f0403] active:bg-[#6e0302];
+  }
+
+  .sgct-button-warning {
+    @apply sgct-button bg-warning-700 text-white shadow-sm hover:bg-[#733500] active:bg-[#592900];
+  }
+
+  .sgct-button-success {
+    @apply sgct-button bg-success-700 text-white shadow-sm hover:bg-[#185230] active:bg-[#123e24];
+  }
+
   .sgct-link {
     @apply font-semibold text-brand-700 underline decoration-brand-200 decoration-2 hover:text-brand-900 hover:decoration-brand-500;
   }

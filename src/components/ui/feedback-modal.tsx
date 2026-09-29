@@ -78,16 +78,16 @@ export function FeedbackModal({
   // Configuração visual por tipo
   const typeConfig = {
     error: {
-      badgeBg: "bg-danger-50 text-danger-600 ring-danger-200",
+      badgeBg: "bg-danger-50 text-danger-700 ring-danger-200",
       icon: AlertCircle,
       defaultConfirm: "Entendido",
-      buttonClass: "inline-flex min-h-11 items-center justify-center rounded-xl bg-danger-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-danger-700 transition-colors disabled:opacity-50",
+      buttonClass: "sgct-button-danger",
     },
     warning: {
       badgeBg: "bg-warning-50 text-warning-700 ring-warning-200",
       icon: AlertTriangle,
       defaultConfirm: "Entendido",
-      buttonClass: "inline-flex min-h-11 items-center justify-center rounded-xl bg-warning-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-warning-700 transition-colors disabled:opacity-50",
+      buttonClass: "sgct-button-warning",
     },
     info: {
       badgeBg: "bg-brand-50 text-brand-700 ring-brand-200",
@@ -99,12 +99,12 @@ export function FeedbackModal({
       badgeBg: "bg-success-50 text-success-700 ring-success-200",
       icon: CheckCircle2,
       defaultConfirm: "Concluído",
-      buttonClass: "inline-flex min-h-11 items-center justify-center rounded-xl bg-success-700 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-success-800 transition-colors disabled:opacity-50",
+      buttonClass: "sgct-button-success",
     },
     confirm: {
       badgeBg:
         confirmVariant === "danger"
-          ? "bg-danger-50 text-danger-600 ring-danger-200"
+          ? "bg-danger-50 text-danger-700 ring-danger-200"
           : confirmVariant === "warning"
           ? "bg-warning-50 text-warning-700 ring-warning-200"
           : "bg-brand-50 text-brand-700 ring-brand-200",
@@ -117,12 +117,17 @@ export function FeedbackModal({
       defaultConfirm: "Confirmar",
       buttonClass:
         confirmVariant === "danger"
-          ? "inline-flex min-h-11 items-center justify-center rounded-xl bg-danger-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-danger-700 transition-colors disabled:opacity-50"
+          ? "sgct-button-danger"
           : confirmVariant === "warning"
-          ? "inline-flex min-h-11 items-center justify-center rounded-xl bg-warning-600 px-5 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-warning-700 transition-colors disabled:opacity-50"
+          ? "sgct-button-warning"
           : "sgct-button-primary",
     },
   }[type];
+
+  const cancelButtonClass =
+    confirmVariant === "danger" || confirmVariant === "warning"
+      ? "sgct-button-quiet w-full sm:w-auto min-h-11"
+      : "sgct-button-secondary w-full sm:w-auto min-h-11";
 
   const Icon = typeConfig.icon;
 
@@ -153,47 +158,52 @@ export function FeedbackModal({
         }
       }}
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl border border-[#e0e2e2] my-auto animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 sm:p-7 shadow-2xl border border-[#e0e2e2] my-auto animate-in zoom-in-95 duration-200">
         {/* Botão de Fechar no canto superior direito */}
         {!isPending && (
           <button
             type="button"
             onClick={handleCancelClick}
             aria-label="Fechar"
-            className="absolute top-4 right-4 rounded-lg p-1.5 text-[#707478] hover:bg-[#eff0f0] hover:text-[#212225] transition-colors cursor-pointer"
+            className="absolute top-4 right-4 rounded-lg p-2 text-[#707478] hover:bg-[#eff0f0] hover:text-[#212225] transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         )}
 
-        {/* Ícone e Conteúdo */}
-        <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+        {/* Layout alinhado: Ícone ao lado do Título e Descrição */}
+        <div className="flex items-start gap-4">
           <div
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl ring-1 mb-4 shrink-0 ${typeConfig.badgeBg}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${typeConfig.badgeBg}`}
           >
             <Icon className="h-6 w-6" aria-hidden="true" />
           </div>
 
-          <h3 id="feedback-modal-title" className="text-xl font-bold text-[#212225] w-full">
-            {title}
-          </h3>
+          <div className="flex-1 min-w-0 pr-4 sm:pr-6">
+            <h3
+              id="feedback-modal-title"
+              className="text-lg sm:text-xl font-bold text-[#212225] leading-snug"
+            >
+              {title}
+            </h3>
 
-          <div
-            id="feedback-modal-desc"
-            className="mt-2 text-sm text-[#53575b] leading-relaxed whitespace-pre-line w-full"
-          >
-            {message}
+            <div
+              id="feedback-modal-desc"
+              className="mt-2 text-sm sm:text-[0.9375rem] text-[#53575b] leading-relaxed whitespace-pre-line"
+            >
+              {message}
+            </div>
           </div>
         </div>
 
         {/* Botões de Ação */}
-        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-[#e0e2e2]">
+        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-5 border-t border-[#e0e2e2]">
           {isConfirm && (
             <button
               type="button"
               disabled={isPending}
               onClick={handleCancelClick}
-              className="sgct-button-secondary w-full sm:w-auto min-h-11"
+              className={cancelButtonClass}
             >
               {cancelLabel}
             </button>
