@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
+import {
+  createSupabaseServerClient,
+  createSupabaseServiceClient,
+} from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
@@ -8,6 +11,38 @@ import { listPublicCaravans } from "@/use-cases/caravan/list-public-caravans";
 import { PublicHeader } from "@/components/ui/public-header";
 import { ArrowLeftIcon, ArrowRightIcon, BusIcon, CalendarIcon, ClockIcon, LocationIcon } from "@/components/ui/icons";
 import { formatBoardingTime, formatCurrency, formatDate } from "@/components/ui/format";
+
+/** Status exibíveis na lista pública de inscritos */
+const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  confirmado:    { label: "Confirmado",      color: "text-success-700 bg-success-50 border-success-200" },
+  presente:      { label: "Presente",        color: "text-success-700 bg-success-50 border-success-200" },
+  pago_ala:      { label: "Em validação",    color: "text-warning-700 bg-warning-50 border-warning-200" },
+  aguardando_auxilio: { label: "Ag. auxílio", color: "text-warning-700 bg-warning-50 border-warning-200" },
+  pendente:      { label: "Pendente",        color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
+  lista_espera:  { label: "Lista de espera", color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
+};
+
+/** Ordem de prioridade para exibição (menor = primeiro) */
+const STATUS_ORDER: Record<string, number> = {
+  confirmado: 1,
+  presente: 1,
+  pago_ala: 2,
+  aguardando_auxilio: 2,
+  aguardando_transferencia_interestaca: 2,
+  pendente: 3,
+  lista_espera: 4,
+};
+
+interface ReservationRow {
+  id: string;
+  status: string;
+  created_at: string;
+  confirmed_at: string | null;
+  confirmation_rank: number | null;
+  profiles: { full_name: string } | null;
+  wards: { name: string } | null;
+}
+
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -36,6 +71,49 @@ export default async function PublicCalendarioPage({ params }: Props) {
   const caravans = await listPublicCaravans(stake.id, {
     caravanRepository: caravanRepo,
   });
+
+  // Busca os inscritos de todas as caravanas listadas via service client
+  // (RLS de reservations restringe leituras anônimas, mas a lista pública
+  //  expõe apenas nome, Ala e status — sem PII sensível)
+  const serviceClient = createSupabaseServiceClient();
+  const caravanIds = caravans.map((c) => c.id);
+
+  const reservationsByCaravan: Record<string, ReservationRow[]> = {};
+
+  if (caravanIds.length > 0) {
+    const { data: rawReservations } = await serviceClient
+      .from("reservations")
+      .select("id, caravan_id, status, created_at, confirmed_at, confirmation_rank, profiles(full_name), wards(name)")
+      .in("caravan_id", caravanIds)
+      .not("status", "in", "(cancelada_com_credito,cancelada_sem_credito,expirada,no_show)")
+      .order("created_at", { ascending: true });
+
+    if (rawReservations) {
+      for (const row of rawReservations as (ReservationRow & { caravan_id: string })[]) {
+        if (!row.profiles) continue;
+        const caravanId = row.caravan_id;
+        if (!reservationsByCaravan[caravanId]) reservationsByCaravan[caravanId] = [];
+        reservationsByCaravan[caravanId].push(row);
+      }
+    }
+  }
+
+  /**
+   * Ordena a lista: confirmados primeiro (por confirmation_rank),
+   * depois em validação (por created_at), depois pendentes, depois lista de espera.
+   */
+  function sortReservations(list: ReservationRow[]): ReservationRow[] {
+    return [...list].sort((a, b) => {
+      const orderA = STATUS_ORDER[a.status] ?? 9;
+      const orderB = STATUS_ORDER[b.status] ?? 9;
+      if (orderA !== orderB) return orderA - orderB;
+      // Dentro do mesmo grupo: confirmados por rank, demais por created_at
+      if (a.status === "confirmado" && b.status === "confirmado") {
+        return (a.confirmation_rank ?? 999) - (b.confirmation_rank ?? 999);
+      }
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+  }
 
   return (
     <div className="sgct-page">
@@ -171,6 +249,100 @@ export default async function PublicCalendarioPage({ params }: Props) {
                     </span>
                   )}
                 </div>
+
+                {/* ─── Lista de inscritos ─── */}
+                {(() => {
+                  const members = sortReservations(reservationsByCaravan[caravan.id] ?? []);
+                  if (members.length === 0) return null;
+
+                  // Separar confirmados/validação da lista de espera
+                  const active = members.filter((r) => r.status !== "lista_espera");
+                  const waiting = members.filter((r) => r.status === "lista_espera");
+
+                  return (
+                    <section className="mt-7 border-t border-[#e0e2e2] pt-6" aria-label="Membros inscritos">
+                      <h3 className="text-base font-bold text-[#212225]">
+                        Membros inscritos{" "}
+                        <span className="ml-1 text-sm font-normal text-[#53575b]">({active.length} inscrição{active.length !== 1 ? "s" : ""})</span>
+                      </h3>
+
+                      <div className="mt-4 overflow-hidden rounded-xl border border-[#e0e2e2]">
+                        <table className="w-full text-sm" role="table" aria-label="Lista de inscritos na caravana">
+                          <thead>
+                            <tr className="border-b border-[#e0e2e2] bg-[#f7f8f8]">
+                              <th scope="col" className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-[#53575b]">#</th>
+                              <th scope="col" className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-[#53575b]">Nome</th>
+                              <th scope="col" className="hidden px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-[#53575b] sm:table-cell">Ala</th>
+                              <th scope="col" className="px-4 py-2.5 text-right text-xs font-bold uppercase tracking-wide text-[#53575b]">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#e0e2e2]">
+                            {active.map((r, idx) => {
+                              const wardName = (r.wards as { name: string } | null)?.name ?? "—";
+                              const fullName = (r.profiles as { full_name: string } | null)?.full_name ?? "—";
+                              const badge = STATUS_LABEL[r.status] ?? { label: r.status, color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" };
+                              return (
+                                <tr key={r.id} className="bg-white hover:bg-[#f7f8f8] transition-colors">
+                                  <td className="px-4 py-3 text-xs font-bold text-[#8d9194] tabular-nums">{idx + 1}</td>
+                                  <td className="px-4 py-3 font-medium text-[#212225]">
+                                    <span>{fullName}</span>
+                                    {/* Ala visível inline no mobile */}
+                                    <span className="block text-xs text-[#53575b] sm:hidden">{wardName}</span>
+                                  </td>
+                                  <td className="hidden px-4 py-3 text-[#53575b] sm:table-cell">{wardName}</td>
+                                  <td className="px-4 py-3 text-right">
+                                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.color}`}>
+                                      {badge.label}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Lista de espera */}
+                      {waiting.length > 0 && (
+                        <details className="mt-4 group">
+                          <summary className="cursor-pointer select-none text-sm font-semibold text-[#53575b] hover:text-[#212225] list-none flex items-center gap-2">
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#e0e2e2] text-xs font-bold text-[#53575b]">
+                              {waiting.length}
+                            </span>
+                            Lista de espera
+                            <span className="ml-auto text-xs font-normal text-[#8d9194] group-open:hidden">▼ ver</span>
+                            <span className="ml-auto text-xs font-normal text-[#8d9194] hidden group-open:inline">▲ ocultar</span>
+                          </summary>
+                          <div className="mt-3 overflow-hidden rounded-xl border border-[#e0e2e2]">
+                            <table className="w-full text-sm">
+                              <tbody className="divide-y divide-[#e0e2e2]">
+                                {waiting.map((r, idx) => {
+                                  const wardName = (r.wards as { name: string } | null)?.name ?? "—";
+                                  const fullName = (r.profiles as { full_name: string } | null)?.full_name ?? "—";
+                                  return (
+                                    <tr key={r.id} className="bg-white hover:bg-[#f7f8f8] transition-colors">
+                                      <td className="px-4 py-3 text-xs font-bold text-[#8d9194] tabular-nums">{idx + 1}º</td>
+                                      <td className="px-4 py-3 font-medium text-[#212225]">
+                                        <span>{fullName}</span>
+                                        <span className="block text-xs text-[#53575b] sm:hidden">{wardName}</span>
+                                      </td>
+                                      <td className="hidden px-4 py-3 text-[#53575b] sm:table-cell">{wardName}</td>
+                                      <td className="px-4 py-3 text-right">
+                                        <span className="inline-flex items-center rounded-full border border-[#e0e2e2] bg-[#f7f8f8] px-2.5 py-0.5 text-xs font-semibold text-[#53575b]">
+                                          Lista de espera
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      )}
+                    </section>
+                  );
+                })()}
               </div>
             </article>
           ))
