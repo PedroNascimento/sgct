@@ -31,7 +31,7 @@ export async function signUpGuest(
     throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos para convidado.");
   }
 
-  const { email, password, fullName, birthDate, sexo, homeStakeName, homeWardName } =
+  const { email, password, fullName, cpf, birthDate, sexo, homeStakeName, homeWardName } =
     parsed.data;
 
   // 1. Criar usuário no Auth
@@ -54,7 +54,7 @@ export async function signUpGuest(
     full_name: fullName,
     birth_date: birthDate,
     sexo,
-    cpf: null,
+    cpf,
     phone: null,
     role: "guest",
     home_stake_name: homeStakeName,

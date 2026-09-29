@@ -4,6 +4,7 @@
  * O middleware garante role=super_admin antes de renderizar.
  */
 import Link from "next/link";
+import { Brand } from "@/components/ui/brand";
 
 export default function SuperAdminLayout({
   children,
@@ -11,34 +12,32 @@ export default function SuperAdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">
-              SGCT — Painel Super Admin
-            </h1>
-            <p className="text-sm text-gray-500">
-              Gestão de Estacas e Administradores Iniciais
-            </p>
+    <div className="sgct-page">
+      <header className="border-b border-[#d0d3d3] bg-brand-900 text-white">
+        <div className="sgct-container flex min-h-[4.75rem] flex-wrap items-center justify-between gap-3 py-2">
+          <div className="rounded-xl bg-white px-3 py-1.5">
+            <Brand href="/estacas" context="Administração da plataforma" compact />
           </div>
-          <nav className="flex space-x-4">
+          <span className="sgct-chip border-white/20 bg-white/10 text-white">Super Admin</span>
+        </div>
+        <div className="border-t border-white/10 bg-brand-900">
+          <nav aria-label="Navegação do Super Admin" className="sgct-container flex gap-1 overflow-x-auto py-2">
             <Link
               href="/estacas"
-              className="text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+              className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-brand-50 hover:bg-white/10"
             >
               Estacas
             </Link>
             <Link
               href="/admins"
-              className="text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+              className="inline-flex min-h-11 shrink-0 items-center rounded-md px-4 text-sm font-semibold text-brand-50 hover:bg-white/10"
             >
               Administradores de Estaca
             </Link>
           </nav>
         </div>
       </header>
-      <main className="p-6 max-w-5xl mx-auto">{children}</main>
+      <main id="conteudo-principal" className="sgct-container py-8 sm:py-10">{children}</main>
     </div>
   );
 }

@@ -13,20 +13,19 @@ export default async function AdminsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">
-          Administradores de Estaca
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="sgct-eyebrow">Acesso inicial</p>
+        <h1 className="sgct-title mt-3">Administradores de Estaca</h1>
+        <p className="sgct-subtitle">
           Cadastre o primeiro Admin de Estaca para cada Estaca recém-criada.
         </p>
       </div>
 
       {stakes.length === 0 ? (
-        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-sm text-yellow-800">
+        <div className="sgct-alert-warning">
           Nenhuma Estaca cadastrada ainda.{" "}
           <Link
             href="/estacas"
-            className="font-semibold underline hover:text-yellow-900"
+            className="font-semibold underline"
           >
             Cadastre uma Estaca primeiro
           </Link>{" "}

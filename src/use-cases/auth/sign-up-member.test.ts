@@ -33,6 +33,7 @@ describe("signUpMember (T001.1)", () => {
     email: "membro@natal.org",
     password: "senha-segura-123",
     fullName: "Membro da Silva",
+    cpf: "12345678901",
     birthDate: "1995-05-20",
     sexo: "masculino" as const,
     wardId: "11111111-1111-1111-1111-111111111111",
@@ -76,6 +77,7 @@ describe("signUpMember (T001.1)", () => {
       expect.objectContaining({
         stake_id: STAKE_NATAL_ID,
         ward_id: validPayload.wardId,
+        cpf: validPayload.cpf,
         role: "member",
       })
     );

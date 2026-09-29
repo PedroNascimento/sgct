@@ -13,7 +13,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <a href="#conteudo-principal" className="sgct-skip-link">
+          Ir para o conteúdo principal
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

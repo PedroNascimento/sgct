@@ -92,6 +92,12 @@ Deno.serve(async (req) => {
     let guardianId: string | null = null;
     let homeStakeName: string | null = null;
     let homeWardName: string | null = null;
+    let cpf: string | null = null;
+
+    if (operation === "register_member" || operation === "register_minor" || operation === "register_guest") {
+      cpf = requiredString(payload, "cpf").replace(/\D/g, "");
+      if (!/^\d{11}$/.test(cpf)) throw new Error("CPF deve conter exatamente 11 dígitos.");
+    }
 
     if (operation === "register_member" || operation === "register_minor" || operation === "create_ward_admin") {
       wardId = requiredString(payload, "wardId");
@@ -171,7 +177,7 @@ Deno.serve(async (req) => {
         full_name: common.fullName,
         birth_date: common.birthDate,
         sexo: common.sexo,
-        cpf: null,
+        cpf,
         phone: null,
         role,
         home_stake_name: homeStakeName,

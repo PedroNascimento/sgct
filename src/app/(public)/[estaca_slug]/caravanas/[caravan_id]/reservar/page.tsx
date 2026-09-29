@@ -8,6 +8,9 @@ import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-pr
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
 import { getSeatOccupancy } from "@/use-cases/reservation/get-seat-occupancy";
 import { ReservationForm } from "@/components/reservation/reservation-form";
+import { PublicHeader } from "@/components/ui/public-header";
+import { ArrowLeftIcon, CalendarIcon, InfoIcon } from "@/components/ui/icons";
+import { formatDate } from "@/components/ui/format";
 
 interface Props {
   params: Promise<{
@@ -39,18 +42,21 @@ export default async function ReservarPage({ params }: Props) {
 
   if (caravan.status !== "open") {
     return (
-      <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl border border-gray-200 text-center shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Inscrições Encerradas</h2>
-          <p className="text-sm text-gray-600 mb-6">
-            Esta caravana não está mais aceitando novas reservas (status: {caravan.status}).
+      <main id="conteudo-principal" className="sgct-page py-12">
+        <div className="sgct-narrow">
+        <div className="sgct-panel p-6 text-center sm:p-10">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-warning-50 text-warning-700"><InfoIcon className="h-7 w-7" /></span>
+          <h2 className="mt-5 text-2xl font-bold text-[#212225]">Inscrições encerradas</h2>
+          <p className="mx-auto mb-6 mt-2 max-w-md text-base leading-relaxed text-[#53575b]">
+            Esta caravana não está aceitando novas reservas. Consulte o calendário para ver outras datas.
           </p>
           <Link
             href={`/${estaca_slug}/calendario`}
-            className="inline-flex px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="sgct-button-primary"
           >
-            ← Ver Outras Caravanas
+            Ver outras caravanas
           </Link>
+        </div>
         </div>
       </main>
     );
@@ -80,48 +86,55 @@ export default async function ReservarPage({ params }: Props) {
 
   if (!userProfile) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-gray-200 text-center shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Acesso Restrito</h2>
-          <p className="text-sm text-gray-600 mb-6">
+      <main id="conteudo-principal" className="sgct-page py-12">
+        <div className="sgct-narrow max-w-lg">
+        <div className="sgct-panel p-6 text-center sm:p-10">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700"><InfoIcon className="h-7 w-7" /></span>
+          <h2 className="mt-5 text-2xl font-bold text-[#212225]">Entre para reservar</h2>
+          <p className="mx-auto mb-6 mt-2 max-w-md text-base leading-relaxed text-[#53575b]">
             Você precisa estar autenticado como membro para reservar um assento.
           </p>
           <div className="flex flex-col gap-3">
             <Link
               href={`/${estaca_slug}/auth/login`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="sgct-button-primary"
             >
               Fazer Login
             </Link>
             <Link
               href={`/${estaca_slug}/cadastro`}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
+              className="sgct-button-secondary"
             >
               Criar Conta de Membro
             </Link>
           </div>
+        </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="sgct-page">
+      <PublicHeader stakeSlug={estaca_slug} stakeName={stake.name} />
+    <main id="conteudo-principal" className="py-8 sm:py-12">
+      <div className="sgct-container max-w-4xl">
         {/* Cabeçalho */}
         <div className="mb-8">
           <Link
             href={`/${estaca_slug}/calendario`}
-            className="inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-800 mb-3 transition"
+            className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700 hover:text-brand-900"
           >
-            ← Voltar ao Calendário
+            <ArrowLeftIcon className="h-5 w-5" />
+            Voltar para as caravanas
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Reserva de Assento — Caravana ao Templo ({caravan.departure_date})
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Selecione sua poltrona e preencha os dados de participação da viagem.
-          </p>
+          <p className="sgct-eyebrow">Reserva de assento</p>
+          <h1 className="sgct-title mt-3">Caravana de {formatDate(caravan.departure_date)}</h1>
+          <p className="sgct-subtitle">Escolha seu assento e confira os dados da viagem antes de registrar a reserva.</p>
+          <div className="sgct-alert-info mt-6 flex gap-3">
+            <CalendarIcon className="mt-0.5 h-5 w-5 shrink-0" />
+            <p><strong>Importante:</strong> o assento fica reservado, mas a viagem só é confirmada após o pagamento e a validação da Estaca.</p>
+          </div>
         </div>
 
         {/* Formulário Interativo */}
@@ -134,5 +147,6 @@ export default async function ReservarPage({ params }: Props) {
         />
       </div>
     </main>
+    </div>
   );
 }

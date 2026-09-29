@@ -28,6 +28,7 @@ describe("signUpGuest (US-001.6)", () => {
     email: "convidado@outraestaca.org",
     password: "senha-segura-123",
     fullName: "Convidado de Mossoró",
+    cpf: "12345678901",
     birthDate: "1990-08-10",
     sexo: "masculino" as const,
     homeStakeName: "Estaca Mossoró Brasil",
@@ -60,6 +61,7 @@ describe("signUpGuest (US-001.6)", () => {
         role: "guest",
         stake_id: HOST_STAKE_ID,
         ward_id: null,
+        cpf: guestPayload.cpf,
         home_stake_name: "Estaca Mossoró Brasil",
         home_ward_name: "Ala Abolição",
       })

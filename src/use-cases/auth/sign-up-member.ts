@@ -32,7 +32,7 @@ export async function signUpMember(
     throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos para cadastro.");
   }
 
-  const { email, password, fullName, birthDate, sexo, wardId } = parsed.data;
+  const { email, password, fullName, cpf, birthDate, sexo, wardId } = parsed.data;
 
   // Buscar a Ala para derivar a Estaca de forma segura
   const ward = await deps.wardRepository.findById(wardId);
@@ -65,7 +65,7 @@ export async function signUpMember(
     full_name: fullName,
     birth_date: birthDate,
     sexo,
-    cpf: null,
+    cpf,
     phone: null,
     role: "member",
     home_stake_name: null,

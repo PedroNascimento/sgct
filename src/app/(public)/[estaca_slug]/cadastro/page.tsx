@@ -4,6 +4,7 @@ import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stak
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
 import { CadastroClient } from "./cadastro-client";
 import type { Ward } from "@/domain/types/ward";
+import { PublicHeader } from "@/components/ui/public-header";
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -44,22 +45,22 @@ export default async function CadastroPage({ params }: Props) {
   })) as Ward[];
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto text-center mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          Criar sua Conta
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Inscrições para caravanas ao templo da{" "}
-          <span className="font-semibold text-gray-900">{stake.name}</span>.
-        </p>
-      </div>
+    <div className="sgct-page">
+      <PublicHeader stakeSlug={estaca_slug} stakeName={stake.name} />
+      <main id="conteudo-principal" className="py-8 sm:py-12">
+        <div className="sgct-narrow">
+          <p className="sgct-eyebrow">Cadastro de participante</p>
+          <h1 className="sgct-title mt-3">Crie sua conta</h1>
+          <p className="sgct-subtitle">
+            Informe seus dados para participar das caravanas da{" "}
+            <strong className="font-semibold text-[#212225]">{stake.name}</strong>.
+          </p>
+        </div>
 
-      <CadastroClient
-        stakeSlug={estaca_slug}
-        stakeName={stake.name}
-        wards={wards}
-      />
-    </main>
+        <div className="mt-8">
+          <CadastroClient stakeSlug={estaca_slug} stakeName={stake.name} wards={wards} />
+        </div>
+      </main>
+    </div>
   );
 }

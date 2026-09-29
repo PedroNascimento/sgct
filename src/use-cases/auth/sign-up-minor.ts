@@ -49,7 +49,7 @@ export async function signUpMinor(
     throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos para cadastro de menor.");
   }
 
-  const { email, password, fullName, birthDate, sexo, wardId, guardianId } = parsed.data;
+  const { email, password, fullName, cpf, birthDate, sexo, wardId, guardianId } = parsed.data;
 
   // Validar faixa etária (12 a 17 anos)
   const age = calculateAge(birthDate);
@@ -99,7 +99,7 @@ export async function signUpMinor(
     full_name: fullName,
     birth_date: birthDate,
     sexo,
-    cpf: null,
+    cpf,
     phone: null,
     role: "member",
     home_stake_name: null,

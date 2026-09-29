@@ -12,33 +12,46 @@ export default async function EstacasPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Estacas da Plataforma</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="sgct-eyebrow">Administração da plataforma</p>
+        <h1 className="sgct-title mt-3">Estacas</h1>
+        <p className="sgct-subtitle">
           Cadastre novas Estacas regionais para habilitar o isolamento multi-tenant.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="lg:col-span-2">
           <StakeForm />
         </div>
 
-        <div className="md:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900">
+        <div className="lg:col-span-3">
+          <section className="sgct-card overflow-hidden">
+            <div className="border-b border-[#e0e2e2] px-5 py-4 sm:px-6">
+              <h2 className="text-lg font-bold text-[#212225]">
                 Estacas Cadastradas ({stakes.length})
-              </h3>
+              </h2>
             </div>
 
             {stakes.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-500">
+              <div className="p-8 text-center text-base text-[#53575b]">
                 Nenhuma Estaca cadastrada ainda. Utilize o formulário ao lado para cadastrar a primeira.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50 text-gray-700">
+              <>
+              <div className="divide-y divide-[#e0e2e2] md:hidden">
+                {stakes.map((stake) => (
+                  <article key={stake.id} className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><h3 className="font-bold text-[#212225]">{stake.name}</h3><p className="mt-1 font-mono text-sm text-[#53575b]">/{stake.slug}</p></div>
+                      <span className={`sgct-chip ${stake.is_active ? "border-success-200 bg-success-50 text-success-700" : "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"}`}>{stake.is_active ? "Ativa" : "Inativa"}</span>
+                    </div>
+                    <a href={`/${stake.slug}`} target="_blank" rel="noreferrer" className="sgct-button-secondary mt-4 w-full">Abrir página pública</a>
+                  </article>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
+                  <thead className="bg-[#f7f8f8] text-[#3a3d40]">
                     <tr>
                       <th className="px-6 py-3 text-left font-medium">Nome</th>
                       <th className="px-6 py-3 text-left font-medium">Slug</th>
@@ -46,29 +59,29 @@ export default async function EstacasPage() {
                       <th className="px-6 py-3 text-left font-medium">Link Público</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-[#e0e2e2] bg-white">
                     {stakes.map((stake) => (
-                      <tr key={stake.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">
+                      <tr key={stake.id} className="hover:bg-brand-50/40">
+                        <td className="px-6 py-4 font-semibold text-[#212225]">
                           {stake.name}
                         </td>
-                        <td className="px-6 py-4 text-gray-600 font-mono text-xs">
+                        <td className="px-6 py-4 font-mono text-xs text-[#53575b]">
                           {stake.slug}
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            className={`sgct-chip ${
                               stake.is_active
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
+                                ? "border-success-200 bg-success-50 text-success-700"
+                                : "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"
                             }`}
                           >
                             {stake.is_active ? "Ativa" : "Inativa"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-blue-600 hover:underline">
+                        <td className="px-6 py-4">
                           <a href={`/${stake.slug}`} target="_blank" rel="noreferrer">
-                            /{stake.slug}
+                            <span className="sgct-link">Abrir página</span>
                           </a>
                         </td>
                       </tr>
@@ -76,8 +89,9 @@ export default async function EstacasPage() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>

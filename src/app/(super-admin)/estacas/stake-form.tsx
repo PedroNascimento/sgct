@@ -14,23 +14,23 @@ export function StakeForm() {
   );
 
   return (
-    <form action={formAction} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm space-y-4">
-      <h3 className="text-base font-semibold text-gray-900">Cadastrar Nova Estaca</h3>
+    <form action={formAction} className="sgct-card space-y-5 p-5 sm:p-6">
+      <div><h2 className="text-xl font-bold text-[#212225]">Cadastrar Estaca</h2><p className="mt-2 text-sm leading-relaxed text-[#53575b]">Crie o espaço isolado de uma nova Estaca na plataforma.</p></div>
 
       {state?.error && (
-        <div className="p-3 text-sm text-red-700 bg-red-50 rounded-md border border-red-200">
+        <div role="alert" className="sgct-alert-danger">
           {state.error}
         </div>
       )}
 
       {state?.success && state?.message && (
-        <div className="p-3 text-sm text-green-700 bg-green-50 rounded-md border border-green-200">
+        <div role="status" className="sgct-alert-success">
           {state.message}
         </div>
       )}
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="name" className="sgct-label">
           Nome da Estaca
         </label>
         <input
@@ -39,16 +39,17 @@ export function StakeForm() {
           name="name"
           required
           placeholder="Ex: Estaca Natal Brasil"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoComplete="organization"
+          className="sgct-input"
         />
       </div>
 
       <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="slug" className="sgct-label">
           Slug da URL (kebab-case)
         </label>
         <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-2">/</span>
+          <span className="mr-2 text-base text-[#53575b]">/</span>
           <input
             type="text"
             id="slug"
@@ -57,10 +58,10 @@ export function StakeForm() {
             pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
             title="Apenas letras minúsculas, números e hífens. Ex: natal ou recife-sul"
             placeholder="ex: natal"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="sgct-input"
           />
         </div>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="mt-1.5 text-sm text-[#53575b]">
           Identificador único usado nas rotas e isolamento de tenant.
         </p>
       </div>
@@ -68,7 +69,7 @@ export function StakeForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition disabled:opacity-50"
+        className="sgct-button-primary w-full"
       >
         {isPending ? "Cadastrando..." : "Cadastrar Estaca"}
       </button>

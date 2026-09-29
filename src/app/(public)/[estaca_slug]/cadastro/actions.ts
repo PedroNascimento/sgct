@@ -6,6 +6,11 @@
  */
 
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
+import {
+  signUpGuestSchema,
+  signUpMemberSchema,
+  signUpMinorSchema,
+} from "@/domain/schemas/auth";
 
 export type ActionState = {
   success: boolean;
@@ -19,16 +24,20 @@ export async function registerMemberAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
-    const birthDate = formData.get("birthDate") as string;
-    const sexo = formData.get("sexo") as "masculino" | "feminino";
-    const wardId = formData.get("wardId") as string;
+    const parsed = signUpMemberSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+      fullName: formData.get("fullName"),
+      cpf: String(formData.get("cpf") ?? "").replace(/\D/g, ""),
+      birthDate: formData.get("birthDate"),
+      sexo: formData.get("sexo"),
+      wardId: formData.get("wardId"),
+    });
+    if (!parsed.success) throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.functions.invoke("provision-user", {
-      body: { operation: "register_member", stakeSlug, email, password, fullName, birthDate, sexo, wardId },
+      body: { operation: "register_member", stakeSlug, ...parsed.data },
     });
     if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
 
@@ -50,21 +59,25 @@ export async function registerMinorAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
-    const birthDate = formData.get("birthDate") as string;
-    const sexo = formData.get("sexo") as "masculino" | "feminino";
-    const wardId = formData.get("wardId") as string;
     const guardianId = (formData.get("guardianId") as string) || undefined;
     const consent = formData.get("parentalConsent") === "on";
+    const parsed = signUpMinorSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+      fullName: formData.get("fullName"),
+      cpf: String(formData.get("cpf") ?? "").replace(/\D/g, ""),
+      birthDate: formData.get("birthDate"),
+      sexo: formData.get("sexo"),
+      wardId: formData.get("wardId"),
+      guardianId,
+      parentalConsent: consent,
+    });
+    if (!parsed.success) throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.functions.invoke("provision-user", {
       body: {
-        operation: "register_minor", stakeSlug, email, password, fullName,
-        birthDate, sexo, wardId, guardianId: guardianId || undefined,
-        parentalConsent: consent,
+        operation: "register_minor", stakeSlug, ...parsed.data,
       },
     });
     if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
@@ -87,19 +100,22 @@ export async function registerGuestAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
-    const birthDate = formData.get("birthDate") as string;
-    const sexo = formData.get("sexo") as "masculino" | "feminino";
-    const homeStakeName = formData.get("homeStakeName") as string;
-    const homeWardName = formData.get("homeWardName") as string;
+    const parsed = signUpGuestSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+      fullName: formData.get("fullName"),
+      cpf: String(formData.get("cpf") ?? "").replace(/\D/g, ""),
+      birthDate: formData.get("birthDate"),
+      sexo: formData.get("sexo"),
+      homeStakeName: formData.get("homeStakeName"),
+      homeWardName: formData.get("homeWardName"),
+    });
+    if (!parsed.success) throw new Error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.functions.invoke("provision-user", {
       body: {
-        operation: "register_guest", stakeSlug, email, password, fullName,
-        birthDate, sexo, homeStakeName, homeWardName,
+        operation: "register_guest", stakeSlug, ...parsed.data,
       },
     });
     if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");

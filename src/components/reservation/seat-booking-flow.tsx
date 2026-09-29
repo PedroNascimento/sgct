@@ -54,11 +54,11 @@ export function SeatBookingFlow({
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-6">
+    <div className="mx-auto w-full max-w-xl space-y-6">
       {errorMessage && (
         <div
           role="alert"
-          className="p-4 bg-red-50 border-l-4 border-red-500 rounded-md text-sm text-red-700 shadow-sm"
+          className="sgct-alert-danger"
         >
           {errorMessage}
         </div>
@@ -67,7 +67,7 @@ export function SeatBookingFlow({
       {successMessage && (
         <div
           role="status"
-          className="p-4 bg-green-50 border-l-4 border-green-500 rounded-md text-sm text-green-700 shadow-sm"
+          className="sgct-alert-success"
         >
           {successMessage}
         </div>
@@ -80,17 +80,17 @@ export function SeatBookingFlow({
         disabled={isSubmitting}
       />
 
-      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="sgct-card flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
         <div data-testid="selected-seat-info">
           {selectedSeat ? (
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-base font-semibold text-[#212225]">
               Assento Selecionado:{" "}
-              <span className="text-blue-600 font-bold text-base">
+              <span className="font-bold text-brand-700">
                 {selectedSeat}
               </span>
             </p>
           ) : (
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-[#53575b]">
               Toque em uma poltrona livre no mapa para selecionar seu assento.
             </p>
           )}
@@ -100,10 +100,10 @@ export function SeatBookingFlow({
           type="button"
           disabled={!selectedSeat || isSubmitting}
           onClick={handleConfirmReservation}
-          className={`w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-medium transition shadow-sm ${
+          className={`sgct-button w-full sm:w-auto ${
             !selectedSeat || isSubmitting
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95"
+              ? "bg-[#e0e2e2] text-[#676b6e]"
+              : "bg-brand-600 text-white hover:bg-brand-700"
           }`}
         >
           {isSubmitting ? "Confirmando..." : "Confirmar Reserva"}

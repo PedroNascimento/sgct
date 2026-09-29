@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { BusIcon } from "@/components/ui/icons";
 
 export interface SeatMapProps {
   totalSeats?: number;
@@ -56,12 +57,12 @@ export function SeatMap({
         aria-pressed={isSelected}
         disabled={isOccupied || disabled}
         onClick={() => !isOccupied && !disabled && onSelectSeat(seatNum)}
-        className={`w-9 h-9 sm:w-10 sm:h-10 text-xs sm:text-sm font-semibold rounded-lg flex items-center justify-center transition-all ${
+        className={`flex h-11 w-11 items-center justify-center rounded-md text-sm font-bold transition sm:h-12 sm:w-12 ${
           isOccupied
-            ? "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed line-through shadow-inner"
+            ? "cursor-not-allowed border border-[#d0d3d3] bg-[#e0e2e2] text-[#676b6e] line-through"
             : isSelected
-            ? "bg-blue-600 text-white border-2 border-blue-700 shadow-md ring-2 ring-blue-300 scale-105"
-            : "bg-white text-gray-800 border border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer shadow-sm active:scale-95"
+            ? "border-2 border-brand-900 bg-brand-600 text-white shadow-sm ring-2 ring-brand-200"
+            : "cursor-pointer border border-[#9da1a1] bg-white text-[#212225] shadow-sm hover:border-brand-600 hover:bg-brand-50 active:bg-brand-100"
         }`}
       >
         {seatNum}
@@ -70,63 +71,63 @@ export function SeatMap({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-slate-50 border-2 border-slate-300 rounded-3xl p-4 sm:p-6 shadow-md select-none">
+    <div className="mx-auto w-full max-w-md select-none rounded-2xl border-2 border-[#bdc0c0] bg-[#f7f8f8] p-3 shadow-card min-[380px]:p-5 sm:p-6">
       {/* Frente do Ônibus / Para-brisa */}
-      <div className="w-full bg-slate-800 text-slate-200 rounded-2xl py-2 px-4 mb-5 flex items-center justify-between shadow-sm">
-        <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider">
-          <span className="text-base">🚌</span>
+      <div className="mb-5 flex min-h-12 w-full items-center justify-between rounded-xl bg-brand-900 px-4 py-2 text-white shadow-sm">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          <BusIcon className="h-5 w-5" />
           <span>Motorista</span>
         </div>
-        <div className="text-[10px] uppercase font-semibold text-slate-400">
-          Frente / Embarque 🚪
+        <div className="text-xs font-semibold text-brand-100">
+          Frente do ônibus
         </div>
       </div>
 
       {/* Legenda Informativa */}
-      <div className="flex items-center justify-around bg-white p-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 mb-5 shadow-sm">
-        <div className="flex items-center space-x-1.5">
-          <span className="w-4 h-4 rounded bg-white border border-gray-300 inline-block shadow-sm" />
-          <span>Livre</span>
+      <div className="mb-5 grid grid-cols-3 gap-2 rounded-xl border border-[#e0e2e2] bg-white p-3 text-center text-xs font-semibold text-[#53575b] shadow-sm">
+        <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-center">
+          <span className="inline-block h-4 w-4 rounded border border-[#9da1a1] bg-white" />
+          <span>Disponível</span>
         </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-4 h-4 rounded bg-blue-600 border border-blue-700 inline-block shadow-sm" />
-          <span className="font-semibold text-blue-800">Sua Escolha</span>
+        <div className="flex flex-col items-center gap-1.5 text-brand-700 sm:flex-row sm:justify-center">
+          <span className="inline-block h-4 w-4 rounded border border-brand-900 bg-brand-600" />
+          <span>Sua escolha</span>
         </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-4 h-4 rounded bg-gray-200 border border-gray-300 inline-block shadow-inner line-through" />
+        <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-center">
+          <span className="inline-block h-4 w-4 rounded border border-[#d0d3d3] bg-[#e0e2e2] line-through" />
           <span>Ocupado</span>
         </div>
       </div>
 
       {/* Indicador do Corredor Central */}
-      <div className="text-center text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+      <div className="mb-2 text-center text-xs font-bold uppercase tracking-widest text-[#676b6e]">
         Corredor
       </div>
 
       {/* Mapa de Fileiras */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {rows.map((row) => (
           <div key={row.rowNumber} className="flex items-center justify-between">
             {/* Par de Poltronas Esquerda */}
-            <div className="flex items-center space-x-1 sm:space-x-1.5">
+            <div className="flex items-center gap-1 min-[380px]:gap-1.5">
               {row.left.map((seatNum) => renderSeat(seatNum))}
             </div>
 
             {/* Espaço do Corredor */}
-            <div className="w-6 sm:w-8 flex justify-center text-[10px] text-slate-300 font-mono">
-              •
+            <div className="flex w-3 justify-center text-[10px] text-[#bdc0c0] min-[380px]:w-6 sm:w-8">
+              <span aria-hidden="true">·</span>
             </div>
 
             {/* Par de Poltronas Direita ou Banheiro */}
-            <div className="flex items-center space-x-1 sm:space-x-1.5">
+            <div className="flex items-center gap-1 min-[380px]:gap-1.5">
               {row.right.map((item, idx) => {
                 if (item === "wc") {
                   return (
                     <div
                       key="wc"
-                      className="w-19 sm:w-21 h-9 sm:h-10 px-2 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg flex items-center justify-center text-[11px] font-bold shadow-sm"
+                      className="flex h-11 w-[5.75rem] items-center justify-center rounded-md border border-warning-200 bg-warning-50 px-2 text-center text-[11px] font-bold text-warning-700 sm:h-12 sm:w-[6.25rem]"
                     >
-                      WC / Banheiro 🚻
+                      Banheiro
                     </div>
                   );
                 }
@@ -138,7 +139,7 @@ export function SeatMap({
       </div>
 
       {/* Fundo do Ônibus */}
-      <div className="w-full text-center mt-5 pt-3 border-t border-slate-200 text-xs text-slate-400 font-medium">
+      <div className="mt-5 w-full border-t border-[#e0e2e2] pt-3 text-center text-xs font-semibold text-[#676b6e]">
         Fundo do Veículo
       </div>
     </div>

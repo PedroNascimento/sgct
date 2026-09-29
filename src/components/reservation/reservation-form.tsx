@@ -14,6 +14,8 @@ import type {
   ParticipantType,
   FundingSource,
 } from "@/domain/types/reservation";
+import { CheckIcon, InfoIcon } from "@/components/ui/icons";
+import { formatCurrency } from "@/components/ui/format";
 
 interface Props {
   stakeSlug: string;
@@ -67,44 +69,53 @@ export function ReservationForm({
 
   if (isProfileIncomplete) {
     return (
-      <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-xl shadow-sm text-amber-900">
-        <h3 className="text-lg font-bold mb-2">Cadastro Incompleto</h3>
-        <p className="text-sm mb-4">
+      <div className="sgct-alert-warning p-5 sm:p-6">
+        <div className="flex gap-4">
+          <InfoIcon className="mt-0.5 h-6 w-6 shrink-0" />
+          <div>
+        <h3 className="text-lg font-bold">Complete seu cadastro</h3>
+        <p className="mb-5 mt-2 text-base">
           Para garantir a segurança e o seguro dos passageiros, é obrigatório possuir
           o CPF preenchido em seu cadastro antes de realizar uma reserva.
         </p>
         <Link
           href={`/${stakeSlug}/conta`}
-          className="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm rounded-lg transition"
+          className="sgct-button inline-flex bg-warning-700 text-white hover:brightness-90"
         >
-          Completar Meu Cadastro →
+          Completar meu cadastro
         </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (successReservationId) {
     return (
-      <div className="bg-green-50 border border-green-200 p-8 rounded-2xl shadow-sm text-center">
-        <div className="text-4xl mb-3">🎉</div>
-        <h2 className="text-2xl font-bold text-green-900 mb-2">
-          Reserva Registrada com Sucesso!
+      <div role="status" className="sgct-panel p-6 text-center sm:p-10">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-50 text-success-700">
+          <CheckIcon className="h-9 w-9" />
+        </span>
+        <h2 className="mt-5 text-2xl font-bold text-[#212225]">
+          Sua reserva foi registrada
         </h2>
-        <p className="text-sm text-green-800 mb-6 max-w-md mx-auto">
-          Sua intenção de reserva para a poltrona{" "}
-          <span className="font-bold text-base">{selectedSeat}</span> foi registrada.
+        <p className="mx-auto mb-6 mt-3 max-w-md text-base leading-relaxed text-[#53575b]">
+          O assento <strong className="text-[#212225]">{selectedSeat}</strong> foi reservado para você.
           A confirmação final segue o fluxo de pagamento e validação semanal.
         </p>
+        <div className="sgct-alert-info mx-auto mb-6 max-w-lg text-left">
+          Próximo passo: faça o pagamento pelos canais oficiais da sua Ala e aguarde a validação da Estaca.
+        </div>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link
             href={`/${stakeSlug}/calendario`}
-            className="px-5 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg shadow-sm transition"
+            className="sgct-button-primary"
           >
             Ver Calendário
           </Link>
           <Link
             href={`/${stakeSlug}`}
-            className="px-5 py-2.5 bg-white text-green-900 border border-green-300 text-sm font-medium rounded-lg hover:bg-green-50 transition"
+            className="sgct-button-secondary"
           >
             Início
           </Link>
@@ -179,44 +190,42 @@ export function ReservationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8" aria-busy={isSubmitting}>
       {errorMessage && (
         <div
           role="alert"
-          className="p-4 bg-red-50 border-l-4 border-red-500 rounded-xl text-sm text-red-700 shadow-sm"
+          className="sgct-alert-danger"
         >
           {errorMessage}
         </div>
       )}
 
       {/* 1. Dados Pessoais Cadastrados (US-003.5 - Read-Only) */}
-      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Seus Dados de Cadastro (Preenchimento Automático)
-          </h3>
-          <span className="text-[11px] text-slate-500">
-            Deseja alterar? Edite em Minha Conta
-          </span>
+      <div className="rounded-xl border border-[#e0e2e2] bg-white p-5 shadow-card">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg font-bold text-[#212225]">
+            Seus dados
+          </h2>
+          <Link href={`/${stakeSlug}/conta`} className="text-sm font-semibold text-brand-700 underline">Editar em Minha Conta</Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <span className="text-slate-500 block">Nome Completo:</span>
-            <span className="font-semibold text-slate-800">{userProfile.full_name}</span>
+            <span className="block text-[#53575b]">Nome completo</span>
+            <span className="font-semibold text-[#212225]">{userProfile.full_name}</span>
           </div>
           <div>
-            <span className="text-slate-500 block">CPF:</span>
-            <span className="font-semibold text-slate-800">{userProfile.cpf}</span>
+            <span className="block text-[#53575b]">CPF</span>
+            <span className="font-semibold text-[#212225]">{userProfile.cpf}</span>
           </div>
           <div>
-            <span className="text-slate-500 block">Telefone:</span>
-            <span className="font-semibold text-slate-800">
+            <span className="block text-[#53575b]">Telefone</span>
+            <span className="font-semibold text-[#212225]">
               {userProfile.phone || "Não informado"}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 block">Sexo:</span>
-            <span className="font-semibold text-slate-800 capitalize">
+            <span className="block text-[#53575b]">Sexo</span>
+            <span className="font-semibold capitalize text-[#212225]">
               {userProfile.sexo || "Não informado"}
             </span>
           </div>
@@ -226,12 +235,10 @@ export function ReservationForm({
       {/* 2. Seleção de Assento no Ônibus (US-003.1 / T003.10) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-            1. Escolha seu Assento no Ônibus
-          </h3>
+          <h2 className="text-xl font-bold text-[#212225]">1. Escolha seu assento</h2>
           {selectedSeat && (
-            <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold">
-              Assento #{selectedSeat} Selecionado
+            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-700" aria-live="polite">
+              Assento {selectedSeat} selecionado
             </span>
           )}
         </div>
@@ -249,21 +256,20 @@ export function ReservationForm({
       </div>
 
       {/* 3. Informações da Viagem (US-003.6) */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-100 pb-3">
-          2. Detalhes Desta Viagem
-        </h3>
+      <div className="sgct-card space-y-6 p-5 sm:p-6">
+        <h2 className="border-b border-[#e0e2e2] pb-4 text-xl font-bold text-[#212225]">2. Confira os detalhes da viagem</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Ponto de Embarque */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">
+            <label htmlFor="boardingPoint" className="sgct-label">
               Ponto de Embarque
             </label>
             <select
               value={boardingPointId}
+              id="boardingPoint"
               onChange={(e) => setBoardingPointId(e.target.value)}
-              className="w-full text-sm border-gray-300 rounded-lg p-2.5 bg-gray-50 focus:bg-white border focus:ring-2 focus:ring-blue-500"
+              className="sgct-input"
             >
               {boardingPoints.map((bp) => (
                 <option key={bp.id} value={bp.id}>
@@ -275,20 +281,21 @@ export function ReservationForm({
 
           {/* Categoria (D12: Autodeclarada) */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">
+            <label htmlFor="category" className="sgct-label">
               Categoria de Passageiro
             </label>
             <select
               value={category}
+              id="category"
               onChange={(e) => setCategory(e.target.value as ReservationCategory)}
-              className="w-full text-sm border-gray-300 rounded-lg p-2.5 bg-gray-50 focus:bg-white border focus:ring-2 focus:ring-blue-500 font-medium"
+              className="sgct-input font-semibold"
             >
               <option value="standard">Padrão — R$ {caravan.price_standard.toFixed(2)}</option>
               <option value="officiant">
                 Oficiante do Templo — R$ {caravan.price_officiant.toFixed(2)}
               </option>
             </select>
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="mt-1.5 text-sm leading-snug text-[#53575b]">
               {category === "officiant"
                 ? "Categoria autodeclarada para oficiantes com designação ativa no Templo."
                 : "Tarifa regular para membros e participantes."}
@@ -297,13 +304,14 @@ export function ReservationForm({
 
           {/* Tipo de Participante (D29: Metadado de Logística) */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">
+            <label htmlFor="participantType" className="sgct-label">
               Tipo de Participação
             </label>
             <select
               value={participantType}
+              id="participantType"
               onChange={(e) => setParticipantType(e.target.value as ParticipantType)}
-              className="w-full text-sm border-gray-300 rounded-lg p-2.5 bg-gray-50 focus:bg-white border focus:ring-2 focus:ring-blue-500"
+              className="sgct-input"
             >
               <option value="adulto">Adulto</option>
               <option value="jovem">Jovem</option>
@@ -317,13 +325,14 @@ export function ReservationForm({
 
           {/* Fonte de Custeio (D30) */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">
+            <label htmlFor="fundingSource" className="sgct-label">
               Forma de Custeio
             </label>
             <select
               value={fundingSource}
+              id="fundingSource"
               onChange={(e) => setFundingSource(e.target.value as FundingSource)}
-              className="w-full text-sm border-gray-300 rounded-lg p-2.5 bg-gray-50 focus:bg-white border focus:ring-2 focus:ring-blue-500"
+              className="sgct-input"
             >
               <option value="membro">Pagamento Próprio (Membro)</option>
               <option value="auxilio_area_investidura">Auxílio Área (Primeira Investidura)</option>
@@ -334,7 +343,7 @@ export function ReservationForm({
               </option>
             </select>
             {fundingSource !== "membro" && (
-              <p className="text-[11px] text-amber-700 mt-1 font-medium">
+              <p className="mt-2 text-sm font-semibold leading-snug text-warning-700">
                 Reserva sujeita à validação da fonte de auxílio junto à liderança da Ala/Estaca.
               </p>
             )}
@@ -343,25 +352,25 @@ export function ReservationForm({
 
         {/* Assento Preferencial */}
         <div className="pt-2">
-          <label className="flex items-center space-x-2 text-xs font-semibold text-gray-800 cursor-pointer">
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-[#d0d3d3] p-3 text-sm font-semibold text-[#212225]">
             <input
               type="checkbox"
               checked={isPreferentialSeating}
               onChange={(e) => setIsPreferentialSeating(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="h-5 w-5 shrink-0 rounded border-[#bdc0c0] text-brand-600 focus:ring-brand-500"
             />
             <span>Necessito de assento preferencial ou com acessibilidade especial</span>
           </label>
         </div>
 
         {/* Grupo Familiar */}
-        <div className="pt-2 border-t border-gray-100">
-          <label className="flex items-center space-x-2 text-xs font-semibold text-gray-800 cursor-pointer">
+        <div className="border-t border-[#e0e2e2] pt-3">
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm font-semibold text-[#212225]">
             <input
               type="checkbox"
               checked={isFamilyGroup}
               onChange={(e) => setIsFamilyGroup(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="h-5 w-5 shrink-0 rounded border-[#bdc0c0] text-brand-600 focus:ring-brand-500"
             />
             <span>Estou viajando com grupo familiar (para alojamento conjunto)</span>
           </label>
@@ -372,9 +381,9 @@ export function ReservationForm({
                 value={familyGroupMemberNames}
                 onChange={(e) => setFamilyGroupMemberNames(e.target.value)}
                 placeholder="Ex: Esposa Maria e filhos João e Clara"
-                className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                className="sgct-input"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">
+              <span className="mt-1.5 block text-sm text-[#53575b]">
                 Sem garantia de quarto exclusivo — ajuda a liderança na organização do alojamento.
               </span>
             </div>
@@ -382,13 +391,13 @@ export function ReservationForm({
         </div>
 
         {/* Acompanhante em Investidura */}
-        <div className="pt-2 border-t border-gray-100">
-          <label className="flex items-center space-x-2 text-xs font-semibold text-gray-800 cursor-pointer">
+        <div className="border-t border-[#e0e2e2] pt-3">
+          <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm font-semibold text-[#212225]">
             <input
               type="checkbox"
               checked={hasCompanionForEndowment}
               onChange={(e) => setHasCompanionForEndowment(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="h-5 w-5 shrink-0 rounded border-[#bdc0c0] text-brand-600 focus:ring-brand-500"
             />
             <span>Estou acompanhando alguém em sua própria investidura</span>
           </label>
@@ -399,7 +408,7 @@ export function ReservationForm({
                 value={companionForEndowmentName}
                 onChange={(e) => setCompanionForEndowmentName(e.target.value)}
                 placeholder="Nome da pessoa que fará a investidura"
-                className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                className="sgct-input"
               />
             </div>
           )}
@@ -407,13 +416,13 @@ export function ReservationForm({
       </div>
 
       {/* 4. Manifesto de Criança de Colo (US-003.3 / D06 - Gratuito, sem assento) */}
-      <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 shadow-sm space-y-4">
-        <label className="flex items-center space-x-2 text-xs font-bold text-emerald-900 cursor-pointer">
+      <div className="space-y-4 rounded-xl border border-success-200 bg-success-50 p-5 sm:p-6">
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm font-bold text-success-700">
           <input
             type="checkbox"
             checked={hasLapChild}
             onChange={(e) => setHasLapChild(e.target.checked)}
-            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300"
+            className="h-5 w-5 shrink-0 rounded border-success-200 text-success-700 focus:ring-success-700"
           />
           <span>Vou levar criança de colo (0 a 5 anos — sem assento individual, gratuito)</span>
         </label>
@@ -421,7 +430,7 @@ export function ReservationForm({
         {hasLapChild && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div>
-              <label className="block text-[11px] font-bold text-emerald-800 uppercase mb-1">
+              <label className="sgct-label">
                 Nome Completo da Criança
               </label>
               <input
@@ -429,24 +438,24 @@ export function ReservationForm({
                 value={lapChildName}
                 onChange={(e) => setLapChildName(e.target.value)}
                 placeholder="Nome da criança"
-                className="w-full text-xs border border-emerald-300 rounded-lg p-2 bg-white"
+                className="sgct-input"
                 required={hasLapChild}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-emerald-800 uppercase mb-1">
+              <label className="sgct-label">
                 Data de Nascimento
               </label>
               <input
                 type="date"
                 value={lapChildBirthDate}
                 onChange={(e) => setLapChildBirthDate(e.target.value)}
-                className="w-full text-xs border border-emerald-300 rounded-lg p-2 bg-white"
+                className="sgct-input"
                 required={hasLapChild}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-emerald-800 uppercase mb-1">
+              <label className="sgct-label">
                 Filiação / Responsáveis
               </label>
               <input
@@ -454,7 +463,7 @@ export function ReservationForm({
                 value={lapChildFiliation}
                 onChange={(e) => setLapChildFiliation(e.target.value)}
                 placeholder="Ex: Pai e Mãe"
-                className="w-full text-xs border border-emerald-300 rounded-lg p-2 bg-white"
+                className="sgct-input"
                 required={hasLapChild}
               />
             </div>
@@ -463,18 +472,18 @@ export function ReservationForm({
       </div>
 
       {/* Resumo Financeiro e Botão de Confirmação */}
-      <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-col sm:flex-row items-center justify-between gap-5">
-        <div>
-          <span className="text-xs text-slate-400 block uppercase tracking-wider">
-            Total a Confirmar
+      <div className="sticky bottom-0 z-20 -mx-4 flex flex-col items-stretch justify-between gap-5 border-t border-brand-700 bg-brand-900 p-5 text-white shadow-elevated sm:static sm:mx-0 sm:flex-row sm:items-center sm:rounded-2xl sm:border">
+        <div aria-live="polite">
+          <span className="block text-sm font-semibold text-brand-100">
+            Contribuição da viagem
           </span>
-          <div className="text-2xl font-extrabold text-white">
-            R$ {currentPrice.toFixed(2)}{" "}
-            <span className="text-xs font-normal text-slate-300">
+          <div className="text-2xl font-bold text-white">
+            {formatCurrency(currentPrice)}{" "}
+            <span className="text-sm font-normal text-brand-100">
               ({category === "officiant" ? "Oficiante" : "Padrão"})
             </span>
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="mt-1 block text-sm text-brand-100">
             {selectedSeat
               ? `Poltrona ${selectedSeat} selecionada no ônibus.`
               : "Nenhum assento selecionado ainda."}
@@ -484,10 +493,10 @@ export function ReservationForm({
         <button
           type="submit"
           disabled={!selectedSeat || isSubmitting}
-          className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm shadow-md transition ${
+          className={`sgct-button w-full sm:w-auto ${
             !selectedSeat || isSubmitting
-              ? "bg-slate-700 text-slate-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-500 text-white active:scale-95 cursor-pointer"
+              ? "bg-white/10 text-brand-200"
+              : "cursor-pointer bg-white text-brand-900 hover:bg-brand-50"
           }`}
         >
           {isSubmitting ? "Gravando Reserva..." : "Confirmar Minha Reserva"}

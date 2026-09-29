@@ -41,6 +41,7 @@ describe("signUpMinor (T001.3)", () => {
     email: "jovem@natal.org",
     password: "senha-segura-123",
     fullName: "Jovem Santos",
+    cpf: "12345678901",
     birthDate: minorBirthDate,
     sexo: "feminino" as const,
     wardId: WARD_ID,
@@ -78,6 +79,7 @@ describe("signUpMinor (T001.3)", () => {
     expect(mockProfileRepository.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         guardian_id: null,
+        cpf: validMinorPayload.cpf,
         role: "member",
       })
     );

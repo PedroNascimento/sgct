@@ -30,14 +30,14 @@ export default async function AdminCalendarioPage({ params }: Props) {
   const caravans = await caravanRepo.findByStakeId(stake.id);
 
   return (
-    <main className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-          Gestão de Caravanas — {stake.name}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
+    <main id="conteudo-principal" className="sgct-container py-8 sm:py-10">
+      <div className="mb-8">
+        <p className="sgct-eyebrow">Painel da Estaca</p>
+        <h1 className="sgct-title mt-3">Gestão de caravanas</h1>
+        <p className="sgct-subtitle">
           Cadastre novas viagens ao Templo de Recife, configure pontos de embarque e monitore os prazos.
         </p>
+        <p className="mt-3 text-sm font-semibold text-brand-700">{stake.name}</p>
       </div>
 
       <CalendarioAdminClient

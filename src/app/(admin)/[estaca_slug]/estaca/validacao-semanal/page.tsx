@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { validateWeeklyTransfersAction } from "@/app/(admin)/[estaca_slug]/actions";
+import { AlertIcon, CheckIcon } from "@/components/ui/icons";
+import { formatCurrency, formatDate } from "@/components/ui/format";
 
 interface Props {
   params: Promise<{
@@ -61,46 +62,39 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
   );
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <main id="conteudo-principal" className="sgct-container py-8 sm:py-10">
+      <div className="mx-auto max-w-5xl space-y-7">
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
-          <div>
-            <Link
-              href={`/${estaca_slug}`}
-              className="text-xs text-blue-600 hover:text-blue-800 font-semibold mb-2 inline-block"
-            >
-              ← Voltar ao Início
-            </Link>
-            <h1 className="text-2xl font-extrabold text-slate-900">
-              Validação Semanal de Transferências — Estaca
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
+        <div>
+            <p className="sgct-eyebrow">Ciclo financeiro</p>
+            <h1 className="sgct-title mt-3">Validação semanal</h1>
+            <p className="sgct-subtitle">
               Valide as transferências enviadas pelas Alas toda terça-feira para confirmar as vagas
               e reordenar o ranking oficial dos 50 assentos.
             </p>
-          </div>
         </div>
 
         {/* Lista de Caravanas */}
         <div className="space-y-6">
           {caravansWithCounts.length === 0 ? (
-            <div className="bg-white p-10 text-center rounded-2xl border border-slate-200 text-slate-500 text-sm shadow-sm">
-              Nenhuma caravana com inscrições abertas no momento.
+            <div className="sgct-panel p-10 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-success-50 text-success-700"><CheckIcon className="h-7 w-7" /></span>
+              <h2 className="mt-4 text-lg font-bold text-[#212225]">Nenhuma validação pendente</h2>
+              <p className="mt-2 text-base text-[#53575b]">Não há caravanas com inscrições abertas no momento.</p>
             </div>
           ) : (
             caravansWithCounts.map((c) => (
               <div
                 key={c.id}
-                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5"
+                className="sgct-card space-y-5 p-5 sm:p-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Caravana ao Templo — {new Date(c.departure_date).toLocaleDateString("pt-BR")}
+                    <h2 className="text-xl font-bold text-[#212225]">
+                      Caravana de {formatDate(c.departure_date)}
                     </h2>
-                    <p className="text-xs text-slate-500">
-                      Limite: {c.seat_limit} assentos | Quórum mínimo: {c.min_quorum} pessoas
+                    <p className="mt-1 text-sm text-[#53575b]">
+                      {c.seat_limit} assentos · quórum mínimo de {c.min_quorum} pessoas
                     </p>
                   </div>
 
@@ -114,21 +108,21 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
                       <button
                         type="submit"
                         disabled={c.pagoAlaCount === 0}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm transition ${
+                        className={`sgct-button w-full sm:w-auto ${
                           c.pagoAlaCount === 0
-                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95"
+                            ? "bg-[#e0e2e2] text-[#676b6e]"
+                            : "cursor-pointer bg-brand-600 text-white hover:bg-brand-700"
                         }`}
                       >
-                        Validar em Lote ({c.pagoAlaCount} Pagamentos da Ala)
+                        Validar {c.pagoAlaCount} pagamento(s)
                       </button>
                     </form>
                   </div>
                 </div>
 
                 {c.isEmbarkmentWeek && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs flex items-center gap-2">
-                    <span>⚠️</span>
+                  <div className="sgct-alert-warning flex gap-3">
+                    <AlertIcon className="mt-0.5 h-5 w-5 shrink-0" />
                     <span>
                       Esta caravana está na <strong>semana do embarque</strong> (≤ 7 dias). O job
                       automático de terça-feira está desativado; as validações devem ser feitas de forma
@@ -139,9 +133,19 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
 
                 {/* Lista de Reservas Pendentes de Validação da Estaca */}
                 {c.pagoAlaCount > 0 ? (
-                  <div className="border border-slate-100 rounded-xl overflow-hidden">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold">
+                  <div className="overflow-hidden rounded-xl border border-[#e0e2e2]">
+                    <div className="divide-y divide-[#e0e2e2] md:hidden">
+                      {c.pagoAlaList.map((res: any) => (
+                        <div key={res.id} className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div><p className="font-bold text-[#212225]">{res.profiles.full_name}</p><p className="mt-1 text-sm text-[#53575b]">{res.wards.name} · assento {res.seat_number}</p></div>
+                            <strong className="text-brand-700">{formatCurrency(Number(res.payment_amount))}</strong>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <table className="hidden w-full text-left text-sm md:table">
+                      <thead className="bg-[#f7f8f8] text-xs font-bold uppercase tracking-wider text-[#53575b]">
                         <tr>
                           <th className="py-2.5 px-3">Passageiro</th>
                           <th className="py-2.5 px-3">Ala</th>
@@ -149,18 +153,18 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
                           <th className="py-2.5 px-3">Valor</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                      <tbody className="divide-y divide-[#e0e2e2] text-[#3a3d40]">
                         {c.pagoAlaList.map((res: any) => (
                           <tr key={res.id}>
-                            <td className="py-2.5 px-3 font-medium text-slate-900">
+                            <td className="px-3 py-3 font-semibold text-[#212225]">
                               {res.profiles.full_name}
                             </td>
                             <td className="py-2.5 px-3">{res.wards.name}</td>
-                            <td className="py-2.5 px-3 font-semibold text-blue-700">
-                              #{res.seat_number}
+                            <td className="px-3 py-3 font-semibold text-brand-700">
+                              {res.seat_number}
                             </td>
                             <td className="py-2.5 px-3">
-                              R$ {Number(res.payment_amount).toFixed(2)}
+                              {formatCurrency(Number(res.payment_amount))}
                             </td>
                           </tr>
                         ))}
@@ -168,7 +172,7 @@ export default async function AdminEstacaValidacaoSemanalPage({ params }: Props)
                     </table>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">
+                  <p className="rounded-xl bg-[#f7f8f8] p-4 text-sm text-[#53575b]">
                     Nenhum pagamento registrado pelas Alas aguardando validação para esta caravana.
                   </p>
                 )}
