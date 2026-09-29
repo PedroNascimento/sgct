@@ -56,8 +56,8 @@ export default async function EstacaPublicPage({ params }: Props) {
                   Ver próximas caravanas
                   <ArrowRightIcon className="h-5 w-5" />
                 </Link>
-                <Link href={isAuthenticated ? `/${estaca_slug}/conta` : `/${estaca_slug}/cadastro`} className="sgct-button-secondary w-full sm:w-auto">
-                  {isAuthenticated ? "Acessar minha conta" : "Criar minha conta"}
+                <Link href={isAuthenticated ? `/${estaca_slug}/minhas-reservas` : `/${estaca_slug}/cadastro`} className="sgct-button-secondary w-full sm:w-auto">
+                  {isAuthenticated ? "Acompanhar minhas reservas" : "Criar minha conta"}
                 </Link>
               </div>
 

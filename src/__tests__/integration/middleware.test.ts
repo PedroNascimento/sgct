@@ -104,6 +104,30 @@ describe("Middleware Multi-Tenant", () => {
       );
     });
 
+    it("protege /minhas-reservas quando não há usuário autenticado", async () => {
+      const STAKE_A_ID = "00000000-0000-0000-0000-000000000001";
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: STAKE_A_ID, is_active: true },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+      const response = await middleware(
+        new NextRequest("http://localhost:3000/estaca-a/minhas-reservas")
+      );
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe(
+        "http://localhost:3000/estaca-a/auth/login"
+      );
+    });
+
     it.each([
       "/estaca-b/estaca/calendario",
       "/estaca-b/ala/reservas",

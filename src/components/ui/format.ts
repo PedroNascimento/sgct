@@ -11,7 +11,7 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 });
 
 export function formatDate(value: string | Date): string {
-  const date = value instanceof Date ? value : new Date(`${value}T12:00:00Z`);
+  const date = value instanceof Date ? value : new Date(value.includes("T") ? value : `${value}T12:00:00Z`);
   return dateFormatter.format(date).replace(/\./g, "");
 }
 

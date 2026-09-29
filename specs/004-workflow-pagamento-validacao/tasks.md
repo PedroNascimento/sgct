@@ -14,5 +14,10 @@
 - [x] T004.10 — Tela Admin Ala: lista de reservas `pendente` da própria Ala com ação "Confirmar Pagamento"
 - [x] T004.11 — Tela Admin Estaca: lista de reservas `pago_ala` pendentes de validação semanal, com ação em lote
 - [x] T004.12 — `npm run test:rls` verde para todas as tabelas tocadas antes de considerar a spec concluída
+- [x] T004.13 — **Teste primeiro:** listar apenas reservas do usuário autenticado e da Estaca da rota, descartando inconsistências cross-tenant
+- [x] T004.14 — Implementar `ListOwnReservations` com dados da caravana e ponto de embarque, sem expor dados de terceiros
+- [x] T004.15 — Implementar página responsiva "Minhas reservas" com progresso financeiro, estados especiais e estado vazio
+- [x] T004.16 — Adicionar navegação autenticada para "Minhas reservas" no cabeçalho e na página "Minha conta"
+- [x] T004.17 — Executar regressão completa, cobertura e `test:rls`
 
 **Definition of Done:** todos os itens acima com teste verde, cobertura ≥80% em `src/use-cases/payment/`, `test:rls` sem regressão.

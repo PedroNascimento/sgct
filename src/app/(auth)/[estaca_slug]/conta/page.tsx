@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { updateOwnProfileAction } from "./actions";
-import { Brand } from "@/components/ui/brand";
-import { ArrowLeftIcon, InfoIcon } from "@/components/ui/icons";
+import { PublicHeader } from "@/components/ui/public-header";
+import { ArrowLeftIcon, BusIcon, InfoIcon } from "@/components/ui/icons";
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -23,14 +23,7 @@ export default async function ContaPage({ params }: Props) {
 
   return (
     <div className="sgct-page">
-      <header className="border-b border-[#e0e2e2] bg-white">
-        <div className="sgct-container flex min-h-[4.5rem] items-center justify-between">
-          <Brand href={`/${estaca_slug}`} compact />
-          <Link href={`/${estaca_slug}/calendario`} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-            Caravanas
-          </Link>
-        </div>
-      </header>
+      <PublicHeader stakeSlug={estaca_slug} />
     <main id="conteudo-principal" className="py-8 sm:py-12">
       <div className="sgct-narrow max-w-xl">
         <Link href={`/${estaca_slug}`} className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700 hover:text-brand-900">
@@ -42,6 +35,11 @@ export default async function ContaPage({ params }: Props) {
         <p className="sgct-subtitle">
           Mantenha os dados usados nas reservas e no seguro de passageiros atualizados.
         </p>
+
+        <Link href={`/${estaca_slug}/minhas-reservas`} className="sgct-button-secondary mt-6 w-full sm:w-auto">
+          <BusIcon className="h-5 w-5" />
+          Acompanhar minhas reservas
+        </Link>
 
         <div className="sgct-alert-info mt-7 flex gap-3">
           <InfoIcon className="mt-0.5 h-5 w-5 shrink-0" />

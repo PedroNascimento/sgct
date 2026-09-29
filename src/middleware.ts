@@ -130,6 +130,7 @@ export async function middleware(request: NextRequest) {
       remainingPath.startsWith("/estaca") ||
       remainingPath.startsWith("/ala") ||
       remainingPath.startsWith("/conta") ||
+      remainingPath.startsWith("/minhas-reservas") ||
       remainingPath.startsWith("/caravana/")) &&
     !isLoginRoute;
 

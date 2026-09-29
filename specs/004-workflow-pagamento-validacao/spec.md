@@ -15,6 +15,7 @@ O ciclo financeiro em duas etapas (Membro → Ala → Estaca) e o mecanismo que 
 - `RecalculateCaravanRanking`: reordena reservas `PAGO_ALA`/`CONFIRMADO` por `confirmed_at`, aplica o limite de 50 assentos, move excedente para `lista_espera`.
 - Timeout de reserva `PENDENTE` sem `PAGO_ALA` a ≤7 dias do embarque (`ExpirePendingReservations`).
 - Notificação automática de mudança de posição, com possibilidade de revisão manual do Secretário da Estaca (D15).
+- Área autenticada para o membro consultar as próprias reservas e acompanhar o estágio de pagamento e confirmação.
 
 ### Fora do escopo
 - Geração de crédito por promoção de lista de espera ou permuta (spec 005).
@@ -56,6 +57,17 @@ Como sistema, preciso liberar o compromisso de uma reserva que nunca foi paga, p
 - THE SYSTEM SHALL NOT liberar o assento de uma reserva `pendente`/`pago_ala` antes desse prazo, independentemente de outra reserva da mesma caravana já ter sido confirmada primeiro (D17).
 - 🔄 NOVO: IF a reserva estiver em `status = 'aguardando_auxilio'` (aprovação de auxílio pendente, spec 012), THEN THE SYSTEM SHALL NOT aplicar o timeout padrão de 7 dias — o prazo de expiração dessas reservas é tratado na spec 012, já que o processo de aprovação externo leva de 20 a 30 dias e normalmente exige submissão bem antes do prazo geral de inscrição.
 - 🔄 NOVO: IF a reserva estiver em `status = 'aguardando_transferencia_interestaca'` (convidado, spec 013), THEN THE SYSTEM SHALL NOT aplicar o timeout padrão de 7 dias — o prazo dessas reservas é tratado na spec 013.
+
+### US-004.5: Acompanhar minhas reservas
+Como membro autenticado, quero consultar as reservas que realizei e compreender o estágio de pagamento e confirmação, para saber se ainda há alguma providência pendente.
+
+**Critérios de Aceite (EARS):**
+- WHEN o membro acessar "Minhas reservas", THE SYSTEM SHALL listar exclusivamente reservas cujo `user_id` corresponda ao usuário autenticado e cujo `stake_id` corresponda à Estaca da rota.
+- WHEN uma reserva for exibida, THE SYSTEM SHALL informar data de ida e retorno, assento, ponto de embarque, valor, data da reserva e status atual.
+- WHEN o status for `pendente`, `pago_ala` ou `confirmado`, THE SYSTEM SHALL apresentar visualmente o progresso `Reserva realizada → Pagamento reconhecido pela Ala → Confirmada pela Estaca`, com explicação textual do estágio atual.
+- WHEN o status for `lista_espera`, `aguardando_auxilio`, `aguardando_transferencia_interestaca`, `expirada`, `cancelada_com_credito`, `cancelada_sem_credito`, `presente` ou `no_show`, THE SYSTEM SHALL apresentar o estado com texto explícito, sem depender apenas de cor.
+- IF o membro não possuir reservas, THEN THE SYSTEM SHALL exibir estado vazio com ação para consultar as próximas caravanas.
+- THE SYSTEM SHALL NOT exibir reserva, dados financeiros ou metadados de outro usuário ou de outra Estaca.
 
 ## Regras de Negócio Vinculadas
 Ver `docs/PRD.md` seções 6.3, `docs/DECISIONS.md` D01, D15, D17, D28 (prioridade de convidado no ranking).
