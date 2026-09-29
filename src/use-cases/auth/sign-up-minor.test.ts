@@ -42,6 +42,7 @@ describe("signUpMinor (T001.3)", () => {
     password: "senha-segura-123",
     fullName: "Jovem Santos",
     cpf: "12345678901",
+    phone: "84999998888",
     birthDate: minorBirthDate,
     sexo: "feminino" as const,
     wardId: WARD_ID,
@@ -80,6 +81,7 @@ describe("signUpMinor (T001.3)", () => {
       expect.objectContaining({
         guardian_id: null,
         cpf: validMinorPayload.cpf,
+        phone: validMinorPayload.phone,
         role: "member",
       })
     );

@@ -34,6 +34,7 @@ describe("signUpMember (T001.1)", () => {
     password: "senha-segura-123",
     fullName: "Membro da Silva",
     cpf: "12345678901",
+    phone: "84999998888",
     birthDate: "1995-05-20",
     sexo: "masculino" as const,
     wardId: "11111111-1111-1111-1111-111111111111",
@@ -78,6 +79,7 @@ describe("signUpMember (T001.1)", () => {
         stake_id: STAKE_NATAL_ID,
         ward_id: validPayload.wardId,
         cpf: validPayload.cpf,
+        phone: validPayload.phone,
         role: "member",
       })
     );
@@ -96,6 +98,22 @@ describe("signUpMember (T001.1)", () => {
 
     expect(mockAuthPort.signUp).not.toHaveBeenCalled();
     expect(mockProfileRepository.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejeita WhatsApp sem DDD antes de acessar repositórios", async () => {
+    await expect(
+      signUpMember(
+        { ...validPayload, phone: "99999999" },
+        {
+          authPort: mockAuthPort,
+          wardRepository: mockWardRepository,
+          profileRepository: mockProfileRepository,
+        }
+      )
+    ).rejects.toThrow("WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD.");
+
+    expect(mockWardRepository.findById).not.toHaveBeenCalled();
+    expect(mockAuthPort.signUp).not.toHaveBeenCalled();
   });
 
   it("rejeita cadastro se a Ala pertencer a uma Estaca diferente do contexto da rota", async () => {

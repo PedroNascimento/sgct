@@ -50,6 +50,7 @@ Como participante, quero compreender cada campo e cada erro, para corrigir meus 
 **Critérios de Aceite:**
 
 - WHEN um campo for exibido, THE SYSTEM SHALL manter rótulo visível e associação semântica.
+- WHEN uma conta for criada, THE SYSTEM SHALL solicitar CPF e telefone de WhatsApp com DDD, explicar o formato esperado e validar os dados antes da persistência.
 - WHEN ocorrer erro, THE SYSTEM SHALL exibir mensagem textual com cor e região de alerta, sem depender apenas de cor.
 - WHILE uma ação estiver sendo processada, THE SYSTEM SHALL manter feedback textual e impedir envio duplicado.
 

@@ -11,5 +11,6 @@
 - [x] T014.9 — Executar testes, lint e build; corrigir regressões.
 - [x] T014.10 — Inspecionar visualmente os fluxos principais em mobile e desktop.
 - [x] T014.11 — Exibir sessão ativa no cabeçalho, disponibilizar Minha Conta e logout, e coletar CPF no cadastro inicial.
+- [x] T014.12 — Coletar, validar e persistir o telefone de WhatsApp no cadastro inicial.
 
 **Definition of Done:** critérios da spec atendidos, nenhuma regra de negócio alterada, testes/lint/build verdes e telas principais utilizáveis em 320 px sem rolagem horizontal indevida.

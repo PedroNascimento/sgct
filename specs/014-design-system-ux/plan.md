@@ -10,9 +10,9 @@
 | I — Clean Architecture | ✅ | Mudanças ficam em `app/` e `components/`; domínio e use-cases permanecem intactos. |
 | II — Isolamento Multi-Tenant | ✅ | Nenhuma query, policy ou identificação de tenant é alterada. |
 | III — Sem UPDATE direto | ✅ | A camada visual reutiliza Server Actions existentes. |
-| IV — TDD 80%+ | ✅ | Nenhum use-case novo. Testes de componentes existentes e regressão completa validam a UI interativa. |
-| V — Segurança por padrão | ✅ | Nenhum segredo ou novo endpoint. Campos preservam validação e autocomplete adequado. |
-| VI — LGPD | ✅ | Nenhum dado novo; apresentação de CPF permanece somente nos contextos autorizados existentes. |
+| IV — TDD 80%+ | ✅ | Nenhum use-case novo; os use-cases de cadastro existentes ganham cobertura para CPF e telefone, além da regressão completa. |
+| V — Segurança por padrão | ✅ | Nenhum segredo ou novo endpoint. CPF e telefone são normalizados e validados antes da persistência. |
+| VI — LGPD | ✅ | CPF e telefone utilizam campos de perfil já previstos e permanecem somente nos contextos autorizados existentes. |
 | VII — Nenhuma regra inventada | ✅ | Microcopy e estados mapeiam somente regras e status já aprovados. |
 | VIII — Fluxo linear | ✅ | Spec, plan e tasks foram criados antes da alteração da interface. |
 | IX — Portabilidade | ✅ | Tokens e textos não fixam Estaca; nome e slug continuam vindos do contexto resolvido. |
@@ -26,13 +26,14 @@
 4. Aplicar os componentes e tokens às telas públicas e autenticadas.
 5. Adaptar mapas, formulários longos, painéis e tabelas para mobile.
 6. Validar testes, lint, build e inspeção visual nos viewports definidos.
+7. Completar o cadastro inicial com CPF e telefone de WhatsApp, usando os campos já existentes em `profiles` e validação em todas as fronteiras.
 
 ## Decisões Técnicas
 
 - Fonte principal: Source Sans 3 quando disponível, seguida por fontes de sistema. Não haverá download de fonte em runtime nem redistribuição de Ensign.
 - SVGs simples e próprios serão usados para ícones essenciais, evitando emojis e dependências adicionais.
 - Tailwind continuará sendo a tecnologia de composição; classes semânticas globais reduzirão repetição e divergência.
-- Dados e ações existentes não serão remodelados nesta spec.
+- As ações de cadastro existentes serão estendidas somente para coletar CPF e telefone já previstos no perfil.
 - Tabelas críticas receberão visualização responsiva por cartões, mantendo tabela para desktop.
 
 ## Arquivos Principais

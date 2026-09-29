@@ -10,6 +10,7 @@ export const signUpMemberSchema = z.object({
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de nascimento deve estar no formato YYYY-MM-DD."),
@@ -26,6 +27,7 @@ export const signUpMinorSchema = z.object({
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de nascimento deve estar no formato YYYY-MM-DD."),
@@ -61,6 +63,7 @@ export const signUpGuestSchema = z.object({
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de nascimento deve estar no formato YYYY-MM-DD."),

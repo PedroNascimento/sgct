@@ -93,10 +93,15 @@ Deno.serve(async (req) => {
     let homeStakeName: string | null = null;
     let homeWardName: string | null = null;
     let cpf: string | null = null;
+    let phone: string | null = null;
 
     if (operation === "register_member" || operation === "register_minor" || operation === "register_guest") {
       cpf = requiredString(payload, "cpf").replace(/\D/g, "");
       if (!/^\d{11}$/.test(cpf)) throw new Error("CPF deve conter exatamente 11 dígitos.");
+      phone = requiredString(payload, "phone").replace(/\D/g, "");
+      if (!/^\d{10,11}$/.test(phone)) {
+        throw new Error("WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD.");
+      }
     }
 
     if (operation === "register_member" || operation === "register_minor" || operation === "create_ward_admin") {
@@ -178,7 +183,7 @@ Deno.serve(async (req) => {
         birth_date: common.birthDate,
         sexo: common.sexo,
         cpf,
-        phone: null,
+        phone,
         role,
         home_stake_name: homeStakeName,
         home_ward_name: homeWardName,

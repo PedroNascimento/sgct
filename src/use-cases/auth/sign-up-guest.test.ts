@@ -29,6 +29,7 @@ describe("signUpGuest (US-001.6)", () => {
     password: "senha-segura-123",
     fullName: "Convidado de Mossoró",
     cpf: "12345678901",
+    phone: "84999998888",
     birthDate: "1990-08-10",
     sexo: "masculino" as const,
     homeStakeName: "Estaca Mossoró Brasil",
@@ -62,6 +63,7 @@ describe("signUpGuest (US-001.6)", () => {
         stake_id: HOST_STAKE_ID,
         ward_id: null,
         cpf: guestPayload.cpf,
+        phone: guestPayload.phone,
         home_stake_name: "Estaca Mossoró Brasil",
         home_ward_name: "Ala Abolição",
       })

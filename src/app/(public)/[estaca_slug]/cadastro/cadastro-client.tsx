@@ -46,6 +46,31 @@ function CpfField({ id }: { id: string }) {
   );
 }
 
+function PhoneField({ id }: { id: string }) {
+  return (
+    <div>
+      <label htmlFor={id} className="sgct-label">
+        Telefone (WhatsApp)
+      </label>
+      <input
+        id={id}
+        type="tel"
+        name="phone"
+        required
+        inputMode="tel"
+        autoComplete="tel"
+        maxLength={15}
+        placeholder="(84) 99999-9999"
+        aria-describedby={`${id}-hint`}
+        className="sgct-input"
+      />
+      <p id={`${id}-hint`} className="mt-1.5 text-sm text-[#53575b]">
+        Informe o DDD e o número usado no WhatsApp.
+      </p>
+    </div>
+  );
+}
+
 export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
   const [tab, setTab] = useState<"member" | "minor" | "guest" | null>(null);
 
@@ -157,6 +182,8 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="member-cpf" />
+
+          <PhoneField id="member-phone" />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
@@ -273,6 +300,8 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="minor-cpf" />
+
+          <PhoneField id="minor-phone" />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
@@ -405,6 +434,8 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="guest-cpf" />
+
+          <PhoneField id="guest-phone" />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
