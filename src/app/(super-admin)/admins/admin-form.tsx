@@ -54,7 +54,7 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
   };
 
   return (
-    <div className="sgct-card max-w-2xl space-y-5 p-5 sm:p-7">
+    <div className="sgct-card w-full space-y-6 p-6 sm:p-8">
       <div>
         <h2 className="text-xl font-bold text-[#212225]">Promover membro a Admin de Estaca</h2>
         <p className="mt-1.5 text-sm leading-relaxed text-[#53575b]">
@@ -77,59 +77,61 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
         </div>
       )}
 
-      {/* Passo 1: Selecionar Estaca */}
-      <div>
-        <label htmlFor="stakeId" className="sgct-label">
-          1. Estaca de Destino
-        </label>
-        <select
-          id="stakeId"
-          value={selectedStakeId}
-          onChange={(e) => {
-            setSelectedStakeId(e.target.value);
-            setFoundMember(null);
-            setSearchError(null);
-          }}
-          required
-          className="sgct-input"
-        >
-          <option value="">Selecione uma Estaca...</option>
-          {stakes.map((stake) => (
-            <option key={stake.id} value={stake.id}>
-              {stake.name} (/{stake.slug})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Passo 2: Buscar membro */}
-      <div>
-        <label htmlFor="memberEmail" className="sgct-label">
-          2. E-mail do Membro Já Cadastrado
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            id="memberEmail"
-            value={emailInput}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* Passo 1: Selecionar Estaca */}
+        <div>
+          <label htmlFor="stakeId" className="sgct-label">
+            1. Estaca de Destino
+          </label>
+          <select
+            id="stakeId"
+            value={selectedStakeId}
             onChange={(e) => {
-              setEmailInput(e.target.value);
+              setSelectedStakeId(e.target.value);
               setFoundMember(null);
               setSearchError(null);
             }}
-            disabled={!selectedStakeId}
-            placeholder={selectedStakeId ? "email@exemplo.com" : "Selecione uma Estaca primeiro"}
-            autoComplete="email"
-            className="sgct-input flex-1"
-          />
-          <button
-            type="button"
-            onClick={handleSearch}
-            disabled={!selectedStakeId || !emailInput || isSearching}
-            className="sgct-button-secondary whitespace-nowrap"
+            required
+            className="sgct-input"
           >
-            {isSearching ? "Buscando..." : "Buscar membro"}
-          </button>
+            <option value="">Selecione uma Estaca...</option>
+            {stakes.map((stake) => (
+              <option key={stake.id} value={stake.id}>
+                {stake.name} (/{stake.slug})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Passo 2: Buscar membro */}
+        <div>
+          <label htmlFor="memberEmail" className="sgct-label">
+            2. E-mail do Membro Já Cadastrado
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="email"
+              id="memberEmail"
+              value={emailInput}
+              onChange={(e) => {
+                setEmailInput(e.target.value);
+                setFoundMember(null);
+                setSearchError(null);
+              }}
+              disabled={!selectedStakeId}
+              placeholder={selectedStakeId ? "email@exemplo.com" : "Selecione uma Estaca primeiro"}
+              autoComplete="email"
+              className="sgct-input w-full flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={!selectedStakeId || !emailInput || isSearching}
+              className="sgct-button-primary whitespace-nowrap w-full sm:w-auto text-sm shrink-0"
+            >
+              {isSearching ? "Buscando..." : "Buscar membro"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -179,7 +181,7 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
 
       {foundMember && foundMember.role === "admin_estaca" && (
         <p className="text-sm text-amber-700">
-          Este membro já possui permissão de Admin de Estaca. Use a tabela ao lado para alterar ou revogar o acesso.
+          Este membro já possui permissão de Admin de Estaca. Use a tabela abaixo para alterar ou revogar o acesso.
         </p>
       )}
     </div>

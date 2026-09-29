@@ -2,56 +2,66 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { Search, X, Users, Shield, UserCheck } from "lucide-react";
-import { AdminEstacaItem, toggleAdminStatusAction, updateAdminRoleAction } from "../actions";
+import {
+  type EstacaMemberItem,
+  demoteWardAdminAction,
+  toggleWardMemberStatusAction,
+} from "../../actions";
 
-export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
+interface Props {
+  members: EstacaMemberItem[];
+}
+
+export function WardAdminList({ members }: Props) {
   const [isPending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "member">("all");
 
-  const handleToggleStatus = (admin: AdminEstacaItem) => {
+  const handleDemote = (member: EstacaMemberItem) => {
+    if (!confirm(`Deseja revogar a permissão de Admin de Ala de "${member.full_name}"?`)) {
+      return;
+    }
     startTransition(async () => {
-      await toggleAdminStatusAction(admin.id, !admin.is_active);
+      await demoteWardAdminAction(member.id);
     });
   };
 
-  const handleToggleRole = (admin: AdminEstacaItem) => {
-    const nextRole = admin.role === "admin_estaca" ? "member" : "admin_estaca";
+  const handleToggleStatus = (member: EstacaMemberItem) => {
     startTransition(async () => {
-      await updateAdminRoleAction(admin.id, nextRole);
+      await toggleWardMemberStatusAction(member.id, !member.is_active);
     });
   };
 
-  // Contagens para os botões de filtro
-  const totalCount = admins.length;
+  // Contagens
+  const totalCount = members.length;
   const adminCount = useMemo(
-    () => admins.filter((a) => a.role === "admin_estaca").length,
-    [admins]
+    () => members.filter((m) => m.role === "admin_ala").length,
+    [members]
   );
   const memberCount = useMemo(
-    () => admins.filter((a) => a.role === "member").length,
-    [admins]
+    () => members.filter((m) => m.role === "member").length,
+    [members]
   );
 
-  // Filtragem reativa por texto e papel
-  const filteredAdmins = useMemo(() => {
-    return admins.filter((admin) => {
+  // Filtragem reativa
+  const filteredMembers = useMemo(() => {
+    return members.filter((member) => {
       // 1. Filtro por papel
-      if (roleFilter === "admin" && admin.role !== "admin_estaca") return false;
-      if (roleFilter === "member" && admin.role !== "member") return false;
+      if (roleFilter === "admin" && member.role !== "admin_ala") return false;
+      if (roleFilter === "member" && member.role !== "member") return false;
 
-      // 2. Filtro por busca de texto (nome, email ou estaca)
+      // 2. Filtro por busca de texto (nome, email ou ala)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const matchesName = admin.full_name.toLowerCase().includes(query);
-        const matchesEmail = (admin.email || "").toLowerCase().includes(query);
-        const matchesStake = (admin.stake_name || "").toLowerCase().includes(query);
-        if (!matchesName && !matchesEmail && !matchesStake) return false;
+        const matchesName = member.full_name.toLowerCase().includes(query);
+        const matchesEmail = (member.email || "").toLowerCase().includes(query);
+        const matchesWard = (member.ward_name || "").toLowerCase().includes(query);
+        if (!matchesName && !matchesEmail && !matchesWard) return false;
       }
 
       return true;
     });
-  }, [admins, roleFilter, searchQuery]);
+  }, [members, roleFilter, searchQuery]);
 
   return (
     <section className="sgct-card overflow-hidden">
@@ -60,13 +70,13 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#212225] flex items-center gap-2">
-              <span>Administradores Cadastrados</span>
+              <span>Equipe e Membros Cadastrados</span>
               <span className="inline-flex items-center justify-center rounded-full bg-brand-100 text-brand-800 text-xs font-bold px-2.5 py-0.5">
-                {filteredAdmins.length}{filteredAdmins.length !== totalCount ? ` de ${totalCount}` : ""}
+                {filteredMembers.length}{filteredMembers.length !== totalCount ? ` de ${totalCount}` : ""}
               </span>
             </h2>
             <p className="text-sm text-[#53575b] mt-1">
-              Gerencie o status e as permissões de acesso de cada administrador regional e membro da plataforma.
+              Visualize os Administradores de Ala e membros da Estaca, com filtros rápidos e busca em tempo real.
             </p>
           </div>
         </div>
@@ -80,7 +90,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Digite o nome ou e-mail para filtrar..."
+              placeholder="Digite o nome, e-mail ou Ala para filtrar..."
               className="sgct-input pl-10 pr-9 py-2 text-sm w-full bg-[#fcfdfd]"
             />
             {searchQuery && (
@@ -95,7 +105,7 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
             )}
           </div>
 
-          {/* Filtros de Papel (Todos, Admins, Membros) */}
+          {/* Filtros de Papel (Todos, Admins de Ala, Membros Comuns) */}
           <div className="flex items-center gap-1.5 p-1 bg-[#f4f5f5] rounded-xl self-start md:self-auto overflow-x-auto max-w-full">
             <button
               type="button"
@@ -154,18 +164,18 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
         </div>
       </div>
 
-      {/* Conteúdo de Usuários */}
-      {admins.length === 0 ? (
+      {/* Conteúdo de Membros */}
+      {members.length === 0 ? (
         <div className="p-12 text-center text-base text-[#53575b]">
-          Nenhum administrador encontrado. Cadastre o primeiro pelo formulário acima.
+          Nenhum membro ou administrador encontrado.
         </div>
-      ) : filteredAdmins.length === 0 ? (
+      ) : filteredMembers.length === 0 ? (
         <div className="p-12 text-center">
           <p className="text-base font-semibold text-[#212225]">
             Nenhum cadastro encontrado com os filtros aplicados
           </p>
           <p className="text-sm text-[#53575b] mt-1">
-            Tente pesquisar por outro termo ou selecione outro filtro de papel.
+            Tente pesquisar por outro nome ou selecione outro filtro de papel.
           </p>
           <button
             type="button"
@@ -182,22 +192,22 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
         <>
           {/* VISUALIZAÇÃO MOBILE (Cards empilhados e confortáveis) */}
           <div className="block md:hidden divide-y divide-[#e0e2e2] bg-white">
-            {filteredAdmins.map((admin) => {
-              const isAdmin = admin.role === "admin_estaca";
+            {filteredMembers.map((member) => {
+              const isAdmin = member.role === "admin_ala";
               return (
-                <div key={admin.id} className="p-4 space-y-3 hover:bg-brand-50/20 transition-colors">
+                <div key={member.id} className="p-4 space-y-3 hover:bg-brand-50/20 transition-colors">
                   <div>
-                    <p className="font-bold text-[#212225] text-base truncate">{admin.full_name}</p>
-                    <p className="text-xs text-[#53575b] break-all mt-0.5">{admin.email || "E-mail não disponível"}</p>
+                    <p className="font-bold text-[#212225] text-base truncate">{member.full_name}</p>
+                    <p className="text-xs text-[#53575b] break-all mt-0.5">{member.email || "E-mail não disponível"}</p>
                   </div>
 
                   {/* Grid 3x1 com as 3 tags alinhadas */}
                   <div className="grid grid-cols-3 gap-2 items-center pt-0.5">
                     <span
                       className="sgct-chip justify-center text-center truncate border-[#d0d3d3] bg-[#f0f2f2] text-[#404346] text-xs font-medium px-2 py-1"
-                      title={admin.stake_name}
+                      title={member.ward_name ?? "Ala não vinculada"}
                     >
-                      <span className="truncate">{admin.stake_name}</span>
+                      <span className="truncate">{member.ward_name ?? "Sem Ala"}</span>
                     </span>
 
                     <span
@@ -207,45 +217,43 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                           : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                       }`}
                     >
-                      <span className="truncate">{isAdmin ? "Admin Estaca" : "Membro Comum"}</span>
+                      <span className="truncate">{isAdmin ? "Admin Ala" : "Membro Comum"}</span>
                     </span>
 
                     <span
                       className={`sgct-chip justify-center text-center text-xs px-2 py-1 ${
-                        admin.is_active
+                        member.is_active
                           ? "border-success-200 bg-success-50 text-success-700"
                           : "border-danger-200 bg-danger-50 text-danger-700"
                       }`}
                     >
-                      {admin.is_active ? "Ativo" : "Inativo"}
+                      {member.is_active ? "Ativo" : "Inativo"}
                     </span>
                   </div>
 
                   <div className="pt-2 flex items-center gap-2 border-t border-[#f0f2f2]">
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => handleToggleRole(admin)}
-                      className={`flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border transition-colors ${
-                        isAdmin
-                          ? "border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50"
-                          : "border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100"
-                      } disabled:opacity-50`}
-                    >
-                      {isAdmin ? "Alterar para Membro" : "Promover a Admin"}
-                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleDemote(member)}
+                        className="flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50"
+                      >
+                        Alterar para Membro
+                      </button>
+                    )}
 
                     <button
                       type="button"
                       disabled={isPending}
-                      onClick={() => handleToggleStatus(admin)}
+                      onClick={() => handleToggleStatus(member)}
                       className={`flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border transition-colors ${
-                        admin.is_active
+                        member.is_active
                           ? "border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-100"
                           : "border-success-200 bg-success-50 text-success-700 hover:bg-success-100"
                       } disabled:opacity-50`}
                     >
-                      {admin.is_active ? "Desativar" : "Ativar"}
+                      {member.is_active ? "Desativar" : "Ativar"}
                     </button>
                   </div>
                 </div>
@@ -253,32 +261,31 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
             })}
           </div>
 
-          {/* VISUALIZAÇÃO DESKTOP / TABLET (Tabela completa com min-width garantido) */}
+          {/* VISUALIZAÇÃO DESKTOP / TABLET (Tabela com min-width garantido) */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-[700px] w-full divide-y divide-[#e0e2e2] text-sm">
               <thead className="bg-[#f7f8f8] text-[#3a3d40]">
                 <tr>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Nome / E-mail</th>
-                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Estaca</th>
+                  <th scope="col" className="px-6 py-3.5 text-left font-semibold">Ala</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Papel Atual</th>
                   <th scope="col" className="px-6 py-3.5 text-left font-semibold">Status</th>
                   <th scope="col" className="px-6 py-3.5 text-right font-semibold whitespace-nowrap">Ações de Permissão</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e0e2e2] bg-white">
-                {filteredAdmins.map((admin) => {
-                  const isAdmin = admin.role === "admin_estaca";
+                {filteredMembers.map((member) => {
+                  const isAdmin = member.role === "admin_ala";
                   return (
-                    <tr key={admin.id} className="hover:bg-brand-50/40 transition-colors">
+                    <tr key={member.id} className="hover:bg-brand-50/40 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-bold text-[#212225]">{admin.full_name}</p>
-                        <p className="text-xs text-[#53575b]">{admin.email || "E-mail não disponível"}</p>
+                        <p className="font-bold text-[#212225]">{member.full_name}</p>
+                        <p className="text-xs text-[#53575b]">{member.email || "E-mail não disponível"}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-medium text-[#212225]">{admin.stake_name}</span>
-                        {admin.stake_slug && (
-                          <p className="font-mono text-xs text-[#53575b]">/{admin.stake_slug}</p>
-                        )}
+                        <span className="font-medium text-[#212225]">
+                          {member.ward_name ?? "Ala não vinculada"}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -288,49 +295,47 @@ export function AdminList({ admins }: { admins: AdminEstacaItem[] }) {
                               : "border-[#d0d3d3] bg-[#eff0f0] text-[#53575b]"
                           }`}
                         >
-                          {isAdmin ? "Admin da Estaca" : "Membro Comum"}
+                          {isAdmin ? "Admin Ala" : "Membro Comum"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={`sgct-chip whitespace-nowrap ${
-                            admin.is_active
+                            member.is_active
                               ? "border-success-200 bg-success-50 text-success-700"
                               : "border-danger-200 bg-danger-50 text-danger-700"
                           }`}
                         >
-                          {admin.is_active ? "Ativo" : "Inativo"}
+                          {member.is_active ? "Ativo" : "Inativo"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                          {/* Botão de Alternância de Papel */}
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => handleToggleRole(admin)}
-                            title={isAdmin ? "Rebaixar para membro comum" : "Promover a Admin de Estaca"}
-                            className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border whitespace-nowrap transition-colors ${
-                              isAdmin
-                                ? "border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50"
-                                : "border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100"
-                            } disabled:opacity-50`}
-                          >
-                            {isAdmin ? "Alterar para Membro" : "Promover a Admin"}
-                          </button>
+                          {/* Ação para Admin de Ala: Rebaixar para Membro Comum */}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleDemote(member)}
+                              title="Revogar cargo de Admin de Ala e voltar a Membro"
+                              className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                              Alterar para Membro
+                            </button>
+                          )}
 
                           {/* Botão de Ativar/Desativar */}
                           <button
                             type="button"
                             disabled={isPending}
-                            onClick={() => handleToggleStatus(admin)}
+                            onClick={() => handleToggleStatus(member)}
                             className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border whitespace-nowrap transition-colors ${
-                              admin.is_active
+                              member.is_active
                                 ? "border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-100"
                                 : "border-success-200 bg-success-50 text-success-700 hover:bg-success-100"
                             } disabled:opacity-50`}
                           >
-                            {admin.is_active ? "Desativar" : "Ativar"}
+                            {member.is_active ? "Desativar" : "Ativar"}
                           </button>
                         </div>
                       </td>

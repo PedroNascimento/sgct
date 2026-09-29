@@ -89,11 +89,21 @@ export default async function PublicCalendarioPage({ params }: Props) {
       .order("created_at", { ascending: true });
 
     if (rawReservations) {
-      for (const row of rawReservations as (ReservationRow & { caravan_id: string })[]) {
-        if (!row.profiles) continue;
+      for (const row of rawReservations as any[]) {
+        const profileData = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        const wardData = Array.isArray(row.wards) ? row.wards[0] : row.wards;
+        if (!profileData) continue;
         const caravanId = row.caravan_id;
         if (!reservationsByCaravan[caravanId]) reservationsByCaravan[caravanId] = [];
-        reservationsByCaravan[caravanId].push(row);
+        reservationsByCaravan[caravanId].push({
+          id: row.id,
+          status: row.status,
+          created_at: row.created_at,
+          confirmed_at: row.confirmed_at,
+          confirmation_rank: row.confirmation_rank,
+          profiles: profileData,
+          wards: wardData,
+        });
       }
     }
   }

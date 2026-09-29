@@ -98,7 +98,7 @@ export function WardAdminForm({ wards, stakeId }: Props) {
           <label htmlFor="memberEmailSearch" className="sgct-label">
             1. E-mail do Membro Já Cadastrado
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <input
               type="email"
               id="memberEmailSearch"
@@ -110,16 +110,16 @@ export function WardAdminForm({ wards, stakeId }: Props) {
               }}
               autoComplete="email"
               inputMode="email"
-              className="sgct-input flex-1"
+              className="sgct-input w-full flex-1"
               placeholder="email@membro.com"
             />
             <button
               type="button"
               onClick={handleSearch}
               disabled={!emailInput || isSearching}
-              className="sgct-button-secondary whitespace-nowrap text-sm"
+              className="sgct-button-primary whitespace-nowrap w-full sm:w-auto text-sm shrink-0"
             >
-              {isSearching ? "Buscando..." : "Buscar"}
+              {isSearching ? "Buscando..." : "Buscar membro"}
             </button>
           </div>
         </div>
@@ -185,7 +185,7 @@ export function WardAdminForm({ wards, stakeId }: Props) {
         {foundMember && (foundMember.role === "admin_ala" || foundMember.role === "admin_estaca") && (
           <p className="text-sm text-amber-700">
             Este membro já possui permissão de {foundMember.role === "admin_ala" ? "Admin de Ala" : "Admin de Estaca"}.
-            Para revogar ou transferir, use a listagem ao lado.
+            Para revogar ou transferir, use a tabela abaixo.
           </p>
         )}
       </div>

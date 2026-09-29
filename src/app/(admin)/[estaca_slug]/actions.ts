@@ -563,3 +563,172 @@ export async function rejectTransferAction(
   }
 }
 
+export type EstacaMemberItem = {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  ward_id: string | null;
+  ward_name: string | null;
+  created_at: string;
+};
+
+/**
+ * Lista todos os membros e administradores de Ala da Estaca informada.
+ * Apenas acessível por Admin da Estaca para a sua própria Estaca.
+ */
+export async function getEstacaMembersList(stakeId: string): Promise<EstacaMemberItem[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    const callerRole = userData.user.app_metadata?.role;
+    const callerStakeId = userData.user.app_metadata?.stake_id;
+    if (callerRole !== "admin_estaca" || callerStakeId !== stakeId) return [];
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // 1. Buscar profiles da mesma stake com role 'admin_ala' ou 'member'
+    const { data: profiles, error: pError } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, is_active, ward_id, created_at, wards(name)")
+      .eq("stake_id", stakeId)
+      .in("role", ["admin_ala", "member"])
+      .order("full_name", { ascending: true });
+
+    if (pError || !profiles) return [];
+
+    // 2. Buscar usuários do auth para associar os e-mails
+    const { data: authData } = await serviceClient.auth.admin.listUsers();
+    const userEmails = new Map((authData?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+
+    return profiles.map((p) => {
+      const wardData = Array.isArray(p.wards) ? p.wards[0] : p.wards;
+      return {
+        id: p.id,
+        full_name: p.full_name,
+        email: userEmails.get(p.id) ?? "",
+        role: p.role,
+        is_active: p.is_active,
+        ward_id: p.ward_id,
+        ward_name: (wardData as { name: string } | null)?.name ?? null,
+        created_at: p.created_at,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Revoga a permissão de Admin de Ala de um usuário, retornando-o para Membro Comum.
+ */
+export async function demoteWardAdminAction(userId: string): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const callerRole = userData.user.app_metadata?.role;
+    const callerStakeId = userData.user.app_metadata?.stake_id;
+
+    if (callerRole !== "admin_estaca" || !callerStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // Verificar que o perfil pertence à mesma Estaca
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, stake_id, ward_id")
+      .eq("id", userId)
+      .eq("stake_id", callerStakeId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new Error("Membro não encontrado nesta Estaca.");
+    }
+
+    // Atualizar role para member no profile
+    const { error: pError } = await serviceClient
+      .from("profiles")
+      .update({ role: "member" })
+      .eq("id", userId);
+
+    if (pError) throw new Error(pError.message);
+
+    // Sincronizar claims no Auth metadata
+    await serviceClient.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        role: "member",
+        stake_id: callerStakeId,
+        ward_id: profile.ward_id,
+      },
+    });
+
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    return {
+      success: true,
+      message: `Permissão de Admin de Ala revogada para "${profile.full_name}". Agora é Membro Comum.`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao alterar permissão do membro.",
+    };
+  }
+}
+
+/**
+ * Ativa ou desativa um usuário membro/admin da Estaca.
+ */
+export async function toggleWardMemberStatusAction(
+  userId: string,
+  isActive: boolean
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const callerRole = userData.user.app_metadata?.role;
+    const callerStakeId = userData.user.app_metadata?.stake_id;
+
+    if (callerRole !== "admin_estaca" || !callerStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // Garantir isolamento por stake_id
+    const { error } = await serviceClient
+      .from("profiles")
+      .update({ is_active: isActive })
+      .eq("id", userId)
+      .eq("stake_id", callerStakeId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    return {
+      success: true,
+      message: `Status atualizado com sucesso (${isActive ? "Ativado" : "Desativado"}).`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao alterar status.",
+    };
+  }
+}
+
+

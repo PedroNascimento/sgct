@@ -36,13 +36,9 @@ export default async function AdminsPage() {
           antes de criar o primeiro Administrador.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 items-start">
-          <div className="lg:col-span-2">
-            <AdminForm stakes={stakes} />
-          </div>
-          <div className="lg:col-span-3">
-            <AdminList admins={admins} />
-          </div>
+        <div className="space-y-8">
+          <AdminForm stakes={stakes} />
+          <AdminList admins={admins} />
         </div>
       )}
     </div>
