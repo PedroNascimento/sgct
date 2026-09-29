@@ -1,9 +1,14 @@
 /**
- * Testes unitários para Server Actions administrativas (createWardAdminAction, confirmWardPaymentAction, validateWeeklyTransfersAction, superAdminSignOutAction)
+ * Testes unitários para Server Actions administrativas.
+ * Cobre: promoteToWardAdminAction, confirmWardPaymentAction, validateWeeklyTransfersAction,
+ * editCaravanAction, confirmSingleTransferAction, rejectTransferAction, superAdminSignOutAction.
+ *
+ * DECISÃO D32: createWardAdminAction foi substituído por promoteToWardAdminAction.
+ * Admins não são criados pelo painel — são membros existentes promovidos.
  */
 
 import {
-  createWardAdminAction,
+  promoteToWardAdminAction,
   confirmWardPaymentAction,
   validateWeeklyTransfersAction,
   editCaravanAction,
@@ -56,14 +61,15 @@ describe("Server Actions Administrativas e de Acesso", () => {
     });
   });
 
-  describe("createWardAdminAction", () => {
+  describe("promoteToWardAdminAction", () => {
     it("retorna erro quando o usuário não está autenticado", async () => {
       mockGetUser.mockResolvedValue({ data: { user: null }, error: new Error("No session") });
 
       const formData = new FormData();
+      formData.append("userId", "member-123");
       formData.append("wardId", "ward-123");
 
-      const result = await createWardAdminAction({ success: false }, formData);
+      const result = await promoteToWardAdminAction({ success: false }, formData);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Não autenticado");
@@ -74,89 +80,90 @@ describe("Server Actions Administrativas e de Acesso", () => {
         data: {
           user: {
             id: "user-123",
-            app_metadata: { role: "member" },
+            app_metadata: { role: "member", stake_id: "stake-123" },
           },
         },
         error: null,
       });
 
       const formData = new FormData();
+      formData.append("userId", "member-456");
       formData.append("wardId", "ward-123");
 
-      const result = await createWardAdminAction({ success: false }, formData);
+      const result = await promoteToWardAdminAction({ success: false }, formData);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("requer perfil de Admin da Estaca");
     });
 
-    it("cria o Admin da Ala com sucesso quando acionado por admin_estaca", async () => {
+    it("retorna erro quando userId ou wardId não são informados", async () => {
       mockGetUser.mockResolvedValue({
         data: {
           user: {
             id: "admin-estaca-id",
-            app_metadata: { role: "admin_estaca" },
+            app_metadata: { role: "admin_estaca", stake_id: "stake-123" },
           },
         },
         error: null,
       });
 
-      mockInvoke.mockResolvedValue({
-        data: {
-          ok: true,
-          userId: "ward-admin-new-id",
-          profile: { full_name: "Admin da Ala Candelária" },
-        },
-        error: null,
-      });
-
       const formData = new FormData();
-      formData.append("wardId", "ward-123");
-      formData.append("email", "admin.ala@teste.com");
-      formData.append("fullName", "Admin da Ala Candelária");
-      formData.append("password", "SenhaForte123!");
-      formData.append("birthDate", "1990-01-01");
-      formData.append("sexo", "masculino");
+      // sem userId e wardId
 
-      const result = await createWardAdminAction({ success: false }, formData);
-
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("cadastrado com sucesso");
-      expect(mockInvoke).toHaveBeenCalledWith("provision-user", expect.objectContaining({
-        body: expect.objectContaining({
-          operation: "create_ward_admin",
-          wardId: "ward-123",
-          email: "admin.ala@teste.com",
-        }),
-      }));
-    });
-
-    it("retorna erro quando a edge function retorna falha", async () => {
-      mockGetUser.mockResolvedValue({
-        data: {
-          user: {
-            id: "admin-estaca-id",
-            app_metadata: { role: "admin_estaca" },
-          },
-        },
-        error: null,
-      });
-
-      mockInvoke.mockResolvedValue({
-        data: null,
-        error: { message: "A Ala informada não pertence à sua Estaca." },
-      });
-
-      const formData = new FormData();
-      formData.append("wardId", "ward-outra-estaca");
-      formData.append("email", "admin.ala@teste.com");
-      formData.append("fullName", "Admin Outra");
-      formData.append("password", "Senha123!");
-      formData.append("birthDate", "1990-01-01");
-
-      const result = await createWardAdminAction({ success: false }, formData);
+      const result = await promoteToWardAdminAction({ success: false }, formData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("A Ala informada não pertence à sua Estaca");
+      expect(result.error).toContain("Selecione um membro válido");
+    });
+
+    it("retorna erro quando a Ala não pertence à Estaca do admin", async () => {
+      const callerStakeId = "stake-natal";
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: "admin-estaca-id",
+            app_metadata: { role: "admin_estaca", stake_id: callerStakeId },
+          },
+        },
+        error: null,
+      });
+
+      // Mock da listagem de usuários auth (service client)
+      const mockServiceListUsers = jest.fn().mockResolvedValue({
+        data: { users: [] },
+      });
+      const mockServiceFrom = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({
+              // Ward pertence a outra Estaca
+              data: { id: "ward-outra-estaca", stake_id: "stake-outra", name: "Ala Outra" },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      const mockServiceUpdateUserById = jest.fn();
+
+      jest.doMock("@/infrastructure/supabase/server", () => ({
+        createSupabaseServerClient: jest.fn().mockResolvedValue({
+          auth: { getUser: mockGetUser },
+          from: mockFrom,
+        }),
+        createSupabaseServiceClient: jest.fn().mockReturnValue({
+          from: mockServiceFrom,
+          auth: { admin: { listUsers: mockServiceListUsers, updateUserById: mockServiceUpdateUserById } },
+        }),
+      }));
+
+      const formData = new FormData();
+      formData.append("userId", "member-123");
+      formData.append("wardId", "ward-outra-estaca");
+
+      const result = await promoteToWardAdminAction({ success: false }, formData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 

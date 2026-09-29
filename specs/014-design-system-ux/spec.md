@@ -85,6 +85,15 @@ Como pessoa que usa teclado, zoom ou tecnologia assistiva, quero concluir os mes
 
 ## Regras Vinculadas
 
+### US-014.6: Estrutura unificada de navegação
+
+- A área autenticada deve ter uma única lateral fixa no desktop, recolhível por botão, com preferência local persistida.
+- No celular a navegação deve abrir como gaveta, fechar com Escape, controlar foco e não cobrir permanentemente o conteúdo.
+- O canto superior direito deve reunir identificação, acesso ao perfil, saída e alternância entre visão de membro e administração para Admin Ala/Estaca.
+- A alternância deve funcionar nos dois sentidos sem modificar role, claims ou permissões. Super Admin permanece limitado à gestão da plataforma.
+- Todas as telas existentes devem compartilhar superfícies, espaçamento e controles refinados, preservando integralmente paleta e família tipográfica do DESIGN.md.
+
+
 - `DESIGN.md` é a fonte de decisão visual.
 - Specs 000-004 e `docs/DECISIONS.md` continuam sendo a fonte exclusiva das regras de negócio.
 - A identidade é própria do SGCT e não implica endosso oficial da Igreja.

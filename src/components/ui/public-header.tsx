@@ -1,67 +1,24 @@
 import Link from "next/link";
 import { Brand } from "./brand";
-import { BusIcon, CalendarIcon, UserIcon } from "./icons";
+import { WorkspaceChrome } from "./workspace-chrome";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
-import { signOutAction } from "@/app/auth-actions";
 
-interface PublicHeaderProps {
-  stakeSlug: string;
-  stakeName?: string;
-}
+interface PublicHeaderProps { stakeSlug: string; stakeName?: string; }
 
 export async function PublicHeader({ stakeSlug, stakeName }: PublicHeaderProps) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  const isAuthenticated = Boolean(data.user);
-
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    return <WorkspaceChrome stakeSlug={stakeSlug} context={stakeName} name={profile?.full_name || user.user_metadata?.full_name || "Minha conta"} role={user.app_metadata?.role || "member"} mode="member" />;
+  }
   return (
     <header className="border-b border-[#e0e2e2] bg-white/95 backdrop-blur">
-      <div className="sgct-container flex min-h-[4.5rem] items-center justify-between gap-3">
+      <div className="sgct-container flex min-h-20 items-center justify-between gap-3">
         <Brand href={`/${stakeSlug}`} context={stakeName} compact />
-        <nav aria-label="Navegação principal" className="flex items-center gap-1 sm:gap-2">
-          <Link
-            href={`/${stakeSlug}/calendario`}
-            className={`min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-[#3a3d40] hover:bg-brand-50 hover:text-brand-700 sm:px-4 ${isAuthenticated ? "hidden sm:inline-flex" : "inline-flex"}`}
-          >
-            <CalendarIcon className="hidden h-5 w-5 min-[360px]:block sm:hidden" />
-            <span className="sm:hidden">Viagens</span>
-            <span className="hidden sm:inline">Caravanas</span>
-          </Link>
-          {isAuthenticated ? (
-            <>
-              <Link
-                href={`/${stakeSlug}/minhas-reservas`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:px-4"
-              >
-                <BusIcon className="h-5 w-5" />
-                <span className="sm:hidden">Reservas</span>
-                <span className="hidden sm:inline">Minhas reservas</span>
-              </Link>
-              <Link
-                href={`/${stakeSlug}/conta`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#d0d3d3] bg-white px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:px-4"
-              >
-                <UserIcon className="h-5 w-5" />
-                <span className="sr-only sm:not-sr-only">Minha conta</span>
-              </Link>
-              <form action={signOutAction.bind(null, stakeSlug)}>
-                <button
-                  type="submit"
-                  className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-semibold text-[#53575b] hover:bg-[#eff0f0] hover:text-[#212225] sm:px-3"
-                >
-                  Sair
-                </button>
-              </form>
-            </>
-          ) : (
-            <Link
-              href={`/${stakeSlug}/auth/login`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-md border border-[#d0d3d3] bg-white px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:px-4"
-            >
-              <UserIcon className="h-5 w-5" />
-              <span>Entrar</span>
-            </Link>
-          )}
+        <nav aria-label="Navegação principal" className="flex items-center gap-2">
+          <Link href={`/${stakeSlug}/calendario`} className="sgct-button text-brand-700">Caravanas</Link>
+          <Link href={`/${stakeSlug}/auth/login`} className="sgct-button-secondary">Entrar</Link>
         </nav>
       </div>
     </header>

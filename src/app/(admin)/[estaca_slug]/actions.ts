@@ -5,11 +5,14 @@
  *
  * Artigo I: orquestra use-cases sem misturar regras de negócio na UI.
  * Artigo II.d: restrito a admin_estaca criando admin_ala para a mesma stake_id.
+ *
+ * DECISÃO D32: Admin Estaca não cria usuários novos — apenas promove membros já cadastrados.
  */
 
 import { revalidatePath } from "next/cache";
 import {
   createSupabaseServerClient,
+  createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
@@ -26,7 +29,61 @@ export type AdminActionState = {
   error?: string;
 };
 
-export async function createWardAdminAction(
+/**
+ * Busca um membro existente pelo e-mail para promovê-lo a Admin de Ala.
+ * O membro deve estar na mesma Estaca do Admin Estaca logado.
+ * DECISÃO D32: apenas membros já cadastrados podem ser promovidos.
+ */
+export async function searchMemberForWardAdminPromotion(
+  email: string,
+  stakeId: string
+): Promise<{ id: string; full_name: string; role: string; ward_id: string | null; ward_name: string | null } | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+
+    const callerRole = userData.user.app_metadata?.role;
+    const callerStakeId = userData.user.app_metadata?.stake_id;
+    if (callerRole !== "admin_estaca" || callerStakeId !== stakeId) return null;
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // Buscar usuário pelo e-mail
+    const { data: authUsers } = await serviceClient.auth.admin.listUsers();
+    const authUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!authUser) return null;
+
+    // Verificar que pertence à mesma Estaca
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, ward_id, wards(name)")
+      .eq("id", authUser.id)
+      .eq("stake_id", stakeId)
+      .maybeSingle();
+
+    if (!profile) return null;
+
+    const wardData = Array.isArray(profile.wards) ? profile.wards[0] : profile.wards;
+    return {
+      id: profile.id,
+      full_name: profile.full_name,
+      role: profile.role,
+      ward_id: profile.ward_id,
+      ward_name: (wardData as { name: string } | null)?.name ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Promove um membro existente a Admin de Ala.
+ * REGRA: O usuário já deve existir como membro na mesma Estaca.
+ * Não cria usuários novos — apenas eleva permissão.
+ * Artigo II.d: ward_id deve pertencer à mesma stake_id do admin logado.
+ */
+export async function promoteToWardAdminAction(
   _prevState: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
@@ -39,39 +96,79 @@ export async function createWardAdminAction(
     }
 
     const user = userData.user;
-    const role = user.app_metadata?.role;
-    if (role !== "admin_estaca") {
+    const callerRole = user.app_metadata?.role;
+    const callerStakeId = user.app_metadata?.stake_id;
+
+    if (callerRole !== "admin_estaca" || !callerStakeId) {
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
+    const userId = formData.get("userId") as string;
     const wardId = formData.get("wardId") as string;
-    const email = formData.get("email") as string;
-    const fullName = formData.get("fullName") as string;
-    const password = formData.get("password") as string;
-    const birthDate = formData.get("birthDate") as string;
-    const sexo = (formData.get("sexo") as "masculino" | "feminino") || undefined;
 
-    const { data, error } = await supabase.functions.invoke("provision-user", {
-      body: {
-        operation: "create_ward_admin", wardId, email, fullName,
-        password, birthDate, sexo,
+    if (!userId || !wardId) {
+      throw new Error("Selecione um membro válido e uma Ala de destino.");
+    }
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // Verificar que a Ala pertence à Estaca do admin (Artigo II.d)
+    const { data: ward } = await serviceClient
+      .from("wards")
+      .select("id, stake_id, name")
+      .eq("id", wardId)
+      .maybeSingle();
+
+    if (!ward || ward.stake_id !== callerStakeId) {
+      throw new Error("Ala não encontrada ou não pertence à sua Estaca.");
+    }
+
+    // Verificar que o membro existe e pertence à mesma Estaca
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, stake_id")
+      .eq("id", userId)
+      .eq("stake_id", callerStakeId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new Error("Membro não encontrado nesta Estaca.");
+    }
+
+    if (profile.role === "admin_ala") {
+      throw new Error(`${profile.full_name} já é Admin de Ala.`);
+    }
+
+    // Elevar permissão e vincular à Ala selecionada
+    const { error: pError } = await serviceClient
+      .from("profiles")
+      .update({ role: "admin_ala", ward_id: wardId })
+      .eq("id", userId);
+
+    if (pError) throw new Error(pError.message);
+
+    // Sincronizar claims no Auth metadata
+    await serviceClient.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        role: "admin_ala",
+        stake_id: callerStakeId,
+        ward_id: wardId,
       },
     });
-    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao criar Admin da Ala.");
-    const createdAdmin = data.profile as { full_name: string };
 
-    revalidatePath("/admin");
+    revalidatePath("/[estaca_slug]/estaca/equipe");
     return {
       success: true,
-      message: `Admin da Ala "${createdAdmin.full_name}" cadastrado com sucesso!`,
+      message: `"${profile.full_name}" foi promovido(a) a Admin da Ala ${ward.name} com sucesso!`,
     };
   } catch (err: unknown) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Erro ao cadastrar Admin da Ala.",
+      error: err instanceof Error ? err.message : "Erro ao promover membro a Admin de Ala.",
     };
   }
 }
+
 
 export async function createCaravanAction(
   _prevState: AdminActionState,

@@ -6,11 +6,15 @@
  * Artigo I: orquestra use-cases sem acoplar regras de negócio à UI.
  * Artigo II.f: restrito exclusivamente a super_admin.
  * Artigo V: validação com Zod antes de qualquer operação.
+ *
+ * DECISÃO D32: Admins não são criados pelo painel — são membros existentes promovidos.
+ * O fluxo correto é: cadastrar-se como membro → receber promoção de permissão.
  */
 
 import { revalidatePath } from "next/cache";
 import {
   createSupabaseServerClient,
+  createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { createStake } from "@/use-cases/tenant/create-stake";
@@ -75,44 +79,106 @@ export async function createStakeAction(
 }
 
 /**
- * Cria o primeiro Admin de Estaca (bootstrap) para uma Estaca cadastrada.
+ * Busca um membro existente pelo e-mail para pré-preenchimento do formulário.
+ * Retorna dados básicos do profile sem expor dados sensíveis.
  */
-export async function createBootstrapAdminEstacaAction(
+export async function searchMemberByEmailForPromotion(
+  email: string,
+  stakeId: string
+): Promise<{ id: string; full_name: string; role: string; ward_name: string | null } | null> {
+  try {
+    await assertSuperAdmin();
+    const serviceClient = createSupabaseServiceClient();
+
+    // Buscar usuário pelo e-mail no Auth
+    const { data: authUsers } = await serviceClient.auth.admin.listUsers();
+    const authUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!authUser) return null;
+
+    // Buscar profile do usuário na Estaca informada
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, ward_id, wards(name)")
+      .eq("id", authUser.id)
+      .eq("stake_id", stakeId)
+      .maybeSingle();
+
+    if (!profile) return null;
+
+    const wardData = Array.isArray(profile.wards) ? profile.wards[0] : profile.wards;
+    return {
+      id: profile.id,
+      full_name: profile.full_name,
+      role: profile.role,
+      ward_name: (wardData as { name: string } | null)?.name ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Promove um membro existente a Admin de Estaca.
+ * REGRA: O usuário já deve existir com role 'member' na Estaca selecionada.
+ * Não cria usuários novos — apenas eleva permissão.
+ */
+export async function promoteToStakeAdminAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
     await assertSuperAdmin();
 
+    const userId = formData.get("userId") as string;
     const stakeId = formData.get("stakeId") as string;
-    const email = formData.get("email") as string;
-    const fullName = formData.get("fullName") as string;
-    const password = formData.get("password") as string;
-    const birthDate = formData.get("birthDate") as string;
 
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.functions.invoke("provision-user", {
-      body: {
-        operation: "create_bootstrap_admin", stakeId, email, fullName,
-        password, birthDate,
+    if (!userId || !stakeId) {
+      throw new Error("Selecione um membro válido antes de promover.");
+    }
+
+    const serviceClient = createSupabaseServiceClient();
+
+    // Verificar que o profile existe e pertence à Estaca
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("id, full_name, role, stake_id")
+      .eq("id", userId)
+      .eq("stake_id", stakeId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new Error("Membro não encontrado nesta Estaca. Verifique o e-mail e a Estaca selecionada.");
+    }
+
+    if (profile.role === "admin_estaca") {
+      throw new Error(`${profile.full_name} já possui permissão de Admin de Estaca.`);
+    }
+
+    // Elevar permissão
+    const { error: pError } = await serviceClient
+      .from("profiles")
+      .update({ role: "admin_estaca" })
+      .eq("id", userId);
+
+    if (pError) throw new Error(pError.message);
+
+    // Sincronizar claims no Auth metadata
+    await serviceClient.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        role: "admin_estaca",
+        stake_id: stakeId,
       },
     });
-    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao criar Admin de Estaca.");
-    const profile = data.profile as { full_name: string };
 
     revalidatePath("/admins");
     return {
       success: true,
-      message: `Admin de Estaca "${profile.full_name}" criado com sucesso!`,
+      message: `"${profile.full_name}" foi promovido(a) a Admin de Estaca com sucesso!`,
     };
   } catch (err: unknown) {
-    const errorMsg =
-      err instanceof Error
-        ? err.message
-        : "Erro desconhecido ao criar Admin de Estaca.";
     return {
       success: false,
-      error: errorMsg,
+      error: err instanceof Error ? err.message : "Erro ao promover membro.",
     };
   }
 }

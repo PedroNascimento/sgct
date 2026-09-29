@@ -41,12 +41,16 @@ Como jovem de 12 a 17 anos sem responsável na caravana, quero ter minha própri
 - THE SYSTEM SHALL NOT exigir vínculo (`guardian_id`) com conta de responsável como campo obrigatório.
 - WHERE o menor optar por vincular um responsável já cadastrado, THE SYSTEM SHALL permitir esse vínculo opcional.
 
-### US-001.3: Criação de Admin Ala por um Admin Estaca
-Como Admin Estaca, quero cadastrar administradores para cada Ala da minha Estaca, para descentralizar a aprovação de pagamentos.
+### US-001.3: Promoção de Membro Existente a Admin Ala por um Admin Estaca
+Como Admin Estaca, quero promover um membro já cadastrado da minha Estaca a Administrador de Ala, para descentralizar a aprovação de pagamentos.
 
 **Critérios de Aceite (EARS):**
-- WHEN um `admin_estaca` cria um `profile` com `role = 'admin_ala'`, THE SYSTEM SHALL exigir que o `ward_id` informado pertença à mesma `stake_id` do `admin_estaca` que está criando.
-- IF um `admin_estaca` tentar criar um `admin_ala` vinculado a uma `ward_id` de outra Estaca, THEN THE SYSTEM SHALL rejeitar.
+- PRE-CONDITION: O usuário a ser promovido deve ter cadastro prévio como `member` na mesma Estaca (D32).
+- WHEN um `admin_estaca` promove um `member` existente a `admin_ala`, THE SYSTEM SHALL buscar o perfil pelo e-mail e confirmar que pertence à mesma `stake_id` antes de elevar a permissão.
+- THE SYSTEM SHALL exigir que o `ward_id` informado pertença à mesma `stake_id` do `admin_estaca` que está promovendo (Artigo II.d).
+- IF um `admin_estaca` tentar promover um membro vinculado a outra Estaca, THEN THE SYSTEM SHALL rejeitar.
+- THE SYSTEM SHALL NOT permitir criação de novos usuários pelo painel admin — apenas elevação de permissão de contas existentes.
+- WHEN a permissão for revogada, THE SYSTEM SHALL retornar o usuário para `role = 'member'` sem excluir a conta nem o histórico.
 
 ### US-001.4: Inativação automática por inatividade
 Como responsável técnico do sistema, quero que contas sem uso por muito tempo sejam inativadas automaticamente, sem perder o histórico de dados.
@@ -71,7 +75,7 @@ Como membro de outra Estaca que não usa (ou não precisa usar) este sistema, qu
 - THE SYSTEM SHALL NOT permitir que um `guest` seja promovido a `member`/`admin_ala` da Estaca anfitriã sem um cadastro completo separado (papéis são mutuamente exclusivos nesta versão).
 
 ## Regras de Negócio Vinculadas
-`docs/DECISIONS.md`: D07 (menor sem vínculo obrigatório), D14 (inativação, não exclusão), D20 (auth por e-mail), D22 (hierarquia de papéis), D28 (convidado inter-Estaca, corrigido).
+`docs/DECISIONS.md`: D07 (menor sem vínculo obrigatório), D14 (inativação, não exclusão), D20 (auth por e-mail), D22 (hierarquia de papéis), D28 (convidado inter-Estaca, corrigido), D32 (admin é promovido, nunca criado pelo painel).
 
 ## Dependências
 000-fundacao-multi-tenant-saas (schema `stakes`/`profiles`, triggers de consistência de tenant, claims JWT).

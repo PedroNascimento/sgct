@@ -46,6 +46,13 @@
 
 ## Riscos e Mitigações
 
+## Complemento: navegação unificada
+
+Criar componente client de estrutura com lateral fixa/recolhível, gaveta mobile e menu de conta. Os componentes server existentes fornecem nome e role da sessão validada; links de alternância não alteram privilégios. Reutilizar a estrutura nas áreas administrativa, plataforma e páginas autenticadas que usam PublicHeader. Refino global das superfícies e controles alcança login, cadastro e páginas públicas mantendo tokens.
+
+Conformidade: Artigos I/III/V — apresentação sem novas mutações; II — acesso continua protegido por middleware/RLS, opções administrativas derivadas da sessão; IV — testes de interação de recolhimento, foco e alternância; VII/VIII — escopo autorizado em US-014.6 antes da implementação; IX — nenhum tenant fixo.
+
+
 - **Regressão funcional:** manter props, nomes de campos e Server Actions; executar suíte completa.
 - **Quebra mobile:** validar em 320, 360, 390, 768 e 1280 px.
 - **Contraste inconsistente:** usar somente tokens semânticos com pares registrados no `DESIGN.md`.

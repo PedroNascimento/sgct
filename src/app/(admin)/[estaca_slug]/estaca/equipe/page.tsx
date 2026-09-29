@@ -62,10 +62,10 @@ export default async function EstacaEquipePage({ params }: Props) {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          {/* Formulário de cadastro */}
+          {/* Formulário de promoção */}
           <div className="lg:col-span-2">
             {wards && wards.length > 0 ? (
-              <WardAdminForm wards={wards} />
+              <WardAdminForm wards={wards} stakeId={stake.id} />
             ) : (
               <div className="sgct-alert-warning">
                 Nenhuma Ala cadastrada na Estaca. Contate o Super Admin.
