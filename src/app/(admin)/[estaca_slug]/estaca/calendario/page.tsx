@@ -29,21 +29,28 @@ export default async function AdminCalendarioPage({ params }: Props) {
 
   const caravans = await caravanRepo.findByStakeId(stake.id);
 
+  // Busca todas as reservas da Estaca para o Dashboard de Inscritos
+  const { data: reservations } = await supabase
+    .from("reservations")
+    .select("id, caravan_id, seat_number, status, payment_amount, category, created_at, profiles!inner(full_name, cpf, phone), wards!inner(name)")
+    .eq("stake_id", stake.id)
+    .order("seat_number", { ascending: true, nullsFirst: false });
+
   return (
-    <main id="conteudo-principal" className="sgct-container py-8 sm:py-10">
-      <div className="mb-8">
+    <div className="space-y-6">
+      <div>
         <p className="sgct-eyebrow">Painel da Estaca</p>
-        <h1 className="sgct-title mt-3">Gestão de caravanas</h1>
+        <h1 className="sgct-title mt-2">Gestão de Caravanas & Dashboard</h1>
         <p className="sgct-subtitle">
-          Cadastre novas viagens ao Templo de Recife, configure pontos de embarque e monitore os prazos.
+          Cadastre novas viagens, edite caravanas ativas e acompanhe todos os inscritos por Ala e pagamento.
         </p>
-        <p className="mt-3 text-sm font-semibold text-brand-700">{stake.name}</p>
       </div>
 
       <CalendarioAdminClient
         stakeSlug={estaca_slug}
         initialCaravans={caravans}
+        initialReservations={(reservations as any) ?? []}
       />
-    </main>
+    </div>
   );
 }

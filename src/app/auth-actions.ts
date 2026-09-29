@@ -13,5 +13,11 @@ export async function signOutAction(stakeSlug: string): Promise<never> {
   const slug = stakeSlugSchema.parse(stakeSlug);
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect(`/${slug}`);
+  redirect(`/${slug}/auth/login`);
+}
+
+export async function superAdminSignOutAction(): Promise<never> {
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  redirect("/super-admin/login");
 }
