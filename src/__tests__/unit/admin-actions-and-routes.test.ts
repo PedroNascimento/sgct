@@ -14,11 +14,13 @@ import {
   editCaravanAction,
   confirmSingleTransferAction,
   rejectTransferAction,
+  createCaravanAction,
 } from "@/app/(admin)/[estaca_slug]/actions";
 import { superAdminSignOutAction } from "@/app/auth-actions";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
 import { validateWeeklyTransfers } from "@/use-cases/payment/validate-weekly-transfers";
+import { createCaravan } from "@/use-cases/caravan/create-caravan";
 import { redirect } from "next/navigation";
 
 jest.mock("@/infrastructure/supabase/server", () => ({
@@ -31,6 +33,10 @@ jest.mock("@/use-cases/payment/confirm-ward-payment", () => ({
 
 jest.mock("@/use-cases/payment/validate-weekly-transfers", () => ({
   validateWeeklyTransfers: jest.fn(),
+}));
+
+jest.mock("@/use-cases/caravan/create-caravan", () => ({
+  createCaravan: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -343,6 +349,91 @@ describe("Server Actions Administrativas e de Acesso", () => {
       const result = await rejectTransferAction("res-123");
       expect(result.success).toBe(true);
       expect(result.message).toContain("retornado para a Ala");
+    });
+  });
+
+  describe("createCaravanAction", () => {
+    const adminId = "admin-estaca-1";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: adminId,
+            app_metadata: { role: "admin_estaca", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      (createCaravan as jest.Mock).mockResolvedValue({
+        id: "caravan-new-123",
+        departure_date: "2026-10-16",
+        status: "open",
+      });
+    });
+
+    it("lê e processa pontos de embarque enviados via campo 'boardingPoints'", async () => {
+      const formData = new FormData();
+      formData.append("departureDate", "2026-10-16");
+      formData.append("returnDate", "2026-10-17");
+      formData.append("priceStandard", "130");
+      formData.append("priceOfficiant", "122");
+      formData.append("seatLimit", "50");
+      formData.append("waitlistLimit", "5");
+      formData.append("registrationDeadline", "2026-10-11");
+      formData.append("minQuorum", "48");
+      formData.append("quorumCheckDate", "2026-10-13");
+      formData.append(
+        "boardingPoints",
+        JSON.stringify([
+          { name: "Capela Tirol", boardingTime: "2026-10-16T19:00" },
+          { name: "Capela Potengi", boardingTime: "2026-10-16T19:30" },
+        ])
+      );
+
+      const result = await createCaravanAction({ success: false }, formData);
+
+      expect(result.success).toBe(true);
+      expect(createCaravan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          departureDate: "2026-10-16",
+          boardingPoints: [
+            { name: "Capela Tirol", boardingTime: "2026-10-16T19:00" },
+            { name: "Capela Potengi", boardingTime: "2026-10-16T19:30" },
+          ],
+        }),
+        adminId,
+        expect.any(Object)
+      );
+    });
+
+    it("lê e processa pontos de embarque enviados via campo 'boardingPointsJson'", async () => {
+      const formData = new FormData();
+      formData.append("departureDate", "2026-10-16");
+      formData.append("priceStandard", "130");
+      formData.append("priceOfficiant", "122");
+      formData.append("registrationDeadline", "2026-10-11");
+      formData.append("quorumCheckDate", "2026-10-13");
+      formData.append(
+        "boardingPointsJson",
+        JSON.stringify([
+          { name: "Capela Principal", boardingTime: "2026-10-16T18:00" },
+        ])
+      );
+
+      const result = await createCaravanAction({ success: false }, formData);
+
+      expect(result.success).toBe(true);
+      expect(createCaravan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          boardingPoints: [
+            { name: "Capela Principal", boardingTime: "2026-10-16T18:00" },
+          ],
+        }),
+        adminId,
+        expect.any(Object)
+      );
     });
   });
 });

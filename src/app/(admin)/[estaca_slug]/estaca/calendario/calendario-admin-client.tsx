@@ -159,6 +159,8 @@ export function CalendarioAdminClient({
   };
 
   const statusLabels: Record<string, { label: string; color: string }> = {
+    registered: { label: "Cadastrada", color: "border-brand-200 bg-brand-50 text-brand-800" },
+    draft: { label: "Cadastrada", color: "border-brand-200 bg-brand-50 text-brand-800" },
     open: { label: "Inscrições abertas", color: "border-success-200 bg-success-50 text-success-700" },
     quorum_pending: { label: "Aguardando quórum", color: "border-warning-200 bg-warning-50 text-warning-700" },
     confirmed: { label: "Confirmada", color: "border-brand-200 bg-brand-50 text-brand-700" },
@@ -590,6 +592,7 @@ export function CalendarioAdminClient({
                     defaultValue={editingCaravan.status}
                     className="sgct-select"
                   >
+                    <option value="registered">Cadastrada (registered)</option>
                     <option value="open">Inscrições abertas (open)</option>
                     <option value="quorum_pending">Aguardando quórum (quorum_pending)</option>
                     <option value="confirmed">Confirmada (confirmed)</option>
@@ -634,6 +637,11 @@ export function CalendarioAdminClient({
           <input
             type="hidden"
             name="boardingPoints"
+            value={JSON.stringify(boardingPoints)}
+          />
+          <input
+            type="hidden"
+            name="boardingPointsJson"
             value={JSON.stringify(boardingPoints)}
           />
 

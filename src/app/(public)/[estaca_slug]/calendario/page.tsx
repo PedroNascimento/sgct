@@ -172,9 +172,9 @@ export default async function PublicCalendarioPage({ params }: Props) {
                       )}
                     </div>
                   </div>
-                  <span className={`sgct-chip w-fit border-white/20 ${caravan.status === "open" ? "bg-white text-success-700" : "bg-warning-50 text-warning-700"}`}>
+                  <span className={`sgct-chip w-fit border-white/20 ${caravan.status === "open" ? "bg-white text-success-700" : caravan.status === "registered" || caravan.status === "draft" ? "bg-brand-50 text-brand-800" : "bg-warning-50 text-warning-700"}`}>
                     <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />
-                    {caravan.status === "open" ? "Inscrições abertas" : "Inscrições indisponíveis"}
+                    {caravan.status === "open" ? "Inscrições abertas" : caravan.status === "registered" || caravan.status === "draft" ? "Cadastrada (Em breve)" : "Inscrições indisponíveis"}
                   </span>
                 </div>
               </div>

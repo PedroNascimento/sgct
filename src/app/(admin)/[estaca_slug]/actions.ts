@@ -199,12 +199,20 @@ export async function createCaravanAction(
     const minQuorum = formData.get("minQuorum") ? Number(formData.get("minQuorum")) : 48;
     const quorumCheckDate = formData.get("quorumCheckDate") as string;
 
-    const rawBoarding = formData.get("boardingPointsJson") as string;
+    const rawBoarding = (formData.get("boardingPoints") ||
+      formData.get("boardingPointsJson")) as string;
     let boardingPoints = [];
     try {
       boardingPoints = JSON.parse(rawBoarding || "[]");
     } catch {
       throw new Error("Formato inválido dos pontos de embarque.");
+    }
+
+    if (Array.isArray(boardingPoints)) {
+      boardingPoints = boardingPoints.filter(
+        (bp: { name?: string; boardingTime?: string }) =>
+          bp && typeof bp.name === "string" && bp.name.trim().length > 0
+      );
     }
 
     const caravanRepository = new SupabaseCaravanRepository(supabase);

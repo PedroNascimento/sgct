@@ -40,9 +40,20 @@ export type CreateCaravanInput = z.infer<typeof createCaravanSchema>;
 
 export const updateCaravanStatusSchema = z.object({
   caravanId: z.string().uuid("ID da caravana inválido."),
-  status: z.enum(["open", "quorum_pending", "confirmed", "cancelled", "completed"], {
-    errorMap: () => ({ message: "Status de caravana inválido." }),
-  }),
+  status: z.enum(
+    [
+      "registered",
+      "draft",
+      "open",
+      "quorum_pending",
+      "confirmed",
+      "cancelled",
+      "completed",
+    ],
+    {
+      errorMap: () => ({ message: "Status de caravana inválido." }),
+    }
+  ),
 });
 
 export type UpdateCaravanStatusInput = z.infer<typeof updateCaravanStatusSchema>;

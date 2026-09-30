@@ -4,6 +4,8 @@
  */
 
 export type CaravanStatus =
+  | "registered"
+  | "draft"
   | "open"
   | "quorum_pending"
   | "confirmed"
