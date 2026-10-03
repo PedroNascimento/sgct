@@ -7,5 +7,12 @@ export interface Ward {
   id: string;
   stake_id: string;
   name: string;
+  is_active: boolean;
   created_at: string;
 }
+
+export interface WardWithStats extends Ward {
+  member_count?: number;
+  admin_count?: number;
+}
+

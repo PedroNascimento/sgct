@@ -15,12 +15,20 @@ import {
   confirmSingleTransferAction,
   rejectTransferAction,
   createCaravanAction,
+  createWardAction,
+  updateWardAction,
+  toggleWardStatusAction,
+  deleteWardAction,
 } from "@/app/(admin)/[estaca_slug]/actions";
 import { superAdminSignOutAction } from "@/app/auth-actions";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
 import { validateWeeklyTransfers } from "@/use-cases/payment/validate-weekly-transfers";
 import { createCaravan } from "@/use-cases/caravan/create-caravan";
+import { createWard } from "@/use-cases/ward/create-ward";
+import { updateWard } from "@/use-cases/ward/update-ward";
+import { toggleWardStatus } from "@/use-cases/ward/toggle-ward-status";
+import { deleteWard } from "@/use-cases/ward/delete-ward";
 import { redirect } from "next/navigation";
 
 jest.mock("@/infrastructure/supabase/server", () => ({
@@ -37,6 +45,22 @@ jest.mock("@/use-cases/payment/validate-weekly-transfers", () => ({
 
 jest.mock("@/use-cases/caravan/create-caravan", () => ({
   createCaravan: jest.fn(),
+}));
+
+jest.mock("@/use-cases/ward/create-ward", () => ({
+  createWard: jest.fn(),
+}));
+
+jest.mock("@/use-cases/ward/update-ward", () => ({
+  updateWard: jest.fn(),
+}));
+
+jest.mock("@/use-cases/ward/toggle-ward-status", () => ({
+  toggleWardStatus: jest.fn(),
+}));
+
+jest.mock("@/use-cases/ward/delete-ward", () => ({
+  deleteWard: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -436,4 +460,210 @@ describe("Server Actions Administrativas e de Acesso", () => {
       );
     });
   });
+
+  describe("createWardAction", () => {
+    const adminId = "admin-estaca-1";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: adminId,
+            app_metadata: { role: "admin_estaca", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      (createWard as jest.Mock).mockResolvedValue({
+        id: "ward-123",
+        name: "Ala Candelária",
+        stake_id: "stake-natal",
+      });
+    });
+
+    it("retorna erro se não autenticado", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const formData = new FormData();
+      formData.append("name", "Ala Nova");
+
+      const result = await createWardAction({ success: false }, formData);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Não autenticado");
+    });
+
+    it("retorna erro se role não é admin_estaca", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: {
+          user: {
+            id: "user-123",
+            app_metadata: { role: "member", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      const formData = new FormData();
+      formData.append("name", "Ala Nova");
+
+      const result = await createWardAction({ success: false }, formData);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Acesso negado");
+    });
+
+    it("chama createWard e retorna sucesso quando válido", async () => {
+      const formData = new FormData();
+      formData.append("name", "Ala Candelária");
+
+      const result = await createWardAction({ success: false }, formData);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Ala "Ala Candelária" cadastrada com sucesso!');
+      expect(createWard).toHaveBeenCalledWith(
+        { name: "Ala Candelária" },
+        adminId,
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("updateWardAction", () => {
+    const adminId = "admin-estaca-1";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: adminId,
+            app_metadata: { role: "admin_estaca", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      (updateWard as jest.Mock).mockResolvedValue({
+        id: "ward-123",
+        name: "Ala Candelária Atualizada",
+        stake_id: "stake-natal",
+      });
+    });
+
+    it("retorna erro se não autenticado", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const formData = new FormData();
+      formData.append("wardId", "ward-123");
+      formData.append("name", "Ala Atualizada");
+
+      const result = await updateWardAction({ success: false }, formData);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Não autenticado");
+    });
+
+    it("chama updateWard e retorna sucesso quando válido", async () => {
+      const formData = new FormData();
+      formData.append("wardId", "ward-123");
+      formData.append("name", "Ala Candelária Atualizada");
+
+      const result = await updateWardAction({ success: false }, formData);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Ala "Ala Candelária Atualizada" atualizada com sucesso!');
+      expect(updateWard).toHaveBeenCalledWith(
+        { wardId: "ward-123", name: "Ala Candelária Atualizada" },
+        adminId,
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("toggleWardStatusAction", () => {
+    const adminId = "admin-estaca-1";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: adminId,
+            app_metadata: { role: "admin_estaca", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      (toggleWardStatus as jest.Mock).mockResolvedValue({
+        id: "ward-123",
+        name: "Ala Candelária",
+        is_active: false,
+      });
+    });
+
+    it("retorna erro se não autenticado", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const result = await toggleWardStatusAction("ward-123", false);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Não autenticado");
+    });
+
+    it("chama toggleWardStatus e retorna sucesso quando válido", async () => {
+      const result = await toggleWardStatusAction("ward-123", false);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Ala "Ala Candelária" foi inativada com sucesso.');
+      expect(toggleWardStatus).toHaveBeenCalledWith(
+        { wardId: "ward-123", isActive: false },
+        adminId,
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("deleteWardAction", () => {
+    const adminId = "admin-estaca-1";
+
+    beforeEach(() => {
+      mockGetUser.mockResolvedValue({
+        data: {
+          user: {
+            id: adminId,
+            app_metadata: { role: "admin_estaca", stake_id: "stake-natal" },
+          },
+        },
+        error: null,
+      });
+
+      (deleteWard as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it("retorna erro se não autenticado", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const result = await deleteWardAction("ward-123");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Não autenticado");
+    });
+
+    it("chama deleteWard e retorna sucesso quando válido", async () => {
+      const result = await deleteWardAction("ward-123");
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("Ala excluída com sucesso.");
+      expect(deleteWard).toHaveBeenCalledWith(
+        "ward-123",
+        adminId,
+        expect.any(Object)
+      );
+    });
+  });
 });
+

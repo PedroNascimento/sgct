@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
@@ -63,8 +64,14 @@ export default async function EstacaEquipePage({ params }: Props) {
         {wards.length > 0 ? (
           <WardAdminForm wards={wards} stakeId={stake.id} />
         ) : (
-          <div className="sgct-alert-warning">
-            Nenhuma Ala cadastrada na Estaca. Contate o Super Admin.
+          <div className="sgct-alert-warning flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>Nenhuma Ala cadastrada nesta Estaca. Cadastre as Alas antes de atribuir líderes.</span>
+            <Link
+              href={`/${estaca_slug}/estaca/alas`}
+              className="inline-flex items-center gap-1 font-bold text-amber-900 underline hover:text-amber-950"
+            >
+              Cadastrar Alas →
+            </Link>
           </div>
         )}
 
