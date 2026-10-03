@@ -45,7 +45,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
     { href: `${prefix}/estaca/calendario`, label: "Caravanas", icon: CalendarIcon },
     { href: `${prefix}/estaca/validacao-semanal`, label: "Validação semanal", icon: CheckIcon },
     { href: `${prefix}/estaca/alas`, label: "Alas", icon: BuildingIcon },
-    { href: `${prefix}/estaca/equipe`, label: "Equipe de liderança", icon: UserIcon },
+    { href: `${prefix}/estaca/equipe`, label: "Perfis e Usuários", icon: UserIcon },
   ] : [
     { href: `${prefix}/ala/reservas`, label: "Reservas da Ala", icon: BusIcon },
   ] : [

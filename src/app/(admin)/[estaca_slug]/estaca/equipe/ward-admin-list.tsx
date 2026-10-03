@@ -122,7 +122,7 @@ export function WardAdminList({ members }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#212225] flex items-center gap-2">
-              <span>Equipe e Membros Cadastrados</span>
+              <span>Perfis e Usuários Cadastrados</span>
               <span className="inline-flex items-center justify-center rounded-full bg-brand-100 text-brand-800 text-xs font-bold px-2.5 py-0.5">
                 {filteredMembers.length}{filteredMembers.length !== totalCount ? ` de ${totalCount}` : ""}
               </span>

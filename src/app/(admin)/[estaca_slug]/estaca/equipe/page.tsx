@@ -54,9 +54,9 @@ export default async function EstacaEquipePage({ params }: Props) {
       <div className="mx-auto max-w-6xl space-y-8">
         <div>
           <p className="sgct-eyebrow">Painel da Estaca</p>
-          <h1 className="sgct-title mt-3">Equipe — Admins de Ala</h1>
-          <p className="sgct-subtitle">
-            Cadastre os Administradores de cada Ala da {stake.name} e gerencie as permissões dos membros da Estaca.
+          <h1 className="sgct-title mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl">Perfis e Usuários</h1>
+          <p className="sgct-subtitle text-sm sm:text-base">
+            Cadastre os Administradores de cada Ala da {stake.name} e gerencie as permissões e usuários da Estaca.
           </p>
         </div>
 
