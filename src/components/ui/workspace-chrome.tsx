@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Menu, X, PanelLeftClose, PanelLeftOpen, ChevronDown, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { BusIcon, CalendarIcon, CheckIcon, UserIcon } from "./icons";
+import { BusIcon, CalendarIcon, CheckIcon, UserIcon, BuildingIcon } from "./icons";
 import { signOutAction, superAdminSignOutAction } from "@/app/auth-actions";
 
 interface Props {
@@ -44,6 +44,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
   ] : mode === "admin" ? role === "admin_estaca" ? [
     { href: `${prefix}/estaca/calendario`, label: "Caravanas", icon: CalendarIcon },
     { href: `${prefix}/estaca/validacao-semanal`, label: "Validação semanal", icon: CheckIcon },
+    { href: `${prefix}/estaca/alas`, label: "Alas", icon: BuildingIcon },
     { href: `${prefix}/estaca/equipe`, label: "Equipe de liderança", icon: UserIcon },
   ] : [
     { href: `${prefix}/ala/reservas`, label: "Reservas da Ala", icon: BusIcon },

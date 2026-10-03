@@ -21,7 +21,11 @@ import { updateCaravanStatus } from "@/use-cases/caravan/update-caravan-status";
 import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
 import { validateWeeklyTransfers } from "@/use-cases/payment/validate-weekly-transfers";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
+import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
+import { createWard } from "@/use-cases/ward/create-ward";
+import { updateWard } from "@/use-cases/ward/update-ward";
 import type { CaravanStatus } from "@/domain/types/caravan";
+import type { WardWithStats } from "@/domain/types/ward";
 import { formatDate } from "@/components/ui/format";
 
 export type AdminActionState = {
@@ -739,5 +743,163 @@ export async function toggleWardMemberStatusAction(
     };
   }
 }
+
+/**
+ * Cadastra uma nova Ala na Estaca (Admin Estaca).
+ */
+export async function createWardAction(
+  _prevState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const name = (formData.get("name") as string) || "";
+
+    const wardRepository = new SupabaseWardRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+
+    const created = await createWard(
+      { name },
+      user.id,
+      { wardRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/alas");
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    revalidatePath("/[estaca_slug]/cadastro");
+
+    return {
+      success: true,
+      message: `Ala "${created.name}" cadastrada com sucesso!`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao cadastrar Ala.",
+    };
+  }
+}
+
+/**
+ * Atualiza o nome de uma Ala existente (Admin Estaca).
+ */
+export async function updateWardAction(
+  _prevState: AdminActionState,
+  formData: FormData
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const wardId = formData.get("wardId") as string;
+    const name = (formData.get("name") as string) || "";
+
+    const wardRepository = new SupabaseWardRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+
+    const updated = await updateWard(
+      { wardId, name },
+      user.id,
+      { wardRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/alas");
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    revalidatePath("/[estaca_slug]/cadastro");
+
+    return {
+      success: true,
+      message: `Ala "${updated.name}" atualizada com sucesso!`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao atualizar Ala.",
+    };
+  }
+}
+
+/**
+ * Lista as Alas da Estaca com contagem de membros e admins.
+ */
+export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    const callerRole = userData.user.app_metadata?.role;
+    const callerStakeId = userData.user.app_metadata?.stake_id;
+    if (callerRole !== "admin_estaca" || callerStakeId !== stakeId) return [];
+
+    const serviceClient = createSupabaseServiceClient();
+
+    const [wardsRes, profilesRes] = await Promise.all([
+      serviceClient
+        .from("wards")
+        .select("id, stake_id, name, created_at")
+        .eq("stake_id", stakeId)
+        .order("name", { ascending: true }),
+      serviceClient
+        .from("profiles")
+        .select("ward_id, role")
+        .eq("stake_id", stakeId)
+        .not("ward_id", "is", null),
+    ]);
+
+    if (wardsRes.error || !wardsRes.data) return [];
+
+    const profiles = profilesRes.data ?? [];
+    const memberCounts = new Map<string, number>();
+    const adminCounts = new Map<string, number>();
+
+    for (const p of profiles) {
+      if (!p.ward_id) continue;
+      if (p.role === "admin_ala") {
+        adminCounts.set(p.ward_id, (adminCounts.get(p.ward_id) ?? 0) + 1);
+      } else {
+        memberCounts.set(p.ward_id, (memberCounts.get(p.ward_id) ?? 0) + 1);
+      }
+    }
+
+    return wardsRes.data.map((w) => ({
+      id: w.id,
+      stake_id: w.stake_id,
+      name: w.name,
+      created_at: w.created_at,
+      member_count: memberCounts.get(w.id) ?? 0,
+      admin_count: adminCounts.get(w.id) ?? 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 
 

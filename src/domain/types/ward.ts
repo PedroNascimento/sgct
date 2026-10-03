@@ -9,3 +9,9 @@ export interface Ward {
   name: string;
   created_at: string;
 }
+
+export interface WardWithStats extends Ward {
+  member_count?: number;
+  admin_count?: number;
+}
+
