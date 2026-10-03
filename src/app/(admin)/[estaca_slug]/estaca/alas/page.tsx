@@ -39,12 +39,12 @@ export default async function EstacaAlasPage({ params }: Props) {
   const wards = await getWardsWithStats(stake.id);
 
   return (
-    <main id="conteudo-principal" className="sgct-container py-8 sm:py-10">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <main id="conteudo-principal" className="sgct-container py-6 sm:py-10">
+      <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
         <div>
           <p className="sgct-eyebrow">Painel da Estaca</p>
-          <h1 className="sgct-title mt-3">Gestão de Alas e Ramos</h1>
-          <p className="sgct-subtitle">
+          <h1 className="sgct-title mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl">Gestão de Alas e Ramos</h1>
+          <p className="sgct-subtitle text-sm sm:text-base">
             Cadastre e gerencie as unidades da {stake.name}. As Alas cadastradas estarão disponíveis para seleção pelos membros durante o cadastro e para a liderança.
           </p>
         </div>

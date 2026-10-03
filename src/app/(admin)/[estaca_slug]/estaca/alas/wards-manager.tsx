@@ -272,17 +272,17 @@ export function WardsManager({ initialWards, stakeName }: Props) {
   return (
     <div className="space-y-6">
       {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="sgct-card flex items-center gap-4 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-800">
-            <Building2 className="h-6 w-6" aria-hidden="true" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="sgct-card flex items-center gap-3.5 p-4 sm:p-5">
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-800">
+            <Building2 className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-[#53575b]">
               Alas e Ramos
             </p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#212225]">{totalWards}</span>
+            <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
+              <span className="text-xl sm:text-2xl font-bold text-[#212225]">{totalWards}</span>
               <span className="text-xs text-[#707478]">
                 ({activeWardsCount} ativas{inactiveWardsCount > 0 && `, ${inactiveWardsCount} inativas`})
               </span>
@@ -290,34 +290,34 @@ export function WardsManager({ initialWards, stakeName }: Props) {
           </div>
         </div>
 
-        <div className="sgct-card flex items-center gap-4 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-            <Shield className="h-6 w-6" aria-hidden="true" />
+        <div className="sgct-card flex items-center gap-3.5 p-4 sm:p-5">
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+            <Shield className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#53575b]">
               Lideranças (Admins)
             </p>
-            <p className="text-2xl font-bold text-[#212225]">{totalAdmins}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#212225]">{totalAdmins}</p>
           </div>
         </div>
 
-        <div className="sgct-card flex items-center gap-4 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-            <Users className="h-6 w-6" aria-hidden="true" />
+        <div className="sgct-card flex items-center gap-3.5 p-4 sm:p-5">
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#53575b]">
               Membros Totais
             </p>
-            <p className="text-2xl font-bold text-[#212225]">{totalMembers}</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#212225]">{totalMembers}</p>
           </div>
         </div>
       </div>
 
       {/* Barra de Filtros e Ações */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center max-w-2xl">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
           {/* Campo de Busca */}
           <div className="relative flex-1">
             <Search
@@ -336,7 +336,7 @@ export function WardsManager({ initialWards, stakeName }: Props) {
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#707478] hover:text-[#212225]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#707478] hover:text-[#212225] p-1"
                 aria-label="Limpar filtro de busca"
               >
                 <X className="h-4 w-4" />
@@ -345,11 +345,11 @@ export function WardsManager({ initialWards, stakeName }: Props) {
           </div>
 
           {/* Filtro de Status (Todas / Ativas / Inativas) */}
-          <div className="flex items-center rounded-xl border border-[#e0e2e2] bg-[#f8faf9] p-1 text-xs font-medium">
+          <div className="grid grid-cols-3 sm:flex items-center rounded-xl border border-[#e0e2e2] bg-[#f8faf9] p-1 text-xs font-medium">
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
+              className={`rounded-lg px-2 sm:px-3 py-2 text-center transition-all ${
                 statusFilter === "all"
                   ? "bg-white font-bold text-brand-900 shadow-xs"
                   : "text-[#53575b] hover:text-[#212225]"
@@ -360,7 +360,7 @@ export function WardsManager({ initialWards, stakeName }: Props) {
             <button
               type="button"
               onClick={() => setStatusFilter("active")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
+              className={`rounded-lg px-2 sm:px-3 py-2 text-center transition-all ${
                 statusFilter === "active"
                   ? "bg-white font-bold text-brand-900 shadow-xs"
                   : "text-[#53575b] hover:text-[#212225]"
@@ -371,7 +371,7 @@ export function WardsManager({ initialWards, stakeName }: Props) {
             <button
               type="button"
               onClick={() => setStatusFilter("inactive")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
+              className={`rounded-lg px-2 sm:px-3 py-2 text-center transition-all ${
                 statusFilter === "inactive"
                   ? "bg-white font-bold text-brand-900 shadow-xs"
                   : "text-[#53575b] hover:text-[#212225]"
@@ -386,17 +386,17 @@ export function WardsManager({ initialWards, stakeName }: Props) {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="sgct-btn-primary flex items-center justify-center gap-2 whitespace-nowrap shadow-sm"
+          className="sgct-btn-primary flex items-center justify-center gap-2 whitespace-nowrap shadow-sm w-full sm:w-auto py-2.5 px-4 text-sm font-semibold"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           <span>Cadastrar Nova Ala</span>
         </button>
       </div>
 
-      {/* Tabela de Alas */}
-      <div className="sgct-card overflow-hidden">
+      {/* Tabela / Lista de Alas Responsiva */}
+      <div className="rounded-2xl border border-transparent md:border-[#e0e2e2] bg-transparent md:bg-white md:shadow-card md:overflow-hidden">
         {filteredWards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border border-[#e0e2e2] bg-white">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-700">
               <Building2 className="h-8 w-8" aria-hidden="true" />
             </div>
@@ -441,124 +441,154 @@ export function WardsManager({ initialWards, stakeName }: Props) {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse" aria-label="Lista de Alas da Estaca">
-              <thead>
+          <div className="overflow-x-auto md:overflow-x-visible">
+            <table
+              className="w-full text-left text-sm border-collapse block md:table"
+              aria-label="Lista de Alas da Estaca"
+            >
+              <thead className="hidden md:table-header-group">
                 <tr className="border-b border-[#e0e2e2] bg-[#f8faf9] text-xs font-bold uppercase tracking-wider text-[#53575b]">
-                  <th scope="col" className="px-6 py-3.5">
+                  <th scope="col" className="px-3.5 py-3 whitespace-nowrap">
                     Nome da Ala
                   </th>
-                  <th scope="col" className="px-6 py-3.5">
+                  <th scope="col" className="px-2 py-3 whitespace-nowrap">
                     Status
                   </th>
-                  <th scope="col" className="px-6 py-3.5">
-                    Admins de Ala
+                  <th scope="col" className="px-2 py-3 whitespace-nowrap">
+                    Admins
                   </th>
-                  <th scope="col" className="px-6 py-3.5">
-                    Membros Cadastrados
+                  <th scope="col" className="px-2 py-3 whitespace-nowrap">
+                    Membros
                   </th>
-                  <th scope="col" className="px-6 py-3.5">
-                    Data de Cadastro
+                  <th scope="col" className="px-2 py-3 whitespace-nowrap">
+                    Cadastro
                   </th>
-                  <th scope="col" className="px-6 py-3.5 text-right">
+                  <th scope="col" className="px-3 py-3 text-right whitespace-nowrap">
                     Ações
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f0f2f2]">
+              <tbody className="block md:table-row-group space-y-3 md:space-y-0 md:divide-y md:divide-[#f0f2f2]">
                 {filteredWards.map((ward) => {
                   const isActive = ward.is_active !== false;
                   return (
                     <tr
                       key={ward.id}
-                      className={`hover:bg-brand-50/40 transition-colors ${
-                        !isActive ? "bg-stone-50/60 opacity-80" : ""
+                      className={`block md:table-row rounded-2xl md:rounded-none border md:border-0 border-[#e0e2e2] bg-white transition-all shadow-xs md:shadow-none hover:bg-brand-50/30 ${
+                        !isActive ? "bg-stone-50/70 opacity-90 md:opacity-85" : ""
                       }`}
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold ${
-                              isActive
-                                ? "bg-brand-100/70 text-brand-800"
-                                : "bg-stone-200 text-stone-600"
-                            }`}
-                          >
-                            <Building2 className="h-4 w-4" aria-hidden="true" />
+                      {/* Nome da Ala + Avatar + Status no Mobile */}
+                      <td className="block md:table-cell p-4 md:px-3.5 md:py-3 pb-2 md:pb-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`flex h-10 w-10 md:h-8.5 md:w-8.5 shrink-0 items-center justify-center rounded-xl font-bold ${
+                                isActive
+                                  ? "bg-brand-100/80 text-brand-800"
+                                  : "bg-stone-200 text-stone-600"
+                              }`}
+                            >
+                              <Building2 className="h-5 w-5 md:h-4 md:w-4" aria-hidden="true" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-[#212225] text-base md:text-sm truncate">
+                                {ward.name}
+                              </p>
+                              <span className="text-xs text-[#707478]">
+                                ID: {ward.id.slice(0, 8)}...
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-[#212225] flex items-center gap-2">
-                              <span>{ward.name}</span>
-                              {!isActive && (
-                                <span className="rounded-md bg-stone-200 px-1.5 py-0.5 text-[10px] font-semibold text-stone-700 uppercase">
-                                  Inativa
-                                </span>
-                              )}
-                            </p>
-                            <span className="text-xs text-[#707478]">
-                              ID: {ward.id.slice(0, 8)}...
-                            </span>
+
+                          {/* Status Badge no topo do card no Mobile */}
+                          <div className="md:hidden shrink-0">
+                            {isActive ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                Ativa
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700 border border-stone-300">
+                                <span className="h-1.5 w-1.5 rounded-full bg-stone-400" />
+                                Inativa
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-6 py-4">
+                      {/* Status no Desktop */}
+                      <td className="hidden md:table-cell px-2 py-3 whitespace-nowrap">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
                             Ativa
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700 border border-stone-300">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700 border border-stone-300">
                             <span className="h-1.5 w-1.5 rounded-full bg-stone-400" />
                             Inativa
                           </span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
-                        {ward.admin_count && ward.admin_count > 0 ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800 border border-blue-200">
-                            <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-                            {ward.admin_count} {ward.admin_count === 1 ? "admin" : "admins"}
+                      {/* Admins de Ala */}
+                      <td className="block md:table-cell px-4 md:px-2 py-1.5 md:py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <span className="text-[#707478] md:hidden font-medium min-w-[72px]">Liderança:</span>
+                          {ward.admin_count && ward.admin_count > 0 ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
+                              <Shield className="h-3.5 w-3.5" aria-hidden="true" />
+                              {ward.admin_count} {ward.admin_count === 1 ? "admin" : "admins"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 border border-amber-200">
+                              Sem admin
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Membros Cadastrados */}
+                      <td className="block md:table-cell px-4 md:px-2 py-1.5 md:py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <span className="text-[#707478] md:hidden font-medium min-w-[72px]">Membros:</span>
+                          <span className="inline-flex items-center gap-1 text-xs md:text-sm font-medium text-[#3a3d40]">
+                            <Users className="h-3.5 w-3.5 text-[#707478]" aria-hidden="true" />
+                            {ward.member_count ?? 0} {ward.member_count === 1 ? "membro" : "membros"}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 border border-amber-200">
-                            Sem admin
-                          </span>
-                        )}
+                        </div>
                       </td>
 
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#3a3d40]">
-                          <Users className="h-4 w-4 text-[#707478]" aria-hidden="true" />
-                          {ward.member_count ?? 0} {ward.member_count === 1 ? "membro" : "membros"}
-                        </span>
+                      {/* Data de Cadastro */}
+                      <td className="block md:table-cell px-4 md:px-2 py-1.5 md:py-3 text-xs text-[#707478] whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#707478] md:hidden font-medium min-w-[72px]">Cadastro:</span>
+                          <span>{ward.created_at ? formatDate(ward.created_at) : "—"}</span>
+                        </div>
                       </td>
 
-                      <td className="px-6 py-4 text-xs text-[#707478]">
-                        {ward.created_at ? formatDate(ward.created_at) : "—"}
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <div className="inline-flex items-center justify-end gap-1.5">
+                      {/* Ações */}
+                      <td className="block md:table-cell px-4 md:px-3 py-3 md:py-3 mt-2 md:mt-0 border-t md:border-t-0 border-[#f0f2f2] bg-stone-50/50 md:bg-transparent rounded-b-2xl md:rounded-none whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1">
                           {/* Botão Editar */}
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(ward)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[#e0e2e2] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#212225] hover:bg-brand-50 hover:border-brand-300 hover:text-brand-900 transition-colors shadow-2xs"
+                            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 rounded-xl md:rounded-lg border border-[#e0e2e2] bg-white px-2.5 py-1.5 md:px-2 md:py-1 text-xs md:text-[11px] font-semibold text-[#212225] hover:bg-brand-50 hover:border-brand-300 hover:text-brand-900 transition-colors shadow-2xs whitespace-nowrap"
                             aria-label={`Editar Ala ${ward.name}`}
                             title="Editar nome da Ala"
                           >
-                            <Edit2 className="h-3.5 w-3.5 text-brand-700" aria-hidden="true" />
-                            <span className="hidden sm:inline">Editar</span>
+                            <Edit2 className="h-3 w-3 text-brand-700" aria-hidden="true" />
+                            <span>Editar</span>
                           </button>
 
                           {/* Botão Inativar / Reativar */}
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(ward)}
-                            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors shadow-2xs ${
+                            className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-1 rounded-xl md:rounded-lg border px-2.5 py-1.5 md:px-2 md:py-1 text-xs md:text-[11px] font-semibold transition-colors shadow-2xs whitespace-nowrap ${
                               isActive
                                 ? "border-amber-200 bg-white text-amber-800 hover:bg-amber-50 hover:border-amber-300"
                                 : "border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50 hover:border-emerald-300"
@@ -568,13 +598,13 @@ export function WardsManager({ initialWards, stakeName }: Props) {
                           >
                             {isActive ? (
                               <>
-                                <PowerOff className="h-3.5 w-3.5 text-amber-700" aria-hidden="true" />
-                                <span className="hidden sm:inline">Inativar</span>
+                                <PowerOff className="h-3 w-3 text-amber-700" aria-hidden="true" />
+                                <span>Inativar</span>
                               </>
                             ) : (
                               <>
-                                <Power className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
-                                <span className="hidden sm:inline">Reativar</span>
+                                <Power className="h-3 w-3 text-emerald-700" aria-hidden="true" />
+                                <span>Reativar</span>
                               </>
                             )}
                           </button>
@@ -583,12 +613,12 @@ export function WardsManager({ initialWards, stakeName }: Props) {
                           <button
                             type="button"
                             onClick={() => handleDelete(ward)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-danger-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-danger-700 hover:bg-danger-50 hover:border-danger-300 transition-colors shadow-2xs"
+                            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 rounded-xl md:rounded-lg border border-danger-200 bg-white px-2.5 py-1.5 md:px-2 md:py-1 text-xs md:text-[11px] font-semibold text-danger-700 hover:bg-danger-50 hover:border-danger-300 transition-colors shadow-2xs whitespace-nowrap"
                             aria-label={`Excluir Ala ${ward.name}`}
                             title="Excluir Ala definitivamente"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-danger-600" aria-hidden="true" />
-                            <span className="hidden sm:inline">Excluir</span>
+                            <Trash2 className="h-3 w-3 text-danger-600" aria-hidden="true" />
+                            <span>Excluir</span>
                           </button>
                         </div>
                       </td>
@@ -607,9 +637,9 @@ export function WardsManager({ initialWards, stakeName }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-ward-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#e0e2e2] animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-[#e0e2e2] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#f0f2f2]">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-800">
@@ -691,9 +721,9 @@ export function WardsManager({ initialWards, stakeName }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-ward-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#e0e2e2] animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-[#e0e2e2] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#f0f2f2]">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-800">
