@@ -24,6 +24,8 @@ import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabas
 import { SupabaseWardRepository } from "@/infrastructure/supabase/supabase-ward-repository";
 import { createWard } from "@/use-cases/ward/create-ward";
 import { updateWard } from "@/use-cases/ward/update-ward";
+import { toggleWardStatus } from "@/use-cases/ward/toggle-ward-status";
+import { deleteWard } from "@/use-cases/ward/delete-ward";
 import type { CaravanStatus } from "@/domain/types/caravan";
 import type { WardWithStats } from "@/domain/types/ward";
 import { formatDate } from "@/components/ui/format";
@@ -846,6 +848,101 @@ export async function updateWardAction(
 }
 
 /**
+ * Altera o status (ativo/inativo) de uma Ala (Admin Estaca).
+ */
+export async function toggleWardStatusAction(
+  wardId: string,
+  isActive: boolean
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const wardRepository = new SupabaseWardRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+
+    const updated = await toggleWardStatus(
+      { wardId, isActive },
+      user.id,
+      { wardRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/alas");
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    revalidatePath("/[estaca_slug]/cadastro");
+
+    return {
+      success: true,
+      message: `Ala "${updated.name}" foi ${isActive ? "ativada" : "inativada"} com sucesso.`,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao alterar status da Ala.",
+    };
+  }
+}
+
+/**
+ * Exclui definitivamente uma Ala sem membros/reservas (Admin Estaca).
+ */
+export async function deleteWardAction(
+  wardId: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError || !userData.user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const user = userData.user;
+    const role = user.app_metadata?.role;
+    const userStakeId = user.app_metadata?.stake_id;
+
+    if (role !== "admin_estaca" || !userStakeId) {
+      throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
+    }
+
+    const wardRepository = new SupabaseWardRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+
+    await deleteWard(
+      wardId,
+      user.id,
+      { wardRepository, profileRepository }
+    );
+
+    revalidatePath("/[estaca_slug]/estaca/alas");
+    revalidatePath("/[estaca_slug]/estaca/equipe");
+    revalidatePath("/[estaca_slug]/cadastro");
+
+    return {
+      success: true,
+      message: "Ala excluída com sucesso.",
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao excluir Ala.",
+    };
+  }
+}
+
+/**
  * Lista as Alas da Estaca com contagem de membros e admins.
  */
 export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[]> {
@@ -863,7 +960,7 @@ export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[
     const [wardsRes, profilesRes] = await Promise.all([
       serviceClient
         .from("wards")
-        .select("id, stake_id, name, created_at")
+        .select("id, stake_id, name, is_active, created_at")
         .eq("stake_id", stakeId)
         .order("name", { ascending: true }),
       serviceClient
@@ -892,6 +989,7 @@ export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[
       id: w.id,
       stake_id: w.stake_id,
       name: w.name,
+      is_active: w.is_active ?? true,
       created_at: w.created_at,
       member_count: memberCounts.get(w.id) ?? 0,
       admin_count: adminCounts.get(w.id) ?? 0,
@@ -900,6 +998,7 @@ export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[
     return [];
   }
 }
+
 
 
 

@@ -13,7 +13,7 @@ export class SupabaseWardRepository implements WardRepository {
   async findById(id: string): Promise<Ward | null> {
     const { data, error } = await this.supabase
       .from("wards")
-      .select("id, stake_id, name, created_at")
+      .select("id, stake_id, name, is_active, created_at")
       .eq("id", id)
       .maybeSingle();
 
@@ -27,7 +27,7 @@ export class SupabaseWardRepository implements WardRepository {
   async findByStakeId(stakeId: string): Promise<Ward[]> {
     const { data, error } = await this.supabase
       .from("wards")
-      .select("id, stake_id, name, created_at")
+      .select("id, stake_id, name, is_active, created_at")
       .eq("stake_id", stakeId)
       .order("name", { ascending: true });
 
@@ -41,7 +41,7 @@ export class SupabaseWardRepository implements WardRepository {
   async findByName(stakeId: string, name: string): Promise<Ward | null> {
     const { data, error } = await this.supabase
       .from("wards")
-      .select("id, stake_id, name, created_at")
+      .select("id, stake_id, name, is_active, created_at")
       .eq("stake_id", stakeId)
       .ilike("name", name.trim())
       .maybeSingle();
@@ -59,8 +59,9 @@ export class SupabaseWardRepository implements WardRepository {
       .insert({
         stake_id: stakeId,
         name: name.trim(),
+        is_active: true,
       })
-      .select("id, stake_id, name, created_at")
+      .select("id, stake_id, name, is_active, created_at")
       .single();
 
     if (error) {
@@ -80,7 +81,7 @@ export class SupabaseWardRepository implements WardRepository {
         name: name.trim(),
       })
       .eq("id", id)
-      .select("id, stake_id, name, created_at")
+      .select("id, stake_id, name, is_active, created_at")
       .single();
 
     if (error) {
@@ -91,6 +92,52 @@ export class SupabaseWardRepository implements WardRepository {
     }
 
     return data as Ward;
+  }
+
+  async toggleActive(id: string, isActive: boolean): Promise<Ward> {
+    const { data, error } = await this.supabase
+      .from("wards")
+      .update({
+        is_active: isActive,
+      })
+      .eq("id", id)
+      .select("id, stake_id, name, is_active, created_at")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao alterar status da Ala: ${error.message}`);
+    }
+
+    return data as Ward;
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("wards")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(`Erro ao excluir Ala: ${error.message}`);
+    }
+  }
+
+  async hasAssociatedData(id: string): Promise<{ hasMembers: boolean; hasReservations: boolean }> {
+    const [profilesRes, reservationsRes] = await Promise.all([
+      this.supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("ward_id", id),
+      this.supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("ward_id", id),
+    ]);
+
+    return {
+      hasMembers: (profilesRes.count ?? 0) > 0,
+      hasReservations: (reservationsRes.count ?? 0) > 0,
+    };
   }
 }
 

@@ -11,5 +11,9 @@ export interface WardRepository {
   findByName(stakeId: string, name: string): Promise<Ward | null>;
   create(stakeId: string, name: string): Promise<Ward>;
   update(id: string, name: string): Promise<Ward>;
+  toggleActive(id: string, isActive: boolean): Promise<Ward>;
+  delete(id: string): Promise<void>;
+  hasAssociatedData(id: string): Promise<{ hasMembers: boolean; hasReservations: boolean }>;
 }
+
 

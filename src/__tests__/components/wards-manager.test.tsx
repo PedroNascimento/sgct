@@ -6,6 +6,8 @@ import * as actions from "@/app/(admin)/[estaca_slug]/actions";
 jest.mock("@/app/(admin)/[estaca_slug]/actions", () => ({
   createWardAction: jest.fn(),
   updateWardAction: jest.fn(),
+  toggleWardStatusAction: jest.fn(),
+  deleteWardAction: jest.fn(),
 }));
 
 describe("WardsManager Component", () => {
@@ -14,6 +16,7 @@ describe("WardsManager Component", () => {
       id: "ward-1111-1111-1111",
       stake_id: "stake-1111-1111-1111",
       name: "Ala Candelária",
+      is_active: true,
       created_at: "2026-08-01T12:00:00Z",
       member_count: 24,
       admin_count: 2,
@@ -22,6 +25,7 @@ describe("WardsManager Component", () => {
       id: "ward-2222-2222-2222",
       stake_id: "stake-1111-1111-1111",
       name: "Ala Neópolis",
+      is_active: true,
       created_at: "2026-08-05T12:00:00Z",
       member_count: 15,
       admin_count: 1,
@@ -30,6 +34,7 @@ describe("WardsManager Component", () => {
       id: "ward-3333-3333-3333",
       stake_id: "stake-1111-1111-1111",
       name: "Ramo Parnamirim",
+      is_active: false,
       created_at: "2026-08-10T12:00:00Z",
       member_count: 0,
       admin_count: 0,
@@ -57,6 +62,26 @@ describe("WardsManager Component", () => {
     expect(screen.getByText("Sem admin")).toBeInTheDocument();
   });
 
+  it("filtra as Alas pelo status (Todas, Ativas, Inativas)", () => {
+    render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
+
+    // Clicar em "Inativas"
+    const inactiveTab = screen.getByRole("button", { name: /Inativas/i });
+    fireEvent.click(inactiveTab);
+
+    expect(screen.getByText("Ramo Parnamirim")).toBeInTheDocument();
+    expect(screen.queryByText("Ala Candelária")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ala Neópolis")).not.toBeInTheDocument();
+
+    // Clicar em "Ativas"
+    const activeTab = screen.getByRole("button", { name: /^Ativas/i });
+    fireEvent.click(activeTab);
+
+    expect(screen.getByText("Ala Candelária")).toBeInTheDocument();
+    expect(screen.getByText("Ala Neópolis")).toBeInTheDocument();
+    expect(screen.queryByText("Ramo Parnamirim")).not.toBeInTheDocument();
+  });
+
   it("filtra as Alas pelo campo de busca em tempo real", () => {
     render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
 
@@ -68,69 +93,78 @@ describe("WardsManager Component", () => {
     expect(screen.queryByText("Ramo Parnamirim")).not.toBeInTheDocument();
   });
 
-  it("abre o modal de criação ao clicar no botão '+ Cadastrar Nova Ala'", () => {
-    render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
-
-    const newBtn = screen.getByRole("button", { name: /Cadastrar Nova Ala/i });
-    fireEvent.click(newBtn);
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByLabelText(/Nome da Ala ou Ramo/i)).toBeInTheDocument();
-  });
-
-  it("submete o cadastro de uma nova Ala com sucesso", async () => {
-    (actions.createWardAction as jest.Mock).mockResolvedValueOnce({
+  it("solicita confirmação e inativa uma Ala ativa", async () => {
+    (actions.toggleWardStatusAction as jest.Mock).mockResolvedValueOnce({
       success: true,
-      message: 'Ala "Ala Tirol" cadastrada com sucesso!',
+      message: 'Ala "Ala Candelária" foi inativada com sucesso.',
     });
 
     render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
 
-    const newBtn = screen.getByRole("button", { name: /Cadastrar Nova Ala/i });
-    fireEvent.click(newBtn);
+    const inactivateBtn = screen.getByRole("button", { name: "Inativar Ala Ala Candelária" });
+    fireEvent.click(inactivateBtn);
 
-    const input = screen.getByLabelText(/Nome da Ala ou Ramo/i);
-    fireEvent.change(input, { target: { value: "Ala Tirol" } });
-
-    const submitBtn = screen.getByRole("button", { name: "Cadastrar Ala" });
-    fireEvent.click(submitBtn);
+    // Modal de confirmação deve aparecer
+    expect(screen.getByText("Inativar Ala")).toBeInTheDocument();
+    const confirmBtn = screen.getByRole("button", { name: "Sim, Inativar Ala" });
+    fireEvent.click(confirmBtn);
 
     await waitFor(() => {
-      expect(actions.createWardAction).toHaveBeenCalledTimes(1);
+      expect(actions.toggleWardStatusAction).toHaveBeenCalledWith("ward-1111-1111-1111", false);
     });
   });
 
-  it("abre o modal de edição ao clicar no botão 'Editar'", () => {
-    render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
-
-    const editBtns = screen.getAllByRole("button", { name: /Editar Ala/i });
-    fireEvent.click(editBtns[0]); // Ala Candelária
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Editar Nome da Ala")).toBeInTheDocument();
-    const input = screen.getByLabelText(/Nome da Ala ou Ramo/i) as HTMLInputElement;
-    expect(input.value).toBe("Ala Candelária");
-  });
-
-  it("submete a edição de uma Ala com sucesso", async () => {
-    (actions.updateWardAction as jest.Mock).mockResolvedValueOnce({
+  it("solicita confirmação e reativa uma Ala inativa", async () => {
+    (actions.toggleWardStatusAction as jest.Mock).mockResolvedValueOnce({
       success: true,
-      message: 'Ala "Ala Candelária Norte" atualizada com sucesso!',
+      message: 'Ala "Ramo Parnamirim" foi ativada com sucesso.',
     });
 
     render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
 
-    const editBtns = screen.getAllByRole("button", { name: /Editar Ala/i });
-    fireEvent.click(editBtns[0]); // Ala Candelária
+    const reactivateBtn = screen.getByRole("button", { name: "Reativar Ala Ramo Parnamirim" });
+    fireEvent.click(reactivateBtn);
 
-    const input = screen.getByLabelText(/Nome da Ala ou Ramo/i);
-    fireEvent.change(input, { target: { value: "Ala Candelária Norte" } });
-
-    const submitBtn = screen.getByRole("button", { name: "Salvar Alterações" });
-    fireEvent.click(submitBtn);
+    // Modal de confirmação deve aparecer
+    expect(screen.getByText("Reativar Ala")).toBeInTheDocument();
+    const confirmBtn = screen.getByRole("button", { name: "Sim, Reativar Ala" });
+    fireEvent.click(confirmBtn);
 
     await waitFor(() => {
-      expect(actions.updateWardAction).toHaveBeenCalledTimes(1);
+      expect(actions.toggleWardStatusAction).toHaveBeenCalledWith("ward-3333-3333-3333", true);
+    });
+  });
+
+  it("bloqueia exclusão de Ala que possui membros e orienta inativar", () => {
+    render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
+
+    const deleteBtn = screen.getByRole("button", { name: "Excluir Ala Ala Candelária" });
+    fireEvent.click(deleteBtn);
+
+    // Modal de erro com mensagem explicativa
+    expect(screen.getByText("Não é Possível Excluir")).toBeInTheDocument();
+    expect(screen.getByText(/24 membro\(s\)/i)).toBeInTheDocument();
+    expect(actions.deleteWardAction).not.toHaveBeenCalled();
+  });
+
+  it("solicita confirmação e exclui Ala sem membros", async () => {
+    (actions.deleteWardAction as jest.Mock).mockResolvedValueOnce({
+      success: true,
+      message: "Ala excluída com sucesso.",
+    });
+
+    render(<WardsManager initialWards={mockWards} stakeName="Estaca Natal" />);
+
+    const deleteBtn = screen.getByRole("button", { name: "Excluir Ala Ramo Parnamirim" });
+    fireEvent.click(deleteBtn);
+
+    // Modal de confirmação
+    expect(screen.getByText("Excluir Ala Definitivamente")).toBeInTheDocument();
+    const confirmBtn = screen.getByRole("button", { name: "Sim, Excluir Ala" });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(actions.deleteWardAction).toHaveBeenCalledWith("ward-3333-3333-3333");
     });
   });
 });

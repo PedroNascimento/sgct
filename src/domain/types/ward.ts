@@ -7,6 +7,7 @@ export interface Ward {
   id: string;
   stake_id: string;
   name: string;
+  is_active: boolean;
   created_at: string;
 }
 
