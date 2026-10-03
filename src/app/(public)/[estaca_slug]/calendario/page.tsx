@@ -250,7 +250,7 @@ export default async function PublicCalendarioPage({ params }: Props) {
                       href={`/${estaca_slug}/caravanas/${caravan.id}/reservar`}
                       className="sgct-button-primary w-full sm:w-auto"
                     >
-                      Escolher assento
+                      Realizar inscrição
                       <ArrowRightIcon className="h-5 w-5" />
                     </Link>
                   ) : (
