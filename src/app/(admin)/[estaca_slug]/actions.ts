@@ -701,6 +701,21 @@ export async function demoteWardAdminAction(userId: string): Promise<AdminAction
 }
 
 /**
+ * Promove um membro comum existente a Admin de Ala diretamente a partir da lista de membros.
+ * REGRA (D32): O usuário deve pertencer à mesma Estaca e ter uma Ala válida vinculada.
+ * Apenas Admin de Estaca ativo pode promover.
+ */
+export async function promoteWardMemberAction(
+  userId: string,
+  wardId: string
+): Promise<AdminActionState> {
+  const formData = new FormData();
+  formData.set("userId", userId);
+  formData.set("wardId", wardId);
+  return promoteToWardAdminAction({ success: false }, formData);
+}
+
+/**
  * Ativa ou desativa um usuário membro/admin da Estaca.
  */
 export async function toggleWardMemberStatusAction(

@@ -10,6 +10,7 @@ jest.mock("@/app/(super-admin)/actions", () => ({
 
 jest.mock("@/app/(admin)/[estaca_slug]/actions", () => ({
   demoteWardAdminAction: jest.fn(),
+  promoteWardMemberAction: jest.fn(),
   toggleWardMemberStatusAction: jest.fn(),
 }));
 
@@ -150,5 +151,23 @@ describe("WardAdminList (Admin da Estaca - Busca e Filtros)", () => {
     // Líder Ala Sul tem role 'admin_ala', deve ter botões de alterar para padrão (mobile e desktop)
     const alterButtons = screen.getAllByRole("button", { name: /Alterar para Padrão/i });
     expect(alterButtons.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("exibe o botão 'Promover a Admin' para membros comuns e abre o modal de promoção", () => {
+    const mockWards = [
+      { id: "ward-1", name: "Ala Sul" },
+      { id: "ward-2", name: "Ala Norte" },
+    ];
+    render(<WardAdminList members={mockMembers} wards={mockWards} />);
+
+    // Membro Ala Norte tem role 'member', deve ter botões de promover a admin
+    const promoteButtons = screen.getAllByRole("button", { name: /Promover a Admin/i });
+    expect(promoteButtons.length).toBeGreaterThanOrEqual(1);
+
+    // Clicar no botão deve abrir o modal
+    fireEvent.click(promoteButtons[0]);
+    expect(screen.getByRole("heading", { name: /Promover a Admin de Ala/i })).toBeInTheDocument();
+    expect(screen.getByText("Membro selecionado")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Confirmar Promoção/i })).toBeInTheDocument();
   });
 });

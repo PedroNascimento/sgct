@@ -5,19 +5,67 @@ import { Search, X, Users, Shield, UserCheck } from "lucide-react";
 import {
   type EstacaMemberItem,
   demoteWardAdminAction,
+  promoteWardMemberAction,
   toggleWardMemberStatusAction,
 } from "../../actions";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
-interface Props {
-  members: EstacaMemberItem[];
+interface Ward {
+  id: string;
+  name: string;
 }
 
-export function WardAdminList({ members }: Props) {
+interface Props {
+  members: EstacaMemberItem[];
+  wards?: Ward[];
+}
+
+export function WardAdminList({ members, wards }: Props) {
   const [isPending, startTransition] = useTransition();
   const { feedbackModal, showConfirm, showError, showSuccess } = useFeedbackModal();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "member">("all");
+
+  const [promotingMember, setPromotingMember] = useState<EstacaMemberItem | null>(null);
+  const [selectedWardId, setSelectedWardId] = useState<string>("");
+  const [promoteError, setPromoteError] = useState<string | null>(null);
+
+  const handleOpenPromote = (member: EstacaMemberItem) => {
+    setPromotingMember(member);
+    setPromoteError(null);
+    if (member.ward_id) {
+      setSelectedWardId(member.ward_id);
+    } else if (wards && wards.length > 0) {
+      setSelectedWardId(wards[0].id);
+    } else {
+      setSelectedWardId("");
+    }
+  };
+
+  const handleConfirmPromote = () => {
+    if (!promotingMember || !selectedWardId) return;
+
+    setPromoteError(null);
+    startTransition(async () => {
+      const res = await promoteWardMemberAction(promotingMember.id, selectedWardId);
+      if (res && !res.success) {
+        setPromoteError(res.error || "Não foi possível promover o membro.");
+      } else {
+        const assignedWardName =
+          wards?.find((w) => w.id === selectedWardId)?.name ??
+          promotingMember.ward_name ??
+          "sua Ala";
+        const memberName = promotingMember.full_name;
+        setPromotingMember(null);
+        showSuccess({
+          title: "Membro Promovido",
+          message:
+            res.message ||
+            `${memberName} agora é Administrador(a) de Ala da ${assignedWardName}.`,
+        });
+      }
+    });
+  };
 
   const handleDemote = (member: EstacaMemberItem) => {
     showConfirm({
@@ -284,7 +332,7 @@ export function WardAdminList({ members }: Props) {
                   </div>
 
                   <div className="pt-2 flex items-center gap-2 border-t border-[#f0f2f2]">
-                    {isAdmin && (
+                    {isAdmin ? (
                       <button
                         type="button"
                         disabled={isPending}
@@ -292,6 +340,15 @@ export function WardAdminList({ members }: Props) {
                         className="flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50"
                       >
                         Alterar para Padrão
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleOpenPromote(member)}
+                        className="flex-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold border border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100 transition-colors disabled:opacity-50"
+                      >
+                        Promover a Admin
                       </button>
                     )}
 
@@ -363,8 +420,8 @@ export function WardAdminList({ members }: Props) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                          {/* Ação para Admin de Ala: Rebaixar para Perfil Padrão */}
-                          {isAdmin && (
+                          {/* Ação de Permissão: Rebaixar para Padrão ou Promover a Admin */}
+                          {isAdmin ? (
                             <button
                               type="button"
                               disabled={isPending}
@@ -373,6 +430,16 @@ export function WardAdminList({ members }: Props) {
                               className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                             >
                               Alterar para Padrão
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleOpenPromote(member)}
+                              title="Promover a Administrador de Ala"
+                              className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border border-brand-600 bg-brand-50 text-brand-800 hover:bg-brand-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                              Promover a Admin
                             </button>
                           )}
 
@@ -399,6 +466,106 @@ export function WardAdminList({ members }: Props) {
           </div>
         </>
       )}
+
+      {/* Modal de Promoção a Admin de Ala */}
+      {promotingMember && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="promote-member-title"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-[#e0e2e2] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#f0f2f2]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-800">
+                  <Shield className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 id="promote-member-title" className="text-base font-bold text-[#212225]">
+                    Promover a Admin de Ala
+                  </h3>
+                  <p className="text-xs text-[#707478]">Elevação de perfil administrativo</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isPending && setPromotingMember(null)}
+                disabled={isPending}
+                className="rounded-lg p-1 text-[#707478] hover:bg-[#f0f2f2] hover:text-[#212225] transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              {/* Informações do Membro */}
+              <div className="rounded-xl border border-[#e0e2e2] bg-[#f7f8f8] p-3 text-sm">
+                <p className="text-xs font-semibold text-[#707478] uppercase tracking-wider">Membro selecionado</p>
+                <p className="font-bold text-[#212225] mt-0.5">{promotingMember.full_name}</p>
+                <p className="text-xs text-[#53575b]">{promotingMember.email || "E-mail não disponível"}</p>
+              </div>
+
+              {/* Seleção de Ala */}
+              <div>
+                <label htmlFor="promoteWardSelect" className="sgct-label">
+                  Ala sob Responsabilidade <span className="text-danger-600">*</span>
+                </label>
+                {wards && wards.length > 0 ? (
+                  <select
+                    id="promoteWardSelect"
+                    value={selectedWardId}
+                    onChange={(e) => setSelectedWardId(e.target.value)}
+                    disabled={isPending}
+                    className="sgct-input mt-1.5 w-full text-sm"
+                  >
+                    <option value="" disabled>Selecione uma Ala...</option>
+                    {wards.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-danger-600 mt-1">
+                    Nenhuma Ala disponível para vincular. Cadastre uma Ala primeiro.
+                  </p>
+                )}
+                <p className="text-xs text-[#707478] mt-1.5">
+                  O membro gerenciará as caravanas, quórum e validações de pagamentos desta Ala.
+                </p>
+              </div>
+
+              {promoteError && (
+                <div role="alert" className="sgct-alert-danger text-xs p-3">
+                  {promoteError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#f0f2f2]">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setPromotingMember(null)}
+                  className="sgct-button-secondary text-xs sm:text-sm py-2 px-4"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending || !selectedWardId}
+                  onClick={handleConfirmPromote}
+                  className="sgct-button-primary text-xs sm:text-sm py-2 px-4"
+                >
+                  {isPending ? "Promovendo..." : "Confirmar Promoção"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de confirmações e avisos */}
       {feedbackModal}
     </section>

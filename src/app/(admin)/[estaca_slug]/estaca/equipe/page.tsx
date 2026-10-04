@@ -76,7 +76,7 @@ export default async function EstacaEquipePage({ params }: Props) {
         )}
 
         {/* Lista de membros e admins logo abaixo */}
-        <WardAdminList members={members} />
+        <WardAdminList members={members} wards={wards} />
       </div>
     </main>
   );

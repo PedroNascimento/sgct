@@ -18,6 +18,32 @@ export type ActionState = {
   error?: string;
 };
 
+async function extractErrorMessage(data: { error?: string } | null, error: unknown): Promise<string> {
+  if (data?.error && typeof data.error === "string") {
+    return data.error;
+  }
+  if (error && typeof error === "object") {
+    if ("context" in error && error.context && typeof (error.context as { json?: () => Promise<unknown> }).json === "function") {
+      try {
+        const body = (await (error.context as { json: () => Promise<unknown> }).json()) as { error?: string; message?: string } | null;
+        if (body?.error && typeof body.error === "string") {
+          return body.error;
+        }
+        if (body?.message && typeof body.message === "string") {
+          return body.message;
+        }
+      } catch {
+        // Ignora erro de parse de JSON
+      }
+    }
+    const message = "message" in error && typeof (error as { message?: string }).message === "string" ? (error as { message: string }).message : "";
+    if (message && message !== "Edge Function returned a non-2xx status code") {
+      return message;
+    }
+  }
+  return "Falha ao processar cadastro no servidor. Verifique os dados ou tente novamente mais tarde.";
+}
+
 export async function registerMemberAction(
   stakeSlug: string,
   _prevState: ActionState,
@@ -40,7 +66,9 @@ export async function registerMemberAction(
     const { data, error } = await supabase.functions.invoke("provision-user", {
       body: { operation: "register_member", stakeSlug, ...parsed.data },
     });
-    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
+    if (error || data?.error) {
+      throw new Error(await extractErrorMessage(data, error));
+    }
 
     return {
       success: true,
@@ -82,7 +110,9 @@ export async function registerMinorAction(
         operation: "register_minor", stakeSlug, ...parsed.data,
       },
     });
-    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
+    if (error || data?.error) {
+      throw new Error(await extractErrorMessage(data, error));
+    }
 
     return {
       success: true,
@@ -121,7 +151,9 @@ export async function registerGuestAction(
         operation: "register_guest", stakeSlug, ...parsed.data,
       },
     });
-    if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha no cadastro.");
+    if (error || data?.error) {
+      throw new Error(await extractErrorMessage(data, error));
+    }
 
     return {
       success: true,
