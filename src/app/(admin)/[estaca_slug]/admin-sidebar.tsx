@@ -11,6 +11,14 @@ interface AdminSidebarProps {
   wardName?: string;
 }
 
+function formatWardDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (/^(ala|ramo)\s+/i.test(trimmed) || /^sua\s+ala$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `Ala ${trimmed}`;
+}
+
 export function AdminSidebar({
   estacaSlug,
   isStakeAdmin,
@@ -89,7 +97,7 @@ export function AdminSidebar({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-[#212225]">{adminName || "Administrador"}</p>
               <p className="text-xs text-[#53575b]">
-                {isStakeAdmin ? "Admin da Estaca" : wardName ? `Ala ${wardName}` : "Admin da Ala"}
+                {isStakeAdmin ? "Admin da Estaca" : wardName ? formatWardDisplayName(wardName) : "Admin da Ala"}
               </p>
             </div>
           </div>

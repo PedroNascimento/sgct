@@ -10,6 +10,14 @@ interface Props {
 
 export const dynamic = "force-dynamic";
 
+function formatWardDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (/^(ala|ramo)\s+/i.test(trimmed) || /^sua\s+ala$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `Ala ${trimmed}`;
+}
+
 export default async function AdminAlaReservasPage({ params }: Props) {
   const { estaca_slug } = await params;
 
@@ -58,7 +66,7 @@ export default async function AdminAlaReservasPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="sgct-eyebrow">Ala {wardName}</p>
+        <p className="sgct-eyebrow">{formatWardDisplayName(wardName)}</p>
         <h1 className="sgct-title mt-2">Painel de Reservas e Pagamentos</h1>
         <p className="sgct-subtitle">
           Gerencie as inscrições dos membros da sua Ala, acompanhe pagamentos e confirme os comprovantes recebidos.
