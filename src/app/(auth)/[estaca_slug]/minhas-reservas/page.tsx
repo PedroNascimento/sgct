@@ -8,6 +8,8 @@ import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug
 import { listOwnReservations } from "@/use-cases/reservation/list-own-reservations";
 import { PublicHeader } from "@/components/ui/public-header";
 import { ReservationStatusPanel } from "@/components/reservation/reservation-status";
+import { MinorFormUploader } from "@/components/reservation/minor-form-uploader";
+import { SupabaseMinorRepository } from "@/infrastructure/supabase/supabase-minor-repository";
 import { ArrowLeftIcon, BusIcon, CalendarIcon, ClockIcon, LocationIcon } from "@/components/ui/icons";
 import { formatBoardingTime, formatCurrency, formatDate } from "@/components/ui/format";
 
@@ -30,6 +32,18 @@ export default async function MinhasReservasPage({ params }: Props) {
     reservationRepository: new SupabaseReservationRepository(supabase),
     caravanRepository: new SupabaseCaravanRepository(supabase),
   });
+
+  const minorRepo = new SupabaseMinorRepository(supabase);
+  const reservationsWithMinorForms = await Promise.all(
+    reservations.map(async (item) => {
+      let minorFormStatus: "pending" | "approved" | "rejected" | null = null;
+      if (item.reservation.participant_type === "jovem") {
+        const form = await minorRepo.findFormByReservationId(item.reservation.id);
+        minorFormStatus = form?.status ?? null;
+      }
+      return { ...item, minorFormStatus };
+    })
+  );
 
   return (
     <div className="sgct-page">
@@ -64,7 +78,7 @@ export default async function MinhasReservasPage({ params }: Props) {
             </div>
           ) : (
             <div className="space-y-6">
-              {reservations.map(({ reservation, caravan, boardingPoint }) => (
+              {reservationsWithMinorForms.map(({ reservation, caravan, boardingPoint, minorFormStatus }) => (
                 <article key={reservation.id} className="sgct-panel overflow-hidden">
                   <header className="border-b border-[#e0e2e2] bg-[#f7f8f8] px-5 py-5 sm:px-8">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -122,6 +136,15 @@ export default async function MinhasReservasPage({ params }: Props) {
                     </div>
 
                     <ReservationStatusPanel status={reservation.status} />
+
+                    {reservation.participant_type === "jovem" && (
+                      <div className="mt-6 border-t border-[#e0e2e2] pt-6">
+                        <MinorFormUploader
+                          reservationId={reservation.id}
+                          initialStatus={minorFormStatus}
+                        />
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}

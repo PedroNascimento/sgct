@@ -13,6 +13,7 @@ import React, { useState } from "react";
 import type { SeatSwapRequest } from "@/domain/types/swap";
 import type { Reservation } from "@/domain/types/reservation";
 import type { Caravan } from "@/domain/types/caravan";
+import { formatDate } from "@/components/ui/format";
 
 export interface SwapRequestWithDetails extends SeatSwapRequest {
   caravan_name?: string;
@@ -172,7 +173,7 @@ export function SeatSwapManager({
               >
                 {caravans.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {(c as any).name || (c.departure_date ? `Caravana de ${formatDate(c.departure_date)}` : c.id)}
                   </option>
                 ))}
               </select>
