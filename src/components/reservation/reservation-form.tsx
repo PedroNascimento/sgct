@@ -6,7 +6,9 @@ import { SeatMap } from "./seat-map";
 import {
   createReservationAction,
   addManifestEntryAction,
+  uploadMinorApprovalFormAction,
 } from "@/app/(public)/[estaca_slug]/caravanas/[caravan_id]/reservar/actions";
+import { MinorFormUploader } from "./minor-form-uploader";
 import type { Profile } from "@/domain/types/tenant";
 import type { Caravan, BoardingPoint } from "@/domain/types/caravan";
 import type {
@@ -59,6 +61,11 @@ export function ReservationForm({
   const [lapChildBirthDate, setLapChildBirthDate] = useState<string>("");
   const [lapChildFiliation, setLapChildFiliation] = useState<string>("");
 
+  // Autorização de Menor (Spec 006 / US-006.3)
+  const [minorFile, setMinorFile] = useState<File | null>(null);
+  const [minorFileError, setMinorFileError] = useState<string | null>(null);
+  const [minorUploadStatus, setMinorUploadStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
+
   // Status de envio
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -68,23 +75,47 @@ export function ReservationForm({
   const currentPrice =
     category === "officiant" ? caravan.price_officiant : caravan.price_standard;
 
+  const handleMinorFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinorFileError(null);
+    const selected = e.target.files?.[0];
+    if (!selected) {
+      setMinorFile(null);
+      return;
+    }
+
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowedTypes.includes(selected.type)) {
+      setMinorFileError("Formato não suportado. Envie um arquivo PDF, JPEG ou PNG.");
+      setMinorFile(null);
+      return;
+    }
+
+    if (selected.size > 10 * 1024 * 1024) {
+      setMinorFileError("O arquivo excede o limite máximo de 10MB.");
+      setMinorFile(null);
+      return;
+    }
+
+    setMinorFile(selected);
+  };
+
   if (isProfileIncomplete) {
     return (
       <div className="sgct-alert-warning p-5 sm:p-6">
         <div className="flex gap-4">
           <InfoIcon className="mt-0.5 h-6 w-6 shrink-0" />
           <div>
-        <h3 className="text-lg font-bold">Complete seu cadastro</h3>
-        <p className="mb-5 mt-2 text-base">
-          Para garantir a segurança e o seguro dos passageiros, é obrigatório possuir
-          o CPF preenchido em seu cadastro antes de realizar uma reserva.
-        </p>
-        <Link
-          href={`/${stakeSlug}/conta`}
-          className="sgct-button inline-flex bg-warning-700 text-white hover:brightness-90"
-        >
-          Completar meu cadastro
-        </Link>
+            <h3 className="text-lg font-bold">Complete seu cadastro</h3>
+            <p className="mb-5 mt-2 text-base">
+              Para garantir a segurança e o seguro dos passageiros, é obrigatório possuir
+              o CPF preenchido em seu cadastro antes de realizar uma reserva.
+            </p>
+            <Link
+              href={`/${stakeSlug}/conta`}
+              className="sgct-button inline-flex bg-warning-700 text-white hover:brightness-90"
+            >
+              Completar meu cadastro
+            </Link>
           </div>
         </div>
       </div>
@@ -104,6 +135,16 @@ export function ReservationForm({
           O assento <strong className="text-[#212225]">{selectedSeat}</strong> foi reservado para você.
           A confirmação final segue o fluxo de pagamento e validação semanal.
         </p>
+
+        {participantType === "jovem" && (
+          <div className="mx-auto mb-6 max-w-lg text-left">
+            <MinorFormUploader
+              reservationId={successReservationId}
+              initialStatus={minorUploadStatus}
+            />
+          </div>
+        )}
+
         <div className="sgct-alert-info mx-auto mb-6 max-w-lg text-left">
           Próximo passo: faça o pagamento pelos canais oficiais da sua Ala e aguarde a validação da Estaca.
         </div>
@@ -167,6 +208,22 @@ export function ReservationForm({
     }
 
     const createdReservation = result.data as { id: string };
+
+    // Se é jovem e selecionou arquivo de autorização, envia o termo (Spec 006 / US-006.3)
+    if (participantType === "jovem" && minorFile) {
+      const minorFormData = new FormData();
+      minorFormData.append("reservationId", createdReservation.id);
+      minorFormData.append("file", minorFile);
+      const minorUploadResult = await uploadMinorApprovalFormAction(minorFormData);
+      if (minorUploadResult.success) {
+        setMinorUploadStatus("pending");
+      } else {
+        setErrorMessage(
+          minorUploadResult.error ||
+            "A reserva foi criada, mas houve erro ao anexar a autorização. Você poderá reenviá-la em Minhas Reservas."
+        );
+      }
+    }
 
     // Se informou criança de colo, cadastra no manifesto (US-003.3)
     if (hasLapChild && lapChildName && lapChildBirthDate) {
@@ -350,6 +407,47 @@ export function ReservationForm({
             )}
           </div>
         </div>
+
+        {/* Bloco de Autorização de Menor (Spec 006 / US-006.3) */}
+        {participantType === "jovem" && (
+          <div className="rounded-xl border border-warning-200 bg-warning-50 p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <InfoIcon className="mt-0.5 h-6 w-6 shrink-0 text-warning-700" />
+              <div>
+                <h3 className="text-base font-bold text-[#212225]">
+                  Autorização de Menor de Idade (12 a 17 anos)
+                </h3>
+                <p className="mt-1 text-sm text-[#53575b]">
+                  Jovens viajando sem responsável legal na caravana devem apresentar o termo de autorização assinado pelos pais para validação pela liderança da Ala.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <label htmlFor="minorFormFile" className="sgct-label">
+                Anexar Termo de Autorização Assinado
+              </label>
+              <input
+                id="minorFormFile"
+                type="file"
+                accept=".pdf,image/jpeg,image/png"
+                onChange={handleMinorFileChange}
+                className="sgct-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+              />
+              {minorFileError && (
+                <p role="alert" className="text-sm font-semibold text-danger-700">{minorFileError}</p>
+              )}
+              {minorFile && (
+                <p className="text-sm text-success-700 font-medium">
+                  Arquivo selecionado: {minorFile.name} ({(minorFile.size / 1024).toFixed(0)} KB)
+                </p>
+              )}
+              <p className="text-xs text-[#53575b]">
+                Formatos aceitos: PDF, JPEG ou PNG (máx. 10MB). Caso não consiga anexar agora, você poderá enviá-lo depois na tela &quot;Minhas Reservas&quot;.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Assento Preferencial */}
         <div className="pt-2">

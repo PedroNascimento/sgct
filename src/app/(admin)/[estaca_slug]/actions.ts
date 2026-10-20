@@ -1110,6 +1110,105 @@ export async function approveSeatSwapAction(
   }
 }
 
+/**
+ * Server Action para aprovação/rejeição de formulário de menor (T006.11 / US-006.3).
+ */
+export async function evaluateMinorFormAction(
+  estacaSlug: string,
+  formId: string,
+  status: "approved" | "rejected"
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { approveMinorForm } = await import("@/use-cases/minors/approve-minor-form");
+    const { SupabaseMinorRepository } = await import(
+      "@/infrastructure/supabase/supabase-minor-repository"
+    );
+
+    const minorRepo = new SupabaseMinorRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+
+    await approveMinorForm(
+      {
+        formId,
+        adminId: user.id,
+        status,
+      },
+      {
+        minorRepository: minorRepo,
+        profileRepository: profileRepo,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/ala/menores`);
+    revalidatePath(`/${estacaSlug}/ala/reservas`);
+
+    return {
+      success: true,
+      message: status === "approved" ? "Formulário aprovado com sucesso!" : "Formulário rejeitado.",
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao avaliar formulário.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action para obter URL temporária de visualização de formulário de menor (T006.8).
+ */
+export async function getMinorDocumentViewUrlAction(
+  formId: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { getMinorDocumentUrl } = await import("@/use-cases/minors/get-minor-document-url");
+    const {
+      SupabaseMinorRepository,
+      SupabaseStoragePort,
+      SupabaseAuditLogPort,
+    } = await import("@/infrastructure/supabase/supabase-minor-repository");
+
+    const minorRepo = new SupabaseMinorRepository(supabase);
+    const storagePort = new SupabaseStoragePort(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+    const auditLogPort = new SupabaseAuditLogPort(supabase);
+
+    const result = await getMinorDocumentUrl(
+      {
+        formId,
+        adminId: user.id,
+      },
+      {
+        minorRepository: minorRepo,
+        storagePort,
+        profileRepository: profileRepo,
+        auditLogPort,
+      }
+    );
+
+    return { success: true, url: result.signedUrl };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao obter documento.";
+    return { success: false, error: message };
+  }
+}
+
 
 
 

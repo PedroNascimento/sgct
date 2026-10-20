@@ -233,4 +233,91 @@ describe("confirmWardPayment (T004.1)", () => {
       status: "pago_ala",
     });
   });
+
+  it("T006.7: bloqueia confirmação de pagamento para jovem/menor se formulário estiver pendente ou ausente", async () => {
+    const minorReservation: Reservation = {
+      ...pendingReservation,
+      participant_type: "jovem",
+    };
+
+    const mockMinorRepo = {
+      createForm: jest.fn(),
+      findFormById: jest.fn(),
+      findFormByReservationId: jest.fn().mockResolvedValue({
+        id: "form-1",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        reservation_id: RESERVATION_ID,
+        storage_path: "path",
+        status: "pending",
+        approved_by: null,
+        approved_at: null,
+      }),
+      findPendingFormsByWard: jest.fn(),
+      updateFormStatus: jest.fn(),
+    };
+
+    mockProfileRepository.findById.mockResolvedValueOnce(adminAlaProfile);
+    mockReservationRepository.findById.mockResolvedValueOnce(minorReservation);
+
+    await expect(
+      confirmWardPayment(
+        { reservationId: RESERVATION_ID, adminId: ADMIN_ALA_ID },
+        {
+          reservationRepository: mockReservationRepository,
+          profileRepository: mockProfileRepository,
+          minorRepository: mockMinorRepo,
+        }
+      )
+    ).rejects.toThrow(
+      "Não é possível confirmar o pagamento: o formulário de autorização do menor está pendente ou não foi aprovado."
+    );
+
+    expect(mockReservationRepository.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it("T006.7: permite confirmação de pagamento para jovem/menor se formulário estiver approved", async () => {
+    const minorReservation: Reservation = {
+      ...pendingReservation,
+      participant_type: "jovem",
+    };
+
+    const mockMinorRepo = {
+      createForm: jest.fn(),
+      findFormById: jest.fn(),
+      findFormByReservationId: jest.fn().mockResolvedValue({
+        id: "form-1",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        reservation_id: RESERVATION_ID,
+        storage_path: "path",
+        status: "approved",
+        approved_by: ADMIN_ALA_ID,
+        approved_at: new Date().toISOString(),
+      }),
+      findPendingFormsByWard: jest.fn(),
+      updateFormStatus: jest.fn(),
+    };
+
+    mockProfileRepository.findById.mockResolvedValueOnce(adminAlaProfile);
+    mockReservationRepository.findById.mockResolvedValueOnce(minorReservation);
+    mockReservationRepository.updateStatus.mockResolvedValueOnce({
+      ...minorReservation,
+      status: "pago_ala",
+    });
+
+    const result = await confirmWardPayment(
+      { reservationId: RESERVATION_ID, adminId: ADMIN_ALA_ID },
+      {
+        reservationRepository: mockReservationRepository,
+        profileRepository: mockProfileRepository,
+        minorRepository: mockMinorRepo,
+      }
+    );
+
+    expect(result.status).toBe("pago_ala");
+    expect(mockReservationRepository.updateStatus).toHaveBeenCalledWith(RESERVATION_ID, {
+      status: "pago_ala",
+    });
+  });
 });

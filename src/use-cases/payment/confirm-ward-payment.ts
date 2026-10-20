@@ -15,9 +15,12 @@ import type { ReservationRepository } from "@/domain/interfaces/reservation-repo
 import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
 import type { Reservation } from "@/domain/types/reservation";
 
+import type { MinorRepository } from "@/domain/interfaces/minor-repository";
+
 export interface ConfirmWardPaymentDependencies {
   reservationRepository: ReservationRepository;
   profileRepository: ProfileRepository;
+  minorRepository?: MinorRepository;
 }
 
 export async function confirmWardPayment(
@@ -68,7 +71,21 @@ export async function confirmWardPayment(
     );
   }
 
-  // 7. Transição para 'pago_ala'
+  // 7. Verificação de menor (Spec 006 / T006.7 / US-006.3):
+  // Se for participante jovem/menor e houver minorRepository, o formulário deve estar 'approved'.
+  if (
+    (reservation.participant_type === "jovem" || reservation.participant_type === "crianca") &&
+    deps.minorRepository
+  ) {
+    const form = await deps.minorRepository.findFormByReservationId(reservation.id);
+    if (!form || form.status !== "approved") {
+      throw new Error(
+        "Não é possível confirmar o pagamento: o formulário de autorização do menor está pendente ou não foi aprovado."
+      );
+    }
+  }
+
+  // 8. Transição para 'pago_ala'
   const updated = await reservationRepository.updateStatus(reservation.id, {
     status: "pago_ala",
   });
