@@ -48,6 +48,7 @@ export function ReservationForm({
 
   // Grupo familiar e Investidura
   const [isFamilyGroup, setIsFamilyGroup] = useState<boolean>(false);
+  const [familyGroupLabel, setFamilyGroupLabel] = useState<string>("");
   const [familyGroupMemberNames, setFamilyGroupMemberNames] = useState<string>("");
   const [hasCompanionForEndowment, setHasCompanionForEndowment] = useState<boolean>(false);
   const [companionForEndowmentName, setCompanionForEndowmentName] = useState<string>("");
@@ -145,7 +146,7 @@ export function ReservationForm({
       fundingSource,
       isPreferentialSeating,
       familyGroupMemberNames: isFamilyGroup ? familyGroupMemberNames : null,
-      familyGroupLabel: isFamilyGroup ? `Família de ${userProfile.full_name}` : null,
+      familyGroupLabel: isFamilyGroup ? (familyGroupLabel.trim() || null) : null,
       companionForEndowmentName: hasCompanionForEndowment
         ? companionForEndowmentName
         : null,
@@ -375,17 +376,41 @@ export function ReservationForm({
             <span>Estou viajando com grupo familiar (para alojamento conjunto)</span>
           </label>
           {isFamilyGroup && (
-            <div className="mt-2.5">
-              <input
-                type="text"
-                value={familyGroupMemberNames}
-                onChange={(e) => setFamilyGroupMemberNames(e.target.value)}
-                placeholder="Ex: Esposa Maria e filhos João e Clara"
-                className="sgct-input"
-              />
-              <span className="mt-1.5 block text-sm text-[#53575b]">
-                Sem garantia de quarto exclusivo — ajuda a liderança na organização do alojamento.
-              </span>
+            <div className="mt-2.5 space-y-3">
+              {/* T002.10: rótulo do grupo — texto livre digitado pelo membro (US-002.3) */}
+              <div>
+                <label htmlFor="familyGroupLabel" className="sgct-label">
+                  Nome do grupo familiar
+                </label>
+                <input
+                  id="familyGroupLabel"
+                  type="text"
+                  value={familyGroupLabel}
+                  onChange={(e) => setFamilyGroupLabel(e.target.value)}
+                  placeholder="Ex: Família Silva"
+                  maxLength={80}
+                  className="sgct-input"
+                />
+                <span className="mt-1 block text-sm text-[#53575b]">
+                  Identificação do grupo para apoio à organização do alojamento.
+                </span>
+              </div>
+              <div>
+                <label htmlFor="familyGroupMemberNames" className="sgct-label">
+                  Outros membros da família nesta caravana
+                </label>
+                <input
+                  id="familyGroupMemberNames"
+                  type="text"
+                  value={familyGroupMemberNames}
+                  onChange={(e) => setFamilyGroupMemberNames(e.target.value)}
+                  placeholder="Ex: Esposa Maria e filhos João e Clara"
+                  className="sgct-input"
+                />
+                <span className="mt-1.5 block text-sm text-[#53575b]">
+                  Sem garantia de quarto exclusivo — ajuda a liderança na organização do alojamento.
+                </span>
+              </div>
             </div>
           )}
         </div>

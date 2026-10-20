@@ -334,4 +334,120 @@ describe("createReservation (T003.2, T003.3, T003.4)", () => {
       })
     ).rejects.toThrow("Database connection lost");
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // T002.10 — Campo de Agrupamento Familiar (family_group_label)
+  // ─────────────────────────────────────────────────────────────────
+  describe("family_group_label — Agrupamento Familiar (T002.10 / US-002.3)", () => {
+    it("persiste family_group_label quando o membro informa o rótulo do grupo familiar", async () => {
+      mockProfileRepository.findById.mockResolvedValueOnce(memberProfile);
+      mockCaravanRepository.findById.mockResolvedValueOnce(openCaravan);
+      mockReservationRepository.create.mockImplementationOnce(async (data) => ({
+        id: "res-family-1",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        confirmed_at: null,
+        confirmation_rank: null,
+        qr_token: null,
+        qr_token_expires_at: null,
+        created_at: new Date().toISOString(),
+        boarding_point_id: null,
+        companion_for_endowment_name: null,
+        ...data,
+      }));
+
+      const result = await createReservation(
+        {
+          ...baseInput,
+          familyGroupLabel: "Família da Silva",
+          familyGroupMemberNames: "Esposa Ana e filho Pedro",
+        },
+        USER_ID,
+        {
+          reservationRepository: mockReservationRepository,
+          caravanRepository: mockCaravanRepository,
+          profileRepository: mockProfileRepository,
+        }
+      );
+
+      expect(result.family_group_label).toBe("Família da Silva");
+      expect(result.family_group_member_names).toBe("Esposa Ana e filho Pedro");
+      expect(mockReservationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          family_group_label: "Família da Silva",
+          family_group_member_names: "Esposa Ana e filho Pedro",
+        })
+      );
+    });
+
+    it("persiste family_group_label como null quando membro não informa grupo familiar", async () => {
+      mockProfileRepository.findById.mockResolvedValueOnce(memberProfile);
+      mockCaravanRepository.findById.mockResolvedValueOnce(openCaravan);
+      mockReservationRepository.create.mockImplementationOnce(async (data) => ({
+        id: "res-no-family-1",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        confirmed_at: null,
+        confirmation_rank: null,
+        qr_token: null,
+        qr_token_expires_at: null,
+        created_at: new Date().toISOString(),
+        boarding_point_id: null,
+        companion_for_endowment_name: null,
+        ...data,
+      }));
+
+      const result = await createReservation(
+        { ...baseInput }, // sem familyGroupLabel
+        USER_ID,
+        {
+          reservationRepository: mockReservationRepository,
+          caravanRepository: mockCaravanRepository,
+          profileRepository: mockProfileRepository,
+        }
+      );
+
+      expect(result.family_group_label).toBeNull();
+      expect(result.family_group_member_names).toBeNull();
+      expect(mockReservationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          family_group_label: null,
+          family_group_member_names: null,
+        })
+      );
+    });
+
+    it("não gera family_group_label automaticamente — o valor deve vir do formulário (US-002.3)", async () => {
+      // Garante que o use-case NÃO inventa um label; só persiste o que recebeu.
+      mockProfileRepository.findById.mockResolvedValueOnce(memberProfile);
+      mockCaravanRepository.findById.mockResolvedValueOnce(openCaravan);
+      mockReservationRepository.create.mockImplementationOnce(async (data) => ({
+        id: "res-label-passthrough",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        confirmed_at: null,
+        confirmation_rank: null,
+        qr_token: null,
+        qr_token_expires_at: null,
+        created_at: new Date().toISOString(),
+        boarding_point_id: null,
+        companion_for_endowment_name: null,
+        ...data,
+      }));
+
+      await createReservation(
+        { ...baseInput, familyGroupLabel: null },
+        USER_ID,
+        {
+          reservationRepository: mockReservationRepository,
+          caravanRepository: mockCaravanRepository,
+          profileRepository: mockProfileRepository,
+        }
+      );
+
+      const createCall = mockReservationRepository.create.mock.calls[0]?.[0];
+      // O use-case nunca deve ter substituído null por algo inventado
+      expect(createCall?.family_group_label).toBeNull();
+    });
+  });
 });

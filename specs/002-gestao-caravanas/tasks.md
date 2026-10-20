@@ -20,6 +20,6 @@
 
 ## Fase 3 — Agrupamento Familiar
 - [x] T002.9 — Migration: `reservations.family_group_label` (nullable)
-- [ ] T002.10 — Campo no formulário de reserva (depende da spec 003 existir)
+- [x] T002.10 — Campo no formulário de reserva (depende da spec 003 existir)
 
 **Dependências:** spec 003 (estrutura de `reservations` já criada).
