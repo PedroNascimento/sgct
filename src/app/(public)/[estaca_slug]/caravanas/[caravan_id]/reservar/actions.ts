@@ -116,3 +116,66 @@ export async function addManifestEntryAction(
     };
   }
 }
+
+export async function uploadMinorApprovalFormAction(
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Não autenticado.");
+    }
+
+    const reservationId = formData.get("reservationId") as string;
+    const file = formData.get("file") as File;
+
+    if (!reservationId || !file) {
+      throw new Error("Reserva e arquivo são obrigatórios.");
+    }
+
+    const { uploadMinorApprovalForm } = await import(
+      "@/use-cases/minors/upload-minor-approval-form"
+    );
+    const {
+      SupabaseMinorRepository,
+      SupabaseStoragePort,
+    } = await import("@/infrastructure/supabase/supabase-minor-repository");
+
+    const minorRepository = new SupabaseMinorRepository(supabase);
+    const storagePort = new SupabaseStoragePort(supabase);
+    const reservationRepository = new SupabaseReservationRepository(supabase);
+
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBytes = Buffer.from(arrayBuffer);
+
+    const form = await uploadMinorApprovalForm(
+      {
+        userId: user.id,
+        reservationId,
+        fileName: file.name,
+        fileType: file.type as any,
+        fileSize: file.size,
+        fileBytes,
+      },
+      {
+        minorRepository,
+        storagePort,
+        reservationRepository,
+      }
+    );
+
+    return {
+      success: true,
+      data: form,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao enviar termo de autorização.",
+    };
+  }
+}
