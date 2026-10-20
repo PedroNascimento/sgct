@@ -72,3 +72,13 @@ for insert with check (
     )
   )
 );
+
+-- 4. Atualização da policy profiles_update_self
+-- Permite que qualquer usuário autenticado (member, guest, admin_ala, admin_estaca)
+-- atualize seus próprios dados cadastrais (nome, cpf, telefone, sexo).
+-- Os campos sensíveis (role, stake_id, ward_id, is_active) continuam estritamente protegidos
+-- pelo trigger trg_profiles_protect_security_fields.
+drop policy if exists profiles_update_self on public.profiles;
+create policy profiles_update_self on public.profiles
+for update using (id = auth.uid())
+with check (id = auth.uid());
