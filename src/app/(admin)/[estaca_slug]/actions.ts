@@ -26,6 +26,10 @@ import { createWard } from "@/use-cases/ward/create-ward";
 import { updateWard } from "@/use-cases/ward/update-ward";
 import { toggleWardStatus } from "@/use-cases/ward/toggle-ward-status";
 import { deleteWard } from "@/use-cases/ward/delete-ward";
+import { requestSeatSwap } from "@/use-cases/swap/request-seat-swap";
+import { approveSeatSwap } from "@/use-cases/swap/approve-seat-swap";
+import { SupabaseSwapRepository } from "@/infrastructure/supabase/supabase-swap-repository";
+import { SupabaseCreditRepository } from "@/infrastructure/supabase/supabase-credit-repository";
 import type { CaravanStatus } from "@/domain/types/caravan";
 import type { WardWithStats } from "@/domain/types/ward";
 import { formatDate } from "@/components/ui/format";
@@ -1013,6 +1017,99 @@ export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[
     return [];
   }
 }
+
+/**
+ * Server Action para registrar uma solicitação de permuta (T005.10 / US-005.2).
+ */
+export async function registerSeatSwapAction(
+  estacaSlug: string,
+  input: {
+    reservationId: string;
+    newHolderFullName: string;
+    newHolderDocument?: string;
+  }
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const swapRepo = new SupabaseSwapRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+
+    await requestSeatSwap(
+      {
+        reservationId: input.reservationId,
+        newHolderFullName: input.newHolderFullName,
+        newHolderDocument: input.newHolderDocument,
+        requestedBy: user.id,
+      },
+      {
+        reservationRepository: reservationRepo,
+        swapRepository: swapRepo,
+        profileRepository: profileRepo,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/estaca/permutas`);
+    return { success: true, message: "Permuta registrada com sucesso!" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao registrar permuta.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action para aprovar uma solicitação de permuta (T005.10 / US-005.2).
+ */
+export async function approveSeatSwapAction(
+  estacaSlug: string,
+  swapRequestId: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const swapRepo = new SupabaseSwapRepository(supabase);
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const caravanRepo = new SupabaseCaravanRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+    const creditRepo = new SupabaseCreditRepository(supabase);
+
+    await approveSeatSwap(
+      {
+        swapRequestId,
+        approverId: user.id,
+      },
+      {
+        swapRepository: swapRepo,
+        reservationRepository: reservationRepo,
+        caravanRepository: caravanRepo,
+        profileRepository: profileRepo,
+        creditRepository: creditRepo,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/estaca/permutas`);
+    return { success: true, message: "Permuta aprovada com sucesso!" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao aprovar permuta.";
+    return { success: false, error: message };
+  }
+}
+
 
 
 
