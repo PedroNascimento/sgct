@@ -1209,6 +1209,107 @@ export async function getMinorDocumentViewUrlAction(
   }
 }
 
+/**
+ * Server Action: Aprovação de Auxílio Financeiro pelo Admin da Ala/Estaca (Spec 012 / T012.4).
+ */
+export async function approveAidAction(
+  aidRequestId: string,
+  estacaSlug: string,
+  notes?: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { approveAid } = await import("@/use-cases/aid/process-aid");
+    const { SupabaseAidRepository } = await import("@/infrastructure/supabase/supabase-aid-repository");
+    const { SupabaseNotificationQueueRepository } = await import("@/infrastructure/supabase/supabase-notification-queue-repository");
+
+    const aidRepo = new SupabaseAidRepository(supabase);
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+    const notificationQueueRepository = new SupabaseNotificationQueueRepository(supabase);
+
+    await approveAid(
+      {
+        aidRequestId,
+        approverId: user.id,
+        notes: notes ?? null,
+      },
+      {
+        aidRepository: aidRepo,
+        reservationRepository: reservationRepo,
+        profileRepository: profileRepo,
+        notificationQueueRepository,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/ala/reservas`);
+    revalidatePath(`/${estacaSlug}/estaca/calendario`);
+    return { success: true, message: "Auxílio financeiro aprovado com sucesso! A reserva avançou para 'Pago na Ala'." };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao aprovar auxílio.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Reprovação de Auxílio Financeiro pelo Admin da Ala/Estaca (Spec 012 / T012.5).
+ */
+export async function rejectAidAction(
+  aidRequestId: string,
+  estacaSlug: string,
+  reason?: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { rejectAid } = await import("@/use-cases/aid/process-aid");
+    const { SupabaseAidRepository } = await import("@/infrastructure/supabase/supabase-aid-repository");
+    const { SupabaseNotificationQueueRepository } = await import("@/infrastructure/supabase/supabase-notification-queue-repository");
+
+    const aidRepo = new SupabaseAidRepository(supabase);
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+    const notificationQueueRepository = new SupabaseNotificationQueueRepository(supabase);
+
+    await rejectAid(
+      {
+        aidRequestId,
+        rejecterId: user.id,
+        reason: reason ?? null,
+      },
+      {
+        aidRepository: aidRepo,
+        reservationRepository: reservationRepo,
+        profileRepository: profileRepo,
+        notificationQueueRepository,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/ala/reservas`);
+    revalidatePath(`/${estacaSlug}/estaca/calendario`);
+    return { success: true, message: "Auxílio reprovado. A reserva correspondente foi cancelada." };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao reprovar auxílio.";
+    return { success: false, error: message };
+  }
+}
+
+
 
 
 

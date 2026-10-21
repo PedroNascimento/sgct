@@ -55,10 +55,10 @@ export default async function AdminAlaReservasPage({ params }: Props) {
     .eq("stake_id", stakeId)
     .order("departure_date", { ascending: true });
 
-  // 3. Busca todas as reservas da Ala (pendentes, pago_ala, confirmadas, waitlist)
+  // 3. Busca todas as reservas da Ala (pendentes, pago_ala, confirmadas, waitlist, aguardando_auxilio)
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("id, user_id, seat_number, category, payment_amount, status, created_at, caravan_id, profiles!inner(full_name, cpf, phone), caravans!inner(id, departure_date, status)")
+    .select("id, user_id, seat_number, category, payment_amount, status, created_at, caravan_id, funding_source, profiles!inner(full_name, cpf, phone), caravans!inner(id, departure_date, status), aid_requests(id, aid_type, status, notes)")
     .eq("stake_id", stakeId)
     .eq("ward_id", wardId)
     .order("seat_number", { ascending: true, nullsFirst: false });
@@ -75,6 +75,7 @@ export default async function AdminAlaReservasPage({ params }: Props) {
 
       <AlaReservasClient
         currentUserId={user.id}
+        estacaSlug={estaca_slug}
         reservations={(reservations as any) ?? []}
         caravans={caravans ?? []}
         wardName={wardName}

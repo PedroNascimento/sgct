@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { ReservationsChart } from "@/components/ui/reservations-chart";
 import { formatCurrency, formatDate } from "@/components/ui/format";
-import { confirmWardPaymentAction } from "@/app/(admin)/[estaca_slug]/actions";
+import {
+  confirmWardPaymentAction,
+  approveAidAction,
+  rejectAidAction,
+} from "@/app/(admin)/[estaca_slug]/actions";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";
 
@@ -15,6 +19,13 @@ interface ReservationItem {
   payment_amount: number;
   status: string;
   created_at: string;
+  funding_source?: string;
+  aid_requests?: Array<{
+    id: string;
+    aid_type: string;
+    status: string;
+    notes: string | null;
+  }>;
   profiles: {
     full_name: string;
     cpf: string | null;
@@ -36,15 +47,24 @@ interface CaravanOption {
 
 interface Props {
   currentUserId: string;
+  estacaSlug: string;
   reservations: ReservationItem[];
   caravans: CaravanOption[];
   wardName: string;
 }
 
+const aidTypeLabels: Record<string, string> = {
+  propria_investidura: "Própria Investidura",
+  recem_converso: "Recém-Converso",
+  reserva_estaca: "Reserva da Estaca",
+  outro: "Outro Fundo",
+};
+
 export function AlaReservasClient({
   currentUserId,
+  estacaSlug,
   reservations,
-  caravans,
+  caravans = [],
   wardName,
 }: Props) {
   const [selectedCaravanId, setSelectedCaravanId] = useState<string>(
@@ -64,6 +84,7 @@ export function AlaReservasClient({
   const pendentes = filteredByCaravan.filter((r) => r.status === "pendente");
   const pagosAla = filteredByCaravan.filter((r) => r.status === "pago_ala");
   const confirmados = filteredByCaravan.filter((r) => r.status === "confirmado");
+  const aguardandoAuxilio = filteredByCaravan.filter((r) => r.status === "aguardando_auxilio");
   const waitlist = filteredByCaravan.filter(
     (r) => r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga"
   );
@@ -75,6 +96,7 @@ export function AlaReservasClient({
     if (statusFilter === "pendente") return r.status === "pendente";
     if (statusFilter === "pago_ala") return r.status === "pago_ala";
     if (statusFilter === "confirmado") return r.status === "confirmado";
+    if (statusFilter === "aguardando_auxilio") return r.status === "aguardando_auxilio";
     if (statusFilter === "waitlist")
       return r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga";
     return true;
@@ -147,6 +169,76 @@ export function AlaReservasClient({
     });
   };
 
+  const handleApproveAid = (reservation: ReservationItem) => {
+    const aid = reservation.aid_requests?.[0];
+    showConfirm({
+      title: "Aprovar Auxílio Financeiro",
+      message: `Confirma que o Bispado aprovou o auxílio para ${reservation.profiles?.full_name}? A reserva avançará para 'Pago na Ala'.`,
+      confirmLabel: "Sim, Aprovar Auxílio",
+      confirmVariant: "primary",
+      onConfirm: async () => {
+        try {
+          setIsSubmitting(reservation.id);
+          const aidId = aid?.id || reservation.id;
+          const res = await approveAidAction(aidId, estacaSlug);
+          if (!res.success) {
+            showError({
+              title: "Erro ao aprovar auxílio",
+              message: res.error || "Não foi possível aprovar o auxílio.",
+            });
+          } else {
+            showSuccess({
+              title: "Auxílio Aprovado!",
+              message: res.message || "A reserva foi atualizada para Pago na Ala.",
+            });
+          }
+        } catch {
+          showError({
+            title: "Erro de comunicação",
+            message: "Falha na comunicação com o servidor ao aprovar auxílio.",
+          });
+        } finally {
+          setIsSubmitting(null);
+        }
+      },
+    });
+  };
+
+  const handleRejectAid = (reservation: ReservationItem) => {
+    const aid = reservation.aid_requests?.[0];
+    showConfirm({
+      title: "Reprovar Auxílio Financeiro",
+      message: `Tem certeza que deseja reprovar o auxílio de ${reservation.profiles?.full_name}? A reserva será cancelada definitivamente sem crédito.`,
+      confirmLabel: "Sim, Reprovar Auxílio",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        try {
+          setIsSubmitting(reservation.id);
+          const aidId = aid?.id || reservation.id;
+          const res = await rejectAidAction(aidId, estacaSlug, "Reprovado pelo Bispado");
+          if (!res.success) {
+            showError({
+              title: "Erro ao reprovar auxílio",
+              message: res.error || "Não foi possível reprovar o auxílio.",
+            });
+          } else {
+            showSuccess({
+              title: "Auxílio Reprovado",
+              message: res.message || "A reserva foi cancelada sem crédito.",
+            });
+          }
+        } catch {
+          showError({
+            title: "Erro de comunicação",
+            message: "Falha na comunicação com o servidor ao reprovar auxílio.",
+          });
+        } finally {
+          setIsSubmitting(null);
+        }
+      },
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Topo / Seletor de Caravana */}
@@ -195,7 +287,7 @@ export function AlaReservasClient({
       <ReservationsChart reservations={filteredByCaravan} />
 
       {/* Cards de Métricas (Dashboard da Ala) */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {/* Card 1: Aguardando Pagamento */}
         <button type="button" aria-pressed={statusFilter === "pendente"}
           onClick={() => setStatusFilter("pendente")}
@@ -213,6 +305,24 @@ export function AlaReservasClient({
           </div>
           <p className="mt-3 text-3xl font-black text-[#212225]">{pendentes.length}</p>
           <p className="mt-1 text-sm text-[#53575b]">Aguardam comprovação na Ala</p>
+        </button>
+
+        {/* Card: Aguardando Auxílio */}
+        <button type="button" aria-pressed={statusFilter === "aguardando_auxilio"}
+          onClick={() => setStatusFilter("aguardando_auxilio")}
+          className={`text-left cursor-pointer rounded-2xl border p-5 transition-all ${
+            statusFilter === "aguardando_auxilio"
+              ? "border-purple-500 bg-purple-50/70 ring-2 ring-purple-400"
+              : "border-[#e0e2e2] bg-white hover:border-purple-300"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold uppercase tracking-wider text-purple-700">
+              Aguardando Auxílio
+            </span>
+          </div>
+          <p className="mt-3 text-3xl font-black text-[#212225]">{aguardandoAuxilio.length}</p>
+          <p className="mt-1 text-sm text-[#53575b]">Requer aprovação do Bispado</p>
         </button>
 
         {/* Card 2: Pago Ala */}
@@ -298,6 +408,17 @@ export function AlaReservasClient({
           }`}
         >
           Aguardando Pagamento ({pendentes.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("aguardando_auxilio")}
+          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
+            statusFilter === "aguardando_auxilio"
+              ? "bg-purple-700 text-white"
+              : "bg-white text-[#53575b] hover:bg-purple-50"
+          }`}
+        >
+          Aguardando Auxílio ({aguardandoAuxilio.length})
         </button>
         <button
           type="button"
@@ -452,6 +573,18 @@ export function AlaReservasClient({
                              Aguardando Pgto
                           </span>
                         )}
+                        {res.status === "aguardando_auxilio" && (
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="sgct-chip border-purple-200 bg-purple-50 text-purple-700 font-semibold">
+                              Aguardando Auxílio
+                            </span>
+                            {res.aid_requests?.[0]?.aid_type && (
+                              <span className="text-[11px] font-medium text-purple-900 bg-purple-100/60 px-1.5 py-0.5 rounded">
+                                {aidTypeLabels[res.aid_requests[0].aid_type] || res.aid_requests[0].aid_type}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {res.status === "pago_ala" && (
                           <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
                              Pago na Ala
@@ -471,7 +604,32 @@ export function AlaReservasClient({
 
                       {/* Ação */}
                       <td className="px-5 py-4 text-right">
-                        {isPendente ? (
+                        {res.status === "aguardando_auxilio" ? (
+                          isOwnReservation ? (
+                            <span className="inline-block text-[11px] font-medium text-warning-700 bg-warning-50 px-2.5 py-1.5 rounded-lg border border-warning-200">
+                              Autoaprovação bloqueada
+                            </span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                disabled={isSubmitting === res.id}
+                                onClick={() => handleApproveAid(res)}
+                                className="inline-flex min-h-9 items-center rounded-lg bg-purple-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-purple-800 transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                {isSubmitting === res.id ? "Aprovando..." : "Aprovar Auxílio"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isSubmitting === res.id}
+                                onClick={() => handleRejectAid(res)}
+                                className="inline-flex min-h-9 items-center rounded-lg border border-red-300 bg-white px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer"
+                              >
+                                Reprovar
+                              </button>
+                            </div>
+                          )
+                        ) : isPendente ? (
                           isOwnReservation ? (
                             <span className="inline-block text-[11px] font-medium text-warning-700 bg-warning-50 px-2.5 py-1.5 rounded-lg border border-warning-200">
                               Autoaprovação bloqueada
