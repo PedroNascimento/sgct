@@ -75,6 +75,82 @@ export async function createReservationAction(
   }
 }
 
+export interface CreateGuestReservationActionInput {
+  caravanId: string;
+  seatNumber: number;
+  originStakeName: string;
+  originWardName: string;
+  category?: "standard" | "officiant";
+  participantType?: "adulto" | "jovem" | "crianca" | "oficiante" | "investidura" | "selamento" | "missionario_servico";
+  boardingPointId?: string | null;
+}
+
+export async function createGuestReservationAction(
+  input: CreateGuestReservationActionInput
+): Promise<ActionResult> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Não autenticado.");
+    }
+
+    // 1. Rate Limiting (10 req/min por usuário)
+    const { data: allowed, error: rateLimitError } = await supabase.rpc(
+      "check_reservation_rate_limit"
+    );
+    if (rateLimitError) {
+      throw new Error("Não foi possível validar o limite de tentativas.");
+    }
+    if (allowed !== true) {
+      return {
+        success: false,
+        error: "Muitas tentativas em pouco tempo. Por favor, aguarde um momento antes de tentar novamente.",
+      };
+    }
+
+    const { createGuestReservation } = await import("@/use-cases/guest/create-guest-reservation");
+    const { SupabaseGuestRepository } = await import("@/infrastructure/supabase/supabase-guest-repository");
+
+    const reservationRepository = new SupabaseReservationRepository(supabase);
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+    const guestRepository = new SupabaseGuestRepository(supabase);
+
+    const result = await createGuestReservation(
+      {
+        userId: user.id,
+        caravanId: input.caravanId,
+        seatNumber: input.seatNumber,
+        originStakeName: input.originStakeName,
+        originWardName: input.originWardName,
+        category: input.category ?? "standard",
+        participantType: input.participantType ?? "adulto",
+        boardingPointId: input.boardingPointId,
+      },
+      {
+        reservationRepository,
+        caravanRepository,
+        profileRepository,
+        guestRepository,
+      }
+    );
+
+    return {
+      success: true,
+      data: result.reservation,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro inesperado ao processar reserva de convidado.",
+    };
+  }
+}
+
 export async function addManifestEntryAction(
   input: AddManifestEntryInput
 ): Promise<ActionResult> {
