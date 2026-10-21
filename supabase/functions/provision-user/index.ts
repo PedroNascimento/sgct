@@ -2,12 +2,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+// A15 / D32: Operações administrativas legadas (create_ward_admin, create_bootstrap_admin)
+// foram removidas da Edge Function pública, mantendo apenas fluxos de cadastro direto auditados.
 type Operation =
   | "register_member"
   | "register_minor"
-  | "register_guest"
-  | "create_ward_admin"
-  | "create_bootstrap_admin";
+  | "register_guest";
 
 type Payload = Record<string, unknown> & { operation?: Operation };
 
@@ -23,7 +23,7 @@ function requiredString(payload: Payload, key: string, min = 1): string {
   return value.trim();
 }
 
-function validateCommon(payload: Payload, requireSexo = true) {
+function validateCommon(payload: Payload) {
   const email = requiredString(payload, "email");
   const password = requiredString(payload, "password", 8);
   const fullName = requiredString(payload, "fullName", 3);
@@ -32,8 +32,7 @@ function validateCommon(payload: Payload, requireSexo = true) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("E-mail inválido.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) throw new Error("Data de nascimento inválida.");
-  if (requireSexo && sexo !== "masculino" && sexo !== "feminino") throw new Error("Sexo inválido.");
-  if (sexo !== null && sexo !== "masculino" && sexo !== "feminino") throw new Error("Sexo inválido.");
+  if (sexo !== "masculino" && sexo !== "feminino") throw new Error("Sexo inválido.");
 
   return { email, password, fullName, birthDate, sexo };
 }
@@ -58,53 +57,32 @@ Deno.serve(async (req) => {
   try {
     const payload = (await req.json()) as Payload;
     const operation = payload.operation;
-    if (!operation) return fail("Operação inválida.");
+    if (!operation || !["register_member", "register_minor", "register_guest"].includes(operation)) {
+      return fail("Operação inválida.");
+    }
 
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    let actor: { id: string; role: string; stake_id: string } | null = null;
-    if (operation === "create_ward_admin" || operation === "create_bootstrap_admin") {
-      const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-      if (!token) return fail("Não autenticado.", 401);
+    const common = validateCommon(payload);
+    const age = ageAtToday(common.birthDate);
 
-      const caller = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: userData, error: userError } = await caller.auth.getUser(token);
-      if (userError || !userData.user) return fail("Não autenticado.", 401);
-
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("id, role, stake_id, is_active")
-        .eq("id", userData.user.id)
-        .single();
-      if (!profile?.is_active) return fail("Acesso negado.", 403);
-      actor = profile;
-    }
-
-    const common = validateCommon(payload, operation !== "create_bootstrap_admin");
-    let role: "member" | "guest" | "admin_ala" | "admin_estaca";
+    let role: "member" | "guest";
     let stakeId: string;
     let wardId: string | null = null;
     let guardianId: string | null = null;
     let homeStakeName: string | null = null;
     let homeWardName: string | null = null;
-    let cpf: string | null = null;
-    let phone: string | null = null;
 
-    if (operation === "register_member" || operation === "register_minor" || operation === "register_guest") {
-      cpf = requiredString(payload, "cpf").replace(/\D/g, "");
-      if (!/^\d{11}$/.test(cpf)) throw new Error("CPF deve conter exatamente 11 dígitos.");
-      phone = requiredString(payload, "phone").replace(/\D/g, "");
-      if (!/^\d{10,11}$/.test(phone)) {
-        throw new Error("WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD.");
-      }
+    const cpf = requiredString(payload, "cpf").replace(/\D/g, "");
+    if (!/^\d{11}$/.test(cpf)) throw new Error("CPF deve conter exatamente 11 dígitos.");
+    const phone = requiredString(payload, "phone").replace(/\D/g, "");
+    if (!/^\d{10,11}$/.test(phone)) {
+      throw new Error("WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD.");
     }
 
-    if (operation === "register_member" || operation === "register_minor" || operation === "create_ward_admin") {
+    if (operation === "register_member" || operation === "register_minor") {
       wardId = requiredString(payload, "wardId");
       const { data: ward } = await admin
         .from("wards")
@@ -114,34 +92,44 @@ Deno.serve(async (req) => {
       if (!ward) throw new Error("Ala informada não foi encontrada.");
       stakeId = ward.stake_id;
 
-      if (operation === "create_ward_admin") {
-        if (actor?.role !== "admin_estaca" || actor.stake_id !== stakeId) {
-          return fail("A Ala informada não pertence à sua Estaca.", 403);
-        }
-        role = "admin_ala";
-      } else {
-        const stakeSlug = requiredString(payload, "stakeSlug");
-        const { data: stake } = await admin
-          .from("stakes")
-          .select("id")
-          .eq("slug", stakeSlug)
-          .eq("is_active", true)
-          .single();
-        if (!stake || stake.id !== stakeId) throw new Error("A Ala selecionada não pertence a esta Estaca.");
-        role = "member";
+      const stakeSlug = requiredString(payload, "stakeSlug");
+      const { data: stake } = await admin
+        .from("stakes")
+        .select("id")
+        .eq("slug", stakeSlug)
+        .eq("is_active", true)
+        .single();
+      if (!stake || stake.id !== stakeId) throw new Error("A Ala selecionada não pertence a esta Estaca.");
 
-        if (operation === "register_minor") {
-          const age = ageAtToday(common.birthDate);
-          if (age < 12 || age >= 18) throw new Error("Cadastro próprio disponível apenas para jovens de 12 a 17 anos.");
-          if (payload.parentalConsent !== true) throw new Error("O consentimento explícito do responsável é obrigatório.");
-          guardianId = typeof payload.guardianId === "string" && payload.guardianId ? payload.guardianId : null;
-          if (guardianId) {
-            const { data: guardian } = await admin.from("profiles").select("id").eq("id", guardianId).single();
-            if (!guardian) throw new Error("Responsável informado não foi encontrado.");
-          }
+      role = "member";
+
+      if (operation === "register_member") {
+        // A15: Menores de 18 anos não podem ser registrados via rota comum de membro
+        if (age < 18) {
+          throw new Error(
+            "Membros menores de 18 anos devem utilizar o fluxo de cadastro de menor (register_minor) com consentimento dos pais."
+          );
+        }
+      } else {
+        // register_minor: jovens de 12 a 17 anos com consentimento explícito
+        if (age < 12 || age >= 18) {
+          throw new Error("Cadastro de menor disponível apenas para jovens de 12 a 17 anos.");
+        }
+        if (payload.parentalConsent !== true) {
+          throw new Error("O consentimento explícito do responsável é obrigatório.");
+        }
+        guardianId = typeof payload.guardianId === "string" && payload.guardianId ? payload.guardianId : null;
+        if (guardianId) {
+          const { data: guardian } = await admin.from("profiles").select("id").eq("id", guardianId).single();
+          if (!guardian) throw new Error("Responsável informado não foi encontrado.");
         }
       }
     } else if (operation === "register_guest") {
+      // A15: Convidados devem ter 18 anos ou mais
+      if (age < 18) {
+        throw new Error("Cadastro de convidado está disponível apenas para maiores de 18 anos.");
+      }
+
       const stakeSlug = requiredString(payload, "stakeSlug");
       const { data: stake } = await admin
         .from("stakes")
@@ -154,12 +142,6 @@ Deno.serve(async (req) => {
       role = "guest";
       homeStakeName = requiredString(payload, "homeStakeName", 2);
       homeWardName = requiredString(payload, "homeWardName", 2);
-    } else if (operation === "create_bootstrap_admin") {
-      if (actor?.role !== "super_admin") return fail("Acesso negado.", 403);
-      stakeId = requiredString(payload, "stakeId");
-      const { data: stake } = await admin.from("stakes").select("id").eq("id", stakeId).single();
-      if (!stake) throw new Error("Estaca não encontrada.");
-      role = "admin_estaca";
     } else {
       return fail("Operação inválida.");
     }

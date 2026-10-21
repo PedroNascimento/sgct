@@ -1247,7 +1247,8 @@ export async function evaluateMinorFormAction(
 
     const minorRepo = new SupabaseMinorRepository(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
-    const auditLogPort = new SupabaseAuditLogPort(supabase);
+    const serviceClient = createSupabaseServiceClient();
+    const auditLogPort = new SupabaseAuditLogPort(serviceClient);
 
     await approveMinorForm(
       {
@@ -1303,7 +1304,8 @@ export async function getMinorDocumentViewUrlAction(
     const minorRepo = new SupabaseMinorRepository(supabase);
     const storagePort = new SupabaseStoragePort(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
-    const auditLogPort = new SupabaseAuditLogPort(supabase);
+    const serviceClient = createSupabaseServiceClient();
+    const auditLogPort = new SupabaseAuditLogPort(serviceClient);
 
     const result = await getMinorDocumentUrl(
       {

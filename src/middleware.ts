@@ -19,16 +19,24 @@ const DEFAULT_STAKE = process.env.NEXT_PUBLIC_DEFAULT_STAKE ?? "natal";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Cache simples de slug → stake_id (em memória do edge runtime)
-// Stakes mudam raramente; invalidação não é crítica para MVP.
-const slugCache = new Map<string, { stake_id: string; is_active: boolean } | null>();
+// Cache simples com TTL de 60s de slug → stake_id (em memória do edge runtime) (A16)
+interface CachedStake {
+  stake_id: string;
+  is_active: boolean;
+  cachedAt: number;
+}
+
+const SLUG_CACHE_TTL_MS = 60_000;
+const slugCache = new Map<string, CachedStake | null>();
 
 async function resolveSlug(
   slug: string,
   supabase: ReturnType<typeof createServerClient>
 ): Promise<{ stake_id: string; is_active: boolean } | null> {
-  if (slugCache.has(slug)) {
-    return slugCache.get(slug) ?? null;
+  const cached = slugCache.get(slug);
+  const now = Date.now();
+  if (cached && now - cached.cachedAt < SLUG_CACHE_TTL_MS) {
+    return { stake_id: cached.stake_id, is_active: cached.is_active };
   }
 
   const query = supabase
@@ -45,9 +53,9 @@ async function resolveSlug(
     return null;
   }
 
-  const result = { stake_id: data.id, is_active: data.is_active };
+  const result: CachedStake = { stake_id: data.id, is_active: data.is_active, cachedAt: now };
   slugCache.set(slug, result);
-  return result;
+  return { stake_id: result.stake_id, is_active: result.is_active };
 }
 
 export async function middleware(request: NextRequest) {
@@ -104,7 +112,7 @@ export async function middleware(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser();
     const claims = error ? undefined : user?.app_metadata;
 
-    if (!claims || claims.role !== "super_admin") {
+    if (!claims || claims.role !== "super_admin" || claims.is_active === false) {
       // Redirecionar para login em vez de retornar 403 puro
       const url = request.nextUrl.clone();
       url.pathname = "/super-admin/login";
@@ -176,6 +184,13 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = `/${slug}/auth/login`;
     return NextResponse.redirect(url);
+  }
+
+  // A16: Bloqueio ativo se a conta do usuário estiver inativada
+  if (claims.is_active === false) {
+    return new NextResponse("Acesso bloqueado: sua conta foi desativada pela administração.", {
+      status: 403,
+    });
   }
 
   // 🔴 CHECAGEM CRÍTICA: stake do JWT deve corresponder ao slug da rota

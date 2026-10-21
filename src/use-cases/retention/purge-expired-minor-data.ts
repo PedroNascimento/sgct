@@ -42,10 +42,17 @@ export async function purgeExpiredMinorData(
 
   for (const form of expiredForms) {
     // Exclui o arquivo físico no Storage
+    let fileDeleted = false;
     try {
       await deps.retentionRepository.deleteFile("minor-forms", form.storagePath);
+      fileDeleted = true;
     } catch (err) {
       console.warn(`Erro ao excluir arquivo no storage (${form.storagePath}):`, err);
+    }
+
+    // A12: Se o Storage falhar, não apaga o registro do banco para permitir retry futuro
+    if (!fileDeleted) {
+      continue;
     }
 
     // Exclui o registro na tabela

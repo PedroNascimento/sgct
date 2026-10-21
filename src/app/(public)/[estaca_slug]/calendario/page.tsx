@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   createSupabaseServerClient,
-  createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
@@ -12,37 +11,33 @@ import { PublicHeader } from "@/components/ui/public-header";
 import { ArrowLeftIcon, ArrowRightIcon, BusIcon, CalendarIcon, ClockIcon, LocationIcon } from "@/components/ui/icons";
 import { formatBoardingTime, formatCurrency, formatDate } from "@/components/ui/format";
 
-/** Status exibíveis na lista pública de inscritos */
+/** Status neutros exibíveis na lista pública de inscritos (M01 / Artigo II.g) */
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  confirmado:    { label: "Confirmado",      color: "text-success-700 bg-success-50 border-success-200" },
-  presente:      { label: "Presente",        color: "text-success-700 bg-success-50 border-success-200" },
-  pago_ala:      { label: "Em validação",    color: "text-warning-700 bg-warning-50 border-warning-200" },
-  aguardando_auxilio: { label: "Ag. auxílio", color: "text-warning-700 bg-warning-50 border-warning-200" },
-  pendente:      { label: "Pendente",        color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
-  lista_espera:  { label: "Lista de espera", color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
+  Confirmado:        { label: "Confirmado",      color: "text-success-700 bg-success-50 border-success-200" },
+  "Em validação":    { label: "Em validação",    color: "text-warning-700 bg-warning-50 border-warning-200" },
+  Pendente:          { label: "Pendente",        color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
+  "Lista de espera": { label: "Lista de espera", color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
+  Inscrito:          { label: "Inscrito",        color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" },
 };
 
 /** Ordem de prioridade para exibição (menor = primeiro) */
 const STATUS_ORDER: Record<string, number> = {
-  confirmado: 1,
-  presente: 1,
-  pago_ala: 2,
-  aguardando_auxilio: 2,
-  aguardando_transferencia_interestaca: 2,
-  pendente: 3,
-  lista_espera: 4,
+  Confirmado: 1,
+  "Em validação": 2,
+  Pendente: 3,
+  "Lista de espera": 4,
+  Inscrito: 5,
 };
 
-interface ReservationRow {
+interface PublicSubscriberRow {
   id: string;
-  status: string;
-  created_at: string;
-  confirmed_at: string | null;
+  caravan_id: string;
+  full_name: string;
+  ward_name: string;
+  public_status: string;
   confirmation_rank: number | null;
-  profiles: { full_name: string } | null;
-  wards: { name: string } | null;
+  created_at: string;
 }
-
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -54,7 +49,7 @@ export const revalidate = 60; // ISR — revalida a cada 60 segundos
  * Página Pública de Calendário de Caravanas (T002.8 / US-002.2)
  * Rota: (public)/[estaca_slug]/calendario
  *
- * Exibe as caravanas da Estaca com status agregado de ocupação e sem PII.
+ * Exibe as caravanas da Estaca com status agregado de ocupação e sem PII sensível nem dados de auxílio.
  */
 export default async function PublicCalendarioPage({ params }: Props) {
   const { estaca_slug } = await params;
@@ -72,38 +67,21 @@ export default async function PublicCalendarioPage({ params }: Props) {
     caravanRepository: caravanRepo,
   });
 
-  // Busca os inscritos de todas as caravanas listadas via service client
-  // (RLS de reservations restringe leituras anônimas, mas a lista pública
-  //  expõe apenas nome, Ala e status — sem PII sensível)
-  const serviceClient = createSupabaseServiceClient();
   const caravanIds = caravans.map((c) => c.id);
-
-  const reservationsByCaravan: Record<string, ReservationRow[]> = {};
+  const reservationsByCaravan: Record<string, PublicSubscriberRow[]> = {};
 
   if (caravanIds.length > 0) {
-    const { data: rawReservations } = await serviceClient
-      .from("reservations")
-      .select("id, caravan_id, status, created_at, confirmed_at, confirmation_rank, profiles(full_name), wards(name)")
-      .in("caravan_id", caravanIds)
-      .not("status", "in", "(cancelada_com_credito,cancelada_sem_credito,expirada,no_show)")
-      .order("created_at", { ascending: true });
+    // Busca inscritos via RPC pública segura (M01 / Artigo II.g)
+    // sem service_role e sem revelar auxílio financeiro
+    const { data: rawSubscribers } = await supabase.rpc("get_public_caravan_subscribers", {
+      p_caravan_ids: caravanIds,
+    });
 
-    if (rawReservations) {
-      for (const row of rawReservations as any[]) {
-        const profileData = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-        const wardData = Array.isArray(row.wards) ? row.wards[0] : row.wards;
-        if (!profileData) continue;
+    if (rawSubscribers) {
+      for (const row of rawSubscribers as PublicSubscriberRow[]) {
         const caravanId = row.caravan_id;
         if (!reservationsByCaravan[caravanId]) reservationsByCaravan[caravanId] = [];
-        reservationsByCaravan[caravanId].push({
-          id: row.id,
-          status: row.status,
-          created_at: row.created_at,
-          confirmed_at: row.confirmed_at,
-          confirmation_rank: row.confirmation_rank,
-          profiles: profileData,
-          wards: wardData,
-        });
+        reservationsByCaravan[caravanId].push(row);
       }
     }
   }
@@ -112,13 +90,12 @@ export default async function PublicCalendarioPage({ params }: Props) {
    * Ordena a lista: confirmados primeiro (por confirmation_rank),
    * depois em validação (por created_at), depois pendentes, depois lista de espera.
    */
-  function sortReservations(list: ReservationRow[]): ReservationRow[] {
+  function sortReservations(list: PublicSubscriberRow[]): PublicSubscriberRow[] {
     return [...list].sort((a, b) => {
-      const orderA = STATUS_ORDER[a.status] ?? 9;
-      const orderB = STATUS_ORDER[b.status] ?? 9;
+      const orderA = STATUS_ORDER[a.public_status] ?? 9;
+      const orderB = STATUS_ORDER[b.public_status] ?? 9;
       if (orderA !== orderB) return orderA - orderB;
-      // Dentro do mesmo grupo: confirmados por rank, demais por created_at
-      if (a.status === "confirmado" && b.status === "confirmado") {
+      if (a.public_status === "Confirmado" && b.public_status === "Confirmado") {
         return (a.confirmation_rank ?? 999) - (b.confirmation_rank ?? 999);
       }
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
@@ -266,8 +243,8 @@ export default async function PublicCalendarioPage({ params }: Props) {
                   if (members.length === 0) return null;
 
                   // Separar confirmados/validação da lista de espera
-                  const active = members.filter((r) => r.status !== "lista_espera");
-                  const waiting = members.filter((r) => r.status === "lista_espera");
+                  const active = members.filter((r) => r.public_status !== "Lista de espera");
+                  const waiting = members.filter((r) => r.public_status === "Lista de espera");
 
                   return (
                     <section className="mt-7 border-t border-[#e0e2e2] pt-6" aria-label="Membros inscritos">
@@ -288,9 +265,9 @@ export default async function PublicCalendarioPage({ params }: Props) {
                           </thead>
                           <tbody className="divide-y divide-[#e0e2e2]">
                             {active.map((r, idx) => {
-                              const wardName = (r.wards as { name: string } | null)?.name ?? "—";
-                              const fullName = (r.profiles as { full_name: string } | null)?.full_name ?? "—";
-                              const badge = STATUS_LABEL[r.status] ?? { label: r.status, color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" };
+                              const wardName = r.ward_name ?? "—";
+                              const fullName = r.full_name ?? "—";
+                              const badge = STATUS_LABEL[r.public_status] ?? { label: r.public_status, color: "text-[#53575b] bg-[#f7f8f8] border-[#e0e2e2]" };
                               return (
                                 <tr key={r.id} className="bg-white hover:bg-[#f7f8f8] transition-colors">
                                   <td className="px-4 py-3 text-xs font-bold text-[#8d9194] tabular-nums">{idx + 1}</td>
@@ -327,8 +304,8 @@ export default async function PublicCalendarioPage({ params }: Props) {
                             <table className="w-full text-sm">
                               <tbody className="divide-y divide-[#e0e2e2]">
                                 {waiting.map((r, idx) => {
-                                  const wardName = (r.wards as { name: string } | null)?.name ?? "—";
-                                  const fullName = (r.profiles as { full_name: string } | null)?.full_name ?? "—";
+                                  const wardName = r.ward_name ?? "—";
+                                  const fullName = r.full_name ?? "—";
                                   return (
                                     <tr key={r.id} className="bg-white hover:bg-[#f7f8f8] transition-colors">
                                       <td className="px-4 py-3 text-xs font-bold text-[#8d9194] tabular-nums">{idx + 1}º</td>

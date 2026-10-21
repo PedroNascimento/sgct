@@ -16,7 +16,7 @@ import {
   getCachedValidTokens,
   savePendingCheckIn,
   getPendingCheckIns,
-  clearPendingCheckIns,
+  removePendingCheckIns,
   getPendingCheckInsCount,
 } from "@/infrastructure/storage/checkin-offline-db";
 
@@ -57,11 +57,11 @@ export function QrCodeScanner({
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Carrega contagens locais do IndexedDB
-    getPendingCheckInsCount()
+    // Carrega contagens locais do IndexedDB para a caravana atual (A08)
+    getPendingCheckInsCount(caravanId)
       .then(setPendingCount)
       .catch(() => {});
-    getCachedValidTokens()
+    getCachedValidTokens(caravanId)
       .then((tokens) => setCachedPassengerCount(tokens.length))
       .catch(() => {});
 
@@ -72,7 +72,7 @@ export function QrCodeScanner({
         scannerRef.current.stop().catch(() => {});
       }
     };
-  }, []);
+  }, [caravanId]);
 
   const handleStartScanner = async () => {
     try {
@@ -148,23 +148,34 @@ export function QrCodeScanner({
 
   const handleOfflineCheckIn = async (token: string) => {
     try {
-      const cached = await getCachedValidTokens();
+      const cached = await getCachedValidTokens(caravanId);
       const match = cached.find((c) => c.token === token);
 
-      await savePendingCheckIn({
-        token,
-        direction,
-        checkedInBy: "local-leader",
-        checkedInAt: new Date().toISOString(),
-      });
+      if (!match) {
+        setLastPassenger({
+          status: "error",
+          message: "QR Code não reconhecido nesta caravana. Certifique-se de que o passageiro está confirmado e o cache atualizado.",
+        });
+        return;
+      }
 
-      const count = await getPendingCheckInsCount();
+      await savePendingCheckIn(
+        {
+          token,
+          direction,
+          checkedInBy: "local-leader",
+          checkedInAt: new Date().toISOString(),
+        },
+        caravanId
+      );
+
+      const count = await getPendingCheckInsCount(caravanId);
       setPendingCount(count);
 
       setLastPassenger({
-        name: match?.passengerName,
-        seat: match?.seatNumber,
-        ward: match?.wardName,
+        name: match.passengerName,
+        seat: match.seatNumber,
+        ward: match.wardName,
         status: "offline",
         message: `Check-in de ${direction.toUpperCase()} gravado OFFLINE. Sincronize ao obter sinal.`,
       });
@@ -184,20 +195,34 @@ export function QrCodeScanner({
 
     setIsSyncing(true);
     try {
-      const pending = await getPendingCheckIns();
+      const pending = await getPendingCheckIns(caravanId);
       if (pending.length === 0) {
         setIsSyncing(false);
         return;
       }
 
       const result = await syncOfflineCheckInsAction(pending);
-      if (result.success) {
-        await clearPendingCheckIns();
-        setPendingCount(0);
-        setLastPassenger({
-          status: "success",
-          message: `Sincronização concluída! ${result.data?.syncedCount} novos check-ins gravados (${result.data?.duplicateCount} duplicados ignorados).`,
-        });
+      if (result.success && result.data) {
+        const processedTokens = result.data.results
+          .filter((r) => r.status === "synced" || r.status === "duplicate")
+          .map((r) => r.token);
+
+        // Remove do IndexedDB apenas os itens confirmados ou duplicatas (A08)
+        await removePendingCheckIns(processedTokens, caravanId);
+        const count = await getPendingCheckInsCount(caravanId);
+        setPendingCount(count);
+
+        if (result.data.failedCount > 0) {
+          setLastPassenger({
+            status: "error",
+            message: `Sincronização parcial: ${result.data.syncedCount} check-ins gravados, ${result.data.duplicateCount} duplicados ignorados e ${result.data.failedCount} pendências falharam e permaneceram no aparelho.`,
+          });
+        } else {
+          setLastPassenger({
+            status: "success",
+            message: `Sincronização concluída! ${result.data.syncedCount} novos check-ins gravados (${result.data.duplicateCount} duplicados ignorados).`,
+          });
+        }
       } else {
         alert(result.error || "Erro ao sincronizar check-ins pendentes.");
       }
@@ -213,7 +238,7 @@ export function QrCodeScanner({
     try {
       const result = await loadCaravanCheckInTokensAction(caravanId);
       if (result.success && result.data) {
-        await cacheValidTokens(result.data as CheckInPassengerInfo[]);
+        await cacheValidTokens(result.data as CheckInPassengerInfo[], caravanId);
         setCachedPassengerCount(result.data.length);
         alert(
           `Sucesso! ${result.data.length} passageiros confirmados carregados para uso offline durante o embarque.`

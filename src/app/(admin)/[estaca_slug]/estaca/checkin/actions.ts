@@ -23,7 +23,8 @@ const validateCheckInInputSchema = z.object({
 const offlineItemSchema = z.object({
   token: z.string().min(1, "Token é obrigatório"),
   direction: z.enum(["ida", "volta"]),
-  offlineCheckedInAt: z.string(),
+  checkedInAt: z.string().optional(),
+  offlineCheckedInAt: z.string().optional(),
 });
 
 const grantCreditInputSchema = z.object({
@@ -94,7 +95,7 @@ export async function validateCheckInAction(
 
 export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
   try {
-    z.array(offlineItemSchema).parse(items);
+    const validatedItems = z.array(offlineItemSchema).parse(items);
 
     const supabase = await createSupabaseServerClient();
     const {
@@ -109,10 +110,12 @@ export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
     const checkInRepository = new SupabaseCheckInRepository(supabase);
     const reservationRepository = new SupabaseReservationRepository(supabase);
 
-    // Garante que o checkedInBy dos itens seja o usuário autenticado
-    const enrichedItems = items.map((item) => ({
-      ...item,
+    // Garante que o checkedInBy dos itens seja o usuário autenticado e unifica o timestamp (A08)
+    const enrichedItems: OfflineCheckInItem[] = validatedItems.map((item) => ({
+      token: item.token,
+      direction: item.direction,
       checkedInBy: user.id,
+      checkedInAt: item.checkedInAt || item.offlineCheckedInAt || new Date().toISOString(),
     }));
 
     const result = await syncOfflineCheckIns(enrichedItems, {

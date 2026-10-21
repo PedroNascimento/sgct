@@ -22,6 +22,7 @@ export interface SyncOfflineCheckInsResult {
   duplicateCount: number;
   failedCount: number;
   results: Array<{
+    token: string;
     reservationId?: string;
     status: "synced" | "duplicate" | "failed";
     error?: string;
@@ -61,6 +62,7 @@ export async function syncOfflineCheckIns(
         if (seenInBatch.has(batchKey)) {
           duplicateCount++;
           results.push({
+            token: item.token,
             reservationId,
             status: "duplicate",
           });
@@ -78,6 +80,7 @@ export async function syncOfflineCheckIns(
         if (existing) {
           duplicateCount++;
           results.push({
+            token: item.token,
             reservationId,
             status: "duplicate",
           });
@@ -98,12 +101,14 @@ export async function syncOfflineCheckIns(
 
       syncedCount++;
       results.push({
+        token: item.token,
         reservationId: checkIn.reservation_id,
         status: "synced",
       });
     } catch (err: unknown) {
       failedCount++;
       results.push({
+        token: item.token,
         status: "failed",
         error: err instanceof Error ? err.message : "Erro ao processar check-in",
       });
