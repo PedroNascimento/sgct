@@ -1,4 +1,6 @@
 # Schema de Banco de Dados e Políticas RLS — SGCT
+
+> **Revisão normativa — 21/10/2026, constituição v4.0.0:** o schema/SQL abaixo inclui exemplos históricos, não deve ser aplicado manualmente como migration atual. A fonte executável é `supabase/migrations/`. Super Admin promove member existente a Admin Estaca por contrato específico com lookup mínimo e nunca por criação genérica de profile. Admin Estaca promove somente member da própria Estaca a Admin Ala. SELECT de perfis/financeiro/menores não é liberado genericamente. Nome/Ala públicos só por projeção mínima (II.g). Policies/grants legados têm pendências C01/C02/A02; ver `REGISTRO-REMEDIACAO.md`. Nenhuma migration é alterada na Fase 01.
 ### 🔄 v3 — Auxílio Financeiro (gate) e Convidados Inter-Estaca
 
 > **Regra de ouro deste projeto:** nenhuma tabela vai para produção sem política RLS que respeite os DOIS níveis de isolamento (Estaca e Ala). Se uma tabela nova for criada e este documento não for atualizado com a policy correspondente, o PR não pode ser aprovado. Ver checklist na seção 10.
@@ -447,14 +449,14 @@ for select using (
   id = auth.uid()
   or is_admin_ala_of(stake_id, ward_id)
   or is_admin_estaca_of(stake_id)
-  -- super_admin não lê profiles de membros/admin_ala; só o INSERT abaixo, para bootstrap
+  -- super_admin não lê profiles de membros/admin_ala; lookup mínimo dirigido para promoção; o INSERT de bootstrap abaixo é legado a remover
 );
 
 create policy profiles_update_self on profiles
 for update using (id = auth.uid())
 with check (id = auth.uid() and role = 'member'); -- usuário não se autopromove
 
--- 🔄 super_admin pode inserir (bootstrap) o primeiro admin_estaca de uma Estaca nova
+-- LEGADO, não representa v4.0.0: a promoção usa conta existente; não criar profile administrativo
 create policy profiles_insert_bootstrap on profiles
 for insert with check (
   auth.uid() = id  -- autocadastro normal (member/admin_ala via signup)
@@ -688,7 +690,7 @@ Para **cada** tabela sensível, `npm run test:rls` cobre, no mínimo (fixtures c
 - [ ] `ENABLE ROW LEVEL SECURITY` e `FORCE ROW LEVEL SECURITY` aplicados
 - [ ] Tabela tem `stake_id` **e** `ward_id` se contém dado de reserva/membro (ambos indexados, `stake_id` primeiro)
 - [ ] `stake_id`/`ward_id` são derivados por trigger `BEFORE INSERT`, nunca aceitos do payload
-- [ ] Policy de `SELECT` cobre as 4 camadas corretas (confirmar se `super_admin` deve ou não ter acesso — default é **não**, salvo `stakes`/bootstrap de `profiles`)
+- [ ] Policy de `SELECT` cobre as 4 camadas corretas (confirmar se `super_admin` deve ou não ter acesso — default é **não**, salvo `stakes` e lookup dirigido de promoção via contrato mínimo (sem SELECT genérico de profiles))
 - [ ] Nenhuma policy usa `USING (true)` em tabela com dado sensível (só permitido em `stakes`/`caravans`/`boarding_points`, que são dados públicos não-PII, documentado na seção 5.4)
 - [ ] Teste de vazamento cross-*stake* **e** cross-Ala escrito em `test:rls` antes do merge
 - [ ] Transições de status sensíveis passam por Server Action/Edge Function, não por UPDATE livre do client

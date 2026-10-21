@@ -1,5 +1,7 @@
 # Plan 006: Quórum, Cancelamento de Caravana e Menores
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/VI: lookup de promoção e calendário público não expõem documentos. Upload/rollover/auditoria pendentes, Fases 04/05. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/006-quorum-menores/spec.md`
 
 ## Verificação de Conformidade com a Constituição

@@ -1,24 +1,24 @@
 # Spec 001: Autenticação, Perfis e RBAC
 
-**Status:** Ready for Planning
-**Constitution:** v2.0.0
+**Status:** Implementação existente; aceite reaberto pela auditoria de 21/10/2026
+**Constitution:** v4.0.0
 **Depende de:** 000-fundacao-multi-tenant-saas
 
 ## Contexto e Objetivo
-Todo acesso ao sistema — membro, Admin Ala, Admin Estaca — começa por aqui. Esta spec cobre cadastro, login, atribuição de papel dentro de uma Estaca já existente (a criação da própria Estaca e do primeiro Admin Estaca é escopo da spec 000, feita por `super_admin`) e a manutenção do ciclo de vida da conta (inativação por inatividade).
+Todo acesso ao sistema — membro, Admin Ala, Admin Estaca — começa por aqui. Esta spec cobre cadastro, login, atribuição de papel dentro de uma Estaca já existente (a criação da própria Estaca e a promoção de membros existentes a Admin Estaca são escopo da spec 000, exclusivas de `super_admin`) e a manutenção do ciclo de vida da conta (inativação por inatividade).
 
 ## Escopo
 
 ### Dentro do escopo
 - Cadastro e login de `member` (adulto e menor 12-17 com login próprio).
-- Cadastro de `admin_ala` por um `admin_estaca` da mesma `stake_id`.
+- Promoção de `member` previamente cadastrado a `admin_ala` por um `admin_estaca` da mesma `stake_id`; sem criação de conta pelo painel.
 - 🔄 Cadastro de `guest` (convidado inter-Estaca) — conta leve, sem `ward_id`, vinculada à Estaca **anfitriã** (D28, corrigido).
 - Vínculo opcional (nunca obrigatório) de um menor 12-17 à conta de um responsável.
 - Inativação automática de conta após 24 meses sem login (D14).
 - Bloqueio de autopromoção de `role` pelo próprio usuário.
 
 ### Fora do escopo
-- Criação de `stakes` e do primeiro `admin_estaca` de cada uma (spec 000, papel exclusivo de `super_admin`).
+- Criação de `stakes` e promoção de membros existentes a `admin_estaca` (spec 000, papel exclusivo de `super_admin`).
 - Autenticação via OTP/SMS/WhatsApp (D20 — e-mail próprio para todos, inclusive menores).
 - Portal separado para o responsável de um menor (o vínculo é só um campo de referência, sem funcionalidade própria nesta versão).
 
@@ -50,6 +50,8 @@ Como Admin Estaca, quero promover um membro já cadastrado da minha Estaca a Adm
 - THE SYSTEM SHALL exigir que o `ward_id` informado pertença à mesma `stake_id` do `admin_estaca` que está promovendo (Artigo II.d).
 - IF um `admin_estaca` tentar promover um membro vinculado a outra Estaca, THEN THE SYSTEM SHALL rejeitar.
 - THE SYSTEM SHALL NOT permitir criação de novos usuários pelo painel admin — apenas elevação de permissão de contas existentes.
+- THE SYSTEM SHALL negar promoção a admin_estaca pelo Admin Estaca e qualquer promoção por Admin Ala/membro.
+- THE SYSTEM SHALL retornar somente dados mínimos de candidato ao lookup dirigido, sem varredura de contatos de todas as contas.
 - WHEN a permissão for revogada, THE SYSTEM SHALL retornar o usuário para `role = 'member'` sem excluir a conta nem o histórico.
 
 ### US-001.4: Inativação automática por inatividade

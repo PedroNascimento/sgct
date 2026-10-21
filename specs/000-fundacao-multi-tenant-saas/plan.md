@@ -1,14 +1,16 @@
 # Plan 000: Fundação Multi-Tenant e Distribuição Open-Source
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II.e/f/g: promoção de membros existentes e lookup mínimo; público restrito; C01/C02/A01 abertos. Fases 02–03 e 08. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/000-fundacao-multi-tenant-saas/spec.md`
 
 ## Verificação de Conformidade com a Constituição
 
 | Artigo | Conformidade | Observação |
 |---|---|---|
-| I — Clean Architecture | ✅ | Lógica de resolução de `stake_id`/RBAC fica em `use-cases/` (`ResolveStakeFromSlug`, `CreateStake`, `CreateBootstrapAdminEstaca`), nunca direto em middleware ou componente. |
+| I — Clean Architecture | ✅ | Lógica de resolução de `stake_id`/RBAC fica em `use-cases/` (`ResolveStakeFromSlug`, `CreateStake`, `PromoteStakeAdmin`), nunca direto em middleware ou componente. |
 | II — Isolamento Multi-Tenant | ✅ | Esta spec **é** a implementação do Artigo II. Toda tabela ganha `stake_id`; `super_admin` explicitamente sem acesso a dado sensível. |
-| III — Sem UPDATE direto | ✅ | Criação de `stakes`/bootstrap de `admin_estaca` via Server Action dedicada, nunca `update()` genérico do client. |
+| III — Sem UPDATE direto | ✅ | Criação de `stakes`/promoção de membro a `admin_estaca` via Server Action dedicada, nunca `update()` genérico do client. |
 | IV — TDD 80%+ | ✅ | `use-cases` de resolução de tenant e criação de Estaca cobertos por testes antes da implementação (ver `tasks.md`). |
 | V — Segurança por padrão | ✅ | `.env.example` cobre todos os segredos novos; `service_role` só no script de seed e Edge Functions. |
 | VI — LGPD automatizada | N/A | Esta spec não introduz dado de menor novo — apenas propaga `stake_id` às tabelas já existentes. |
@@ -29,7 +31,7 @@ Ver `docs/DATABASE_SCHEMA.md` seções 2 (DDL: `stakes` nova; `stake_id` em `war
 ```ts
 // src/use-cases/tenant/
 createStake(input: { name: string; slug: string }): Promise<Stake>
-createBootstrapAdminEstaca(input: { stakeId: string; email: string; fullName: string }): Promise<Profile>
+promoteStakeAdmin(input: { stakeId: string; memberId: string }, actorId: string): Promise<Profile>
 resolveStakeFromSlug(slug: string): Promise<Stake | null>
 
 // src/use-cases/auth/
@@ -38,7 +40,7 @@ resolveStakeFromSlug(slug: string): Promise<Stake | null>
 Zod schemas correspondentes em `src/domain/schemas/tenant.ts` — validam `slug` como `kebab-case`, único, sem caracteres especiais (necessário para compor a URL `/[estaca_slug]` com segurança).
 
 ## Decisões Técnicas Resolvidas (Research)
-Ver `docs/DECISIONS.md`: D21 (multi-tenant SaaS regional), D22 (`super_admin` least privilege), D23 (stake_id/ward_id nunca vêm do client), D24 (roteamento por slug + fallback), D25 (distribuição open-source auto-hospedável).
+Ver `docs/DECISIONS.md`: D21 (multi-tenant SaaS regional), D22 (`super_admin` least privilege), D23 (stake_id/ward_id nunca vêm do client), D24 (roteamento por slug + fallback), D25 (distribuição open-source auto-hospedável), D32 (promoção de conta existente).
 
 ## Fases de Implementação
 - **Fase 0 (Research):** já concluída — decisões D21-D25 registradas.

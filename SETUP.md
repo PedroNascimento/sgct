@@ -1,5 +1,7 @@
 # SETUP.md — Guia de Instalação e Auto-Hospedagem (Self-Hosted)
 
+> **Estado em 21/10/2026:** somente desenvolvimento local, sem deploy na Vercel. As seções de nuvem/deploy são instruções futuras e não evidência de instalação concluída. Antes da primeira implantação, fechar `REGISTRO-REMEDIACAO.md`. Não usar banco remoto para testes nem resetar o banco local atual sem autorização específica.
+
 > Este guia permite que **qualquer Estaca no Brasil** suba sua própria instância do SGCT, gratuitamente, sem tocar em código-fonte — apenas configurando variáveis de ambiente. Ver Artigo IX da constituição (`.specify/memory/constitution.md`).
 
 ## 1. Pré-requisitos
@@ -23,7 +25,7 @@ Esta seção é separada de propósito: a Seção 3 cria a instância **real** (
 Pré-requisito adicional: [Docker Desktop](https://www.docker.com/products/docker-desktop) instalado e rodando.
 
 ```bash
-npm install -g supabase
+npx supabase --version  # CLI do projeto, instalada por npm ci
 supabase init          # só na primeira vez, cria a pasta supabase/ se ainda não existir
 supabase start          # sobe Postgres + Auth + Storage + Studio localmente via Docker
 supabase functions serve # mantém as Edge Functions locais disponíveis em outro terminal
@@ -45,7 +47,7 @@ supabase db reset                           # reaplica TODAS as migrations do ze
 npm run test:rls                            # roda contra o banco local, nunca contra produção
 ```
 
-`supabase db reset` é destrutivo **só no banco local** (Docker) — apaga e recria tudo a partir das migrations versionadas. Seguro rodar quantas vezes precisar. **Nunca** rode `supabase db push` (Seção 3/7) apontando para o projeto remoto até o CI passar (lint + test + `test:rls`) e o "Definition of Done" do `tasks.md` da spec estar satisfeito — essa é a fronteira entre desenvolvimento local e produção neste projeto.
+`supabase db reset` é destrutivo **só no banco local** (Docker) — apaga e recria tudo a partir das migrations versionadas. Use apenas em banco local descartável ou após autorização específica para apagar os dados locais; não é comando rotineiro para o banco em uso. **Nunca** rode `supabase db push` (Seção 3/7) apontando para o projeto remoto até o CI passar (lint + test + `test:rls`) e o "Definition of Done" do `tasks.md` da spec estar satisfeito — essa é a fronteira entre desenvolvimento local e produção neste projeto.
 
 ```bash
 supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
@@ -59,7 +61,7 @@ supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
    - service_role key -> SUPABASE_SERVICE_ROLE_KEY (nunca compartilhe ou commite essa chave)
 3. Instale a CLI do Supabase e conecte ao projeto:
    ```bash
-   npm install -g supabase
+   npx supabase --version  # CLI do projeto, instalada por npm ci
    supabase login
    supabase link --project-ref <seu-project-ref>
    ```
@@ -91,19 +93,21 @@ Preste atencao especial a:
 - QR_TOKEN_SECRET: gere um valor aleatorio forte: `openssl rand -hex 32`
 - CRON_SECRET: idem, gere com o mesmo comando.
 
-## 6. Rodar o Script de Seed (primeira Estaca + super_admin)
-Toda instancia nova precisa de pelo menos: (1) um registro em stakes, (2) um usuario com role super_admin, (3) o primeiro admin_estaca daquela Estaca.
+## 6. Bootstrap da instância e promoção de contas existentes
+O seed inicial cria a identidade Super Admin da instância e a configuração inicial prevista no script. Administradores de Estaca/Ala são membros autocadastrados promovidos, conforme constituição v4.0.0/D32; o seed não é um fluxo para criar credenciais de participantes.
 
 ```bash
 npm run seed:super-admin -- --email="seu-email@exemplo.org" --senha="defina-uma-senha-forte"
 ```
 
-Esse script (scripts/seed-super-admin.ts):
+O comando usa `scripts/seed-bootstrap.ts`. Verifique a saída do script e nunca copie senhas/chaves para logs versionados. A implementação legada deve ser revalidada na remediação; a documentação não garante criação automática de todos os perfis.
+
+Responsabilidades do bootstrap:
 1. Usa a SUPABASE_SERVICE_ROLE_KEY (nunca a anon key) para criar o usuario via Admin API do Supabase Auth.
 2. Insere a profile correspondente com role = 'super_admin' e stake_id = null (intencional — ver Artigo II.f da constituicao).
-3. Imprime no terminal um link de login temporario.
+3. Fornece a identidade inicial necessária para acessar a plataforma; não se presume que gere link temporário.
 
-Depois de logado como super_admin, acesse `/estacas` para cadastrar a Estaca (nome + slug) e `/admins` para cadastrar o primeiro `admin_estaca` dela — esse admin, a partir dai, gerencia tudo pela interface normal, sem precisar mais do super_admin.
+Depois de logado como Super Admin, crie a Estaca em `/estacas`. O participante deve se cadastrar como membro nessa Estaca. Em `/admins`, o Super Admin identifica esse membro por busca dirigida e promove a Admin Estaca. Esse Admin Estaca cria as Alas e promove membros existentes da própria Estaca a Admin Ala; não promove outros Admins Estaca. Nenhum painel cria a senha do participante. Contratos/limitações de acesso ainda serão corrigidos nas Fases 02–03.
 
 Atencao: se sua instancia vai atender uma unica Estaca (caso mais comum de auto-hospedagem), o slug cadastrado aqui deve ser exatamente o mesmo valor de NEXT_PUBLIC_DEFAULT_STAKE.
 
@@ -127,3 +131,7 @@ npm install
 supabase db push
 ```
 Nenhuma configuracao especifica da sua Estaca (nome, valores, e-mails) e perdida — tudo vive em variaveis de ambiente ou no banco (stakes, caravans), nunca em codigo (Artigo IX da constituicao).
+
+## Baseline e instalação de testes
+
+Use `npm ci` para reproduzir o lockfile; configure somente URL/chaves do Supabase local e execute `npm run test:guard`, `npm run test:unit` e `npm run test:db`. O runner recusa destinos remotos. Conferir `.github/workflows/ci.yml` para banco descartável de CI, sem secrets remotos. Jobs exigem URL alcançável pelo banco/container e segredo configurados; existência em cron.job não comprova execução. Configuração/monitoramento completos ficam na Fase 07. A segunda instalação independente e o primeiro deploy continuam pendentes.

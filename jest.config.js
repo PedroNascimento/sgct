@@ -6,6 +6,7 @@ const config = {
       testEnvironment: "node",
       // Carrega .env.local para os testes RLS que precisam das credenciais do banco
       setupFiles: ["<rootDir>/src/jest.setup.global.js"],
+      setupFilesAfterEnv: ["<rootDir>/src/jest.integration-guard.js"],
       testMatch: [
         "<rootDir>/src/**/__tests__/rls/**/*.test.ts",
         "<rootDir>/src/**/__tests__/integration/**/*.test.ts",

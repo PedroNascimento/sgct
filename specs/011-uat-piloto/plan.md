@@ -1,5 +1,7 @@
 # Plan 011: UAT e Piloto com uma Caravana Real
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** IX: simulação local não comprova piloto real ou segunda instalação; aceites reabertos. Fase 11. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/011-uat-piloto/spec.md`
 
 ## Verificação de Conformidade com a Constituição

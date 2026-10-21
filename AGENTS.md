@@ -35,7 +35,7 @@ Nunca pule uma etapa. Nunca implemente algo que um `plan.md` não passou pela ch
 🔄 **`012-auxilio-financeiro`** e **`013-convidados-interestaca`** podem ser implementadas em paralelo, a qualquer momento **depois de `004`** estar concluída (ambas dependem de `funding_source`/status de reserva já existirem) — não bloqueiam nem são bloqueadas por `005`-`011`. Recomendação: implementar antes de `010-seguranca-hardening`, já que ambas introduzem tabelas/RLS novas que precisam entrar na auditoria final.
 
 ## Stack
-- Next.js 15 (App Router) + React + TypeScript (strict mode)
+- Next.js 16 (App Router) + React + TypeScript (strict mode)
 - Tailwind CSS
 - Supabase (PostgreSQL, Auth, Storage, Row Level Security, Edge Functions, `pg_cron`)
 - Vercel (hospedagem, free tier) | Resend (e-mail transacional)
@@ -48,7 +48,11 @@ npm run build
 npm run lint
 npm run test
 npm run test:coverage
-npm run test:rls           # obrigatório sempre que uma tabela/policy for tocada
+npm run test:guard         # valida trava de ambiente, incluindo Jest direto
+npm run test:unit          # sem integração/RLS
+npm run test:db            # integração + RLS; exige loopback e chaves locais
+npm run test:rls           # obrigatório ao tocar tabela/policy; nunca banco remoto
+npm run inventory:check   # detecta deriva das fronteiras inventariadas
 supabase start              # sobe o Supabase local via Docker (Postgres, Auth, Storage, Studio)
 supabase status              # mostra URL/anon key/service_role key locais (para o .env.local)
 supabase stop                 # derruba o Supabase local
@@ -78,14 +82,17 @@ supabase/migrations/
 ```
 
 ## Regras Não-Negociáveis (resumo — ver constituição para o texto completo)
-1. **Isolamento em dois níveis é crítico:** `stake_id` (Estaca) é o limite mais externo; vazamento entre Estacas tem a mesma severidade de um incidente de segurança. `ward_id` (Ala) é o limite interno. 🔄 Única exceção adicional documentada: reserva de convidado inter-Estaca (spec 013, Artigo II.d) — visível só ao Admin Estaca anfitrião, nunca a nenhum Admin Ala.
+1. **Isolamento em dois níveis é crítico:** `stake_id` (Estaca) é o limite mais externo; vazamento entre Estacas tem a mesma severidade de um incidente de segurança. `ward_id` (Ala) é o limite interno. Exceções delimitadas: ocupação sem PII, convidado inter-Estaca (II.d), lookup mínimo de promoção (II.f) e nome/Ala em projeção pública (II.g). Convidado inter-Estaca — visível só ao Admin Estaca anfitrião, nunca a nenhum Admin Ala.
 2. **`stake_id`/`ward_id` nunca vêm do payload do client** — sempre derivados por trigger a partir da entidade pai.
-3. **`super_admin` é deliberadamente limitado**: só cadastra Estacas e o primeiro Admin Estaca de cada uma. Sem acesso a reservas/financeiro/menores.
+3. **Promoções (constituição v4.0.0/D32):** Super Admin cria Estacas e promove membros existentes a Admin Estaca; Admin Estaca promove somente membros da própria Estaca a Admin Ala, nunca outros Admins Estaca. Painéis não criam contas/senhas. Lookup mínimo dirigido não autoriza listagem global nem acesso a reservas/financeiro/menores.
 4. **Reserva ≠ confirmação:** escolher assento trava fisicamente, mas a posição final segue a ordem de transferência Ala→Estaca validada semanalmente. Assento nunca é liberado antecipadamente.
 5. **Sem cancelamento direto pelo membro** — só promoção de lista de espera (gera crédito) ou permuta mediada (sem crédito).
 6. **QR Code de check-in** só após `CONFIRMADO`, token assinado, suporte offline idempotente.
 7. **Código 100% agnóstico de tenant e ambiente** — nada hardcoded; tudo via `.env` ou banco.
 8. **TDD obrigatório**, 80%+ em `use-cases/`.
+
+## Estado atual e remediação
+Somente desenvolvimento local; não existe deploy de produção na Vercel. Constituição v4.0.0 e baseline em `docs/BASELINE-FASE-01.md`. A Fase 01 não corrige as vulnerabilidades operacionais: consultar `docs/REGISTRO-REMEDIACAO.md` antes de marcar qualquer aceite como concluído. O banco de desenvolvimento não deve ser resetado sem autorização específica.
 
 ## O que NÃO fazer
 - Não implementar regra de negócio ausente de um `spec.md` — parar e perguntar.

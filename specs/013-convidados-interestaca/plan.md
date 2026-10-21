@@ -1,5 +1,7 @@
 # Plan 013: Reservas de Convidado Inter-Estaca
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II.d preservado: guest sem Ala, repasse visível à Estaca anfitriã, não ao Admin Ala; sem novos poderes do Super Admin. Fase 05. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/013-convidados-interestaca/spec.md`
 
 ## Verificação de Conformidade com a Constituição

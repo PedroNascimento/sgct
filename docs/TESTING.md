@@ -1,7 +1,7 @@
 # Estratégia de Testes — SGCT
 ### 🔄 v2 — inclui isolamento cross-*stake* (ver seção 3.6bis)
 
-> Padrão do projeto: **TDD obrigatório**, cobertura mínima de **80%** em `src/domain/` e `src/use-cases/` (gate de CI — build quebra abaixo disso). Este documento define o que testar, como testar e quais cenários são inegociáveis dado que o sistema lida com dinheiro, concorrência e dados de menores.
+> **Requisito constitucional v4.0.0:** TDD, mínimo de 80% em use-cases com 90% em branches/functions e 75% global. **Estado da baseline:** jest.config.js ainda aplica gates legados aos arquivos coletados; a cobertura atual não atinge 90% de branches. A Fase 09 deve corrigir os gates e a cobertura; CI de baseline não é aprovação de release.
 
 ## 1. Pirâmide de Testes
 
@@ -113,3 +113,15 @@ Para **cada** tabela sensível, o mínimo de testes é:
 - Configuração de infraestrutura (a própria migration SQL é "testada" pelo `test:rls`, não por Jest).
 
 Isso evita inflar a métrica de cobertura com testes de baixo valor, mantendo o foco nos 80%+ em código que realmente carrega risco.
+
+## Execução protegida e CI de baseline (21/10/2026)
+
+- `npm run test:guard`: cinco cenários do runner local, incluindo bloqueio de Jest direto com destino remoto, sem consultar esse destino.
+- `npm run test:unit -- --coverage`: unitários/componentes/infra; exclui `__tests__/rls` e `__tests__/integration`.
+- `npm run test:db`: integração + RLS, com guarda loopback e chaves locais obrigatórias antes da importação dos testes. `test:rls`/`test:integration` executam subconjuntos igualmente protegidos. Nunca usar URL/chaves de produção; não há opção de bypass remoto.
+- `npm run inventory:check`: identifica deriva do inventário estático de exports, páginas e objetos SQL; referência nominal de teste não comprova cobertura de autorização.
+- CI em `.github/workflows/ci.yml`: npm ci, guarda, lint, inventário, Supabase descartável, testes, build, tipos e audit de produção. Audit completo de desenvolvimento é informativo enquanto a remediação da Fase 09 estiver aberta; não esconder esses alertas no relatório de baseline.
+
+A execução hospedada do workflow só será comprovada após push/PR e observação do resultado. A verificação local não autoriza declarar o workflow remoto verde. A configuração não usa secrets do projeto Supabase remoto. Não executar db reset no banco de desenvolvimento atual para simular instalação independente; a Fase 11 usará projeto/portas separados.
+
+Testes por papel devem usar service_role apenas para preparar/limpar fixtures, depois JWTs reais de membro/guest/admin no caminho avaliado. Simulações atuais que usam serviço no caminho operacional permanecem como testes de lógica, não evidência de aceite RLS ponta a ponta. Resultado detalhado em `BASELINE-FASE-01.md`.

@@ -1,5 +1,7 @@
 # Plan 012: Auxílio Financeiro (Aprovação e Fundo)
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II.g: necessidade/tipo de auxílio não pode ser publicado junto ao nome; autorização administrativa e criação do pedido ainda precisam integração. Fases 05/08. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/012-auxilio-financeiro/spec.md`
 
 ## Verificação de Conformidade com a Constituição

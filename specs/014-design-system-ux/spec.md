@@ -1,7 +1,7 @@
 # Spec 014: Design System e Experiência Responsiva
 
 **Status:** Approved for Implementation
-**Constitution:** v3.0.0
+**Constitution:** v4.0.0
 **Depende de:** 000-004 implementadas
 **Referência de produto:** `DESIGN.md`
 
@@ -16,7 +16,7 @@ Uniformizar a interface já implementada do SGCT e torná-la clara, acessível e
 - Tokens de cor, tipografia, espaço, borda, foco e elevação.
 - Componentes visuais reutilizáveis para ações, campos, cartões, alertas e estados.
 - Shells consistentes para áreas pública, autenticada, administrativa e Super Admin.
-- Redesign responsivo das telas existentes das specs 000-004.
+- Redesign responsivo das telas existentes das specs 000-014, com aceite visual ainda pendente para as novas telas.
 - Formatação humana de datas, horários, valores e estados já existentes.
 - Navegação, foco, contraste, alvos de toque e reflow compatíveis com WCAG 2.2 AA.
 - Estados existentes de carregamento, erro, vazio, sucesso e desabilitado com apresentação consistente.
@@ -27,7 +27,7 @@ Uniformizar a interface já implementada do SGCT e torná-la clara, acessível e
 
 - Alterar regras de reserva, pagamento, ranking, tenant ou RBAC.
 - Criar novas etapas de negócio, novas tabelas ou migrations.
-- Implementar funcionalidades previstas nas specs 005-013.
+- Alterar regras operacionais das specs 005-013; o refino das telas já existentes permanece no escopo visual.
 - Reutilizar fontes, marcas ou ativos proprietários do site de referência.
 - Criar modo escuro nesta fase.
 
@@ -95,7 +95,7 @@ Como pessoa que usa teclado, zoom ou tecnologia assistiva, quero concluir os mes
 
 
 - `DESIGN.md` é a fonte de decisão visual.
-- Specs 000-004 e `docs/DECISIONS.md` continuam sendo a fonte exclusiva das regras de negócio.
+- Specs 000-013 e `docs/DECISIONS.md` continuam sendo a fonte das regras de negócio, subordinadas à constituição v4.0.0. Nome/Ala podem ser públicos; campos pessoais e estados financeiros/de auxílio devem seguir a projeção mínima autorizada.
 - A identidade é própria do SGCT e não implica endosso oficial da Igreja.
 
 ## Perguntas em Aberto

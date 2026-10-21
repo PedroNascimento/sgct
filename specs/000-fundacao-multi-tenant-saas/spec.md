@@ -1,7 +1,7 @@
 # Spec 000: Fundação Multi-Tenant e Distribuição Open-Source
 
-**Status:** Ready for Planning
-**Constitution:** v2.0.0
+**Status:** Implementação existente; aceite reaberto pela auditoria de 21/10/2026
+**Constitution:** v4.0.0
 
 ## Contexto e Objetivo
 O SGCT nasceu como um sistema single-tenant para a Estaca Natal. Esta spec formaliza a evolução estratégica do produto para uma **plataforma multi-tenant regional**: múltiplas Estacas do Brasil podem operar na mesma instância (mesmo banco Supabase), com isolamento absoluto entre elas, **e** o próprio código deve poder ser clonado e auto-hospedado por qualquer Estaca que prefira uma instância totalmente própria. Esta é a spec fundacional — toda outra spec (001-011) depende dela, pois todas as tabelas de negócio passam a carregar `stake_id`.
@@ -10,7 +10,7 @@ O SGCT nasceu como um sistema single-tenant para a Estaca Natal. Esta spec forma
 
 ### Dentro do escopo
 - Tabela `stakes` e propagação de `stake_id` para `wards`, `profiles`, `caravans`, `reservations` (e, por consistência de padrão, para as tabelas dependentes de `reservations`: `passenger_manifest_entries`, `minor_approval_forms`, `seat_swap_requests`, `credit_ledger`, `checkins`, `audit_logs`).
-- Papel global `super_admin`, restrito a criar `stakes` e o primeiro `admin_estaca` de cada uma.
+- Papel global `super_admin`, restrito a criar `stakes` e promover membros previamente cadastrados a `admin_estaca`, mediante lookup dirigido e mínimo (D22/D32).
 - Roteamento público dinâmico por slug de Estaca (`/[estaca_slug]`) e fallback silencioso da raiz `/` via `NEXT_PUBLIC_DEFAULT_STAKE`.
 - `.env.example` e `SETUP.md` como artefatos de auto-hospedagem.
 - Script de seed (`scripts/seed-bootstrap.ts`) para criar o `super_admin` e a primeira `stake` de uma instância nova.
@@ -33,13 +33,17 @@ Como responsável técnico da plataforma, quero que nenhuma Estaca consiga acess
 - WHILE o papel do usuário for `super_admin`, THE SYSTEM SHALL negar acesso de leitura a `reservations`, `credit_ledger`, `minor_approval_forms` e `checkins` de qualquer Estaca.
 
 ### US-000.2: Cadastro de nova Estaca por um Super Admin
-Como `super_admin`, quero cadastrar uma nova Estaca e seu primeiro Admin Estaca, para que essa Estaca comece a operar de forma independente sem eu precisar administrar seu dia a dia depois.
+Como `super_admin`, quero cadastrar uma nova Estaca e promover membros que já criaram sua conta a Admin Estaca, para que essa Estaca comece a operar de forma independente sem eu precisar administrar seu dia a dia depois.
 
 **Critérios de Aceite (EARS):**
 - THE SYSTEM SHALL permitir que `super_admin` crie um registro em `stakes` (nome, slug único).
-- THE SYSTEM SHALL permitir que `super_admin` crie exatamente um `profile` com `role = 'admin_estaca'` vinculado à Estaca recém-criada.
+- PRE-CONDITION: o candidato possui perfil prévio como `member` na Estaca selecionada.
+- THE SYSTEM SHALL permitir que `super_admin` promova esse perfil a `admin_estaca`, sem criar conta ou senha nem transferir o membro entre Estacas.
+- THE SYSTEM SHALL oferecer lookup por e-mail e Estaca com retorno mínimo de identificador, nome, Ala, papel e elegibilidade; SHALL NOT conceder listagem global ou SELECT genérico de profiles/Auth.
+- THE SYSTEM SHALL negar ao Admin Estaca a promoção de outros Admins Estaca e negar promoções por Admin Ala/membro.
+- WHEN uma permissão é revogada pela autoridade correspondente, THE SYSTEM SHALL retornar o usuário a member, preservar histórico e retirar capacidades administrativas anteriores.
 - IF o slug informado já existir, THEN THE SYSTEM SHALL rejeitar a criação com mensagem clara.
-- WHEN o primeiro `admin_estaca` de uma Estaca faz login, THE SYSTEM SHALL permitir que ele cadastre suas próprias Alas e admins de Ala, sem depender de nova ação do `super_admin`.
+- WHEN o primeiro `admin_estaca` de uma Estaca faz login, THE SYSTEM SHALL permitir que ele cadastre suas próprias Alas e promova membros existentes da própria Estaca a Admin Ala, sem depender de nova ação do `super_admin`.
 
 ### US-000.3: Acesso público por slug de Estaca
 Como visitante do site público, quero acessar as informações da minha Estaca por uma URL específica, para que eu não veja ou confunda com dados de outra Estaca.
@@ -65,8 +69,12 @@ Como Secretário de Estaca de uma Estaca diferente da Estaca Natal, quero clonar
 - WHEN uma variável de ambiente nova é introduzida em qualquer código, THE SYSTEM SHALL exigir que `.env.example` seja atualizado no mesmo PR (verificação manual de revisão, não automatizável totalmente).
 - THE SYSTEM SHALL fornecer um script de seed que cria o `super_admin` inicial e a primeira `stake` de uma instância nova, sem exigir acesso direto ao banco via SQL manual.
 
+### US-000.6: Projeção pública delimitada
+- THE SYSTEM SHALL permitir nome e Ala no calendário da Estaca correspondente, sem dar acesso direto a profiles/reservations.
+- THE SYSTEM SHALL excluir CPF, e-mail, telefone, documentos, tokens e informação individual de auxílio/financeiro de HTML/RSC/JSON e caches públicos.
+
 ## Regras de Negócio Vinculadas
-Ver `docs/DECISIONS.md` entradas D21-D25 e Constituição, Artigos II e IX.
+Ver `docs/DECISIONS.md` entradas D21-D25 e D32 e Constituição, Artigos II e IX.
 
 ## Dependências
 Nenhuma — esta é a spec fundacional. Todas as demais specs (001-011) dependem desta.

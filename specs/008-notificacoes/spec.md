@@ -1,7 +1,7 @@
 # Spec 008: Notificações por E-mail
 
-**Status:** Implemented
-**Constitution:** v2.0.0
+**Status:** Implementação existente; aceite de remediação pendente (auditoria de 21/10/2026)
+**Constitution:** v4.0.0
 **Depende de:** 000, 004, 005, 006, 007
 
 ## Contexto e Objetivo

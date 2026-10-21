@@ -1,5 +1,7 @@
 # Plan 005: Fila de Espera, Permuta e Crédito
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/III: super_admin sem acesso operacional; C01/A04/A05/A07 pendentes de transações e testes reais. Fases 02/04. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/005-fila-espera-permuta-credito/spec.md`
 
 ## Verificação de Conformidade com a Constituição
