@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseCheckInRepository } from "@/infrastructure/supabase/supabase-checkin-repository";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
@@ -10,11 +11,31 @@ import {
 } from "@/use-cases/checkin/sync-offline-checkins";
 import type { CheckInDirection } from "@/domain/types/checkin";
 
+const validateCheckInInputSchema = z.object({
+  token: z.string().min(1, "Token de check-in é obrigatório"),
+  direction: z.enum(["ida", "volta"], {
+    errorMap: () => ({ message: "Direção deve ser 'ida' ou 'volta'" }),
+  }),
+});
+
+const offlineItemSchema = z.object({
+  token: z.string().min(1, "Token é obrigatório"),
+  direction: z.enum(["ida", "volta"]),
+  offlineCheckedInAt: z.string(),
+});
+
+const grantCreditInputSchema = z.object({
+  reservationId: z.string().uuid("ID de reserva inválido"),
+  reason: z.string().min(5, "Motivo deve conter no mínimo 5 caracteres"),
+});
+
 export async function validateCheckInAction(
   token: string,
   direction: CheckInDirection
 ) {
   try {
+    validateCheckInInputSchema.parse({ token, direction });
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -23,6 +44,22 @@ export async function validateCheckInAction(
 
     if (authError || !user) {
       return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { checkRateLimit, RATE_LIMIT_CONFIGS } = await import(
+      "@/infrastructure/rate-limit/rate-limiter"
+    );
+    const rateLimit = await checkRateLimit(
+      `scanner:${user.id}`,
+      RATE_LIMIT_CONFIGS.SCANNER.limit,
+      RATE_LIMIT_CONFIGS.SCANNER.windowSeconds,
+      supabase
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        error: "Limite de leituras de check-in excedido (máximo 30 leituras/minuto). Aguarde um momento.",
+      };
     }
 
     const checkInRepository = new SupabaseCheckInRepository(supabase);
@@ -51,6 +88,8 @@ export async function validateCheckInAction(
 
 export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
   try {
+    z.array(offlineItemSchema).parse(items);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -89,6 +128,8 @@ export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
 
 export async function loadCaravanCheckInTokensAction(caravanId: string) {
   try {
+    z.string().uuid("ID de caravana inválido").parse(caravanId);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -116,6 +157,8 @@ export async function loadCaravanCheckInTokensAction(caravanId: string) {
 
 export async function markNoShowsAction(caravanId: string) {
   try {
+    z.string().uuid("ID de caravana inválido").parse(caravanId);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -150,6 +193,8 @@ export async function grantExceptionalCreditAction(input: {
   reason: string;
 }) {
   try {
+    grantCreditInputSchema.parse(input);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -201,6 +246,8 @@ export async function grantExceptionalCreditAction(input: {
 
 export async function getPassengerManifestAction(caravanId: string) {
   try {
+    z.string().uuid("ID de caravana inválido").parse(caravanId);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -236,7 +283,10 @@ export async function getPassengerManifestAction(caravanId: string) {
 
 export async function exportPassengerManifestCsvAction(caravanId: string) {
   try {
+    z.string().uuid("ID de caravana inválido").parse(caravanId);
+
     const manifestResult = await getPassengerManifestAction(caravanId);
+
     if (!manifestResult.success || !manifestResult.data) {
       return { success: false, error: manifestResult.error };
     }

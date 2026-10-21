@@ -133,6 +133,21 @@ async function main() {
     console.log(`   ✅ Estaca criada (id: ${stakeData?.id})`);
   }
 
+  // ── 3.1. Registrar auditoria do Bootstrap (T010.5 / Artigo VI) ────────────
+  await supabase.from("audit_logs").insert({
+    stake_id: stakeData?.id ?? null,
+    actor_id: userId,
+    action: "BOOTSTRAP_INSTANCE",
+    entity: "system",
+    entity_id: null,
+    metadata: {
+      email,
+      default_stake: DEFAULT_STAKE_SLUG,
+      created_at: new Date().toISOString(),
+    },
+  });
+  console.log(`   ✅ Evento de bootstrap registrado em audit_logs`);
+
   // ── 4. Instruções finais ──────────────────────────────────────────────────
   console.log(`
 ══════════════════════════════════════

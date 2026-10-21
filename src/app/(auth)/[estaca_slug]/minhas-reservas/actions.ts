@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
@@ -7,6 +8,8 @@ import { generateCheckInToken } from "@/use-cases/checkin/generate-checkin-token
 
 export async function requestCheckInTokenAction(reservationId: string) {
   try {
+    z.string().uuid("ID de reserva inválido").parse(reservationId);
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },

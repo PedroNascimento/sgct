@@ -12,11 +12,13 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import {
   createSupabaseServerClient,
   createSupabaseServiceClient,
 } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
+import { SupabaseAuditLogRepository } from "@/infrastructure/supabase/supabase-audit-log-repository";
 import { createStake } from "@/use-cases/tenant/create-stake";
 
 /**
@@ -45,6 +47,21 @@ export type ActionState = {
   error?: string;
 };
 
+const createStakeInputSchema = z.object({
+  name: z.string().min(3, "Nome da Estaca deve ter no mínimo 3 caracteres"),
+  slug: z.string().min(2, "Slug deve ter no mínimo 2 caracteres"),
+});
+
+const searchMemberInputSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  stakeId: z.string().uuid("ID de Estaca inválido"),
+});
+
+const promoteToStakeAdminInputSchema = z.object({
+  userId: z.string().uuid("ID de usuário inválido"),
+  stakeId: z.string().uuid("ID de Estaca inválido"),
+});
+
 /**
  * Cria uma nova Estaca a partir do formulário do Super Admin.
  */
@@ -53,15 +70,29 @@ export async function createStakeAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
-    await assertSuperAdmin();
+    const superAdmin = await assertSuperAdmin();
 
-    const name = formData.get("name") as string;
-    const slug = formData.get("slug") as string;
+    const validated = createStakeInputSchema.parse({
+      name: formData.get("name"),
+      slug: formData.get("slug"),
+    });
 
     const supabase = await createSupabaseServerClient();
     const stakeRepo = new SupabaseStakeRepository(supabase);
 
-    const stake = await createStake({ name, slug }, stakeRepo);
+    const stake = await createStake(validated, stakeRepo);
+
+    // Registrar em audit_logs (T010.5 / Artigo VI)
+    const serviceClient = createSupabaseServiceClient();
+    const auditRepo = new SupabaseAuditLogRepository(serviceClient);
+    await auditRepo.recordLog({
+      stakeId: stake.id,
+      userId: superAdmin.id,
+      action: "CREATE_STAKE",
+      resourceType: "stakes",
+      resourceId: stake.id,
+      details: { name: stake.name, slug: stake.slug },
+    });
 
     revalidatePath("/estacas");
     return {
@@ -87,6 +118,8 @@ export async function searchMemberByEmailForPromotion(
   stakeId: string
 ): Promise<{ id: string; full_name: string; role: string; ward_name: string | null } | null> {
   try {
+    searchMemberInputSchema.parse({ email, stakeId });
+
     await assertSuperAdmin();
     const serviceClient = createSupabaseServiceClient();
 
@@ -127,14 +160,12 @@ export async function promoteToStakeAdminAction(
   formData: FormData
 ): Promise<ActionState> {
   try {
-    await assertSuperAdmin();
+    const superAdmin = await assertSuperAdmin();
 
-    const userId = formData.get("userId") as string;
-    const stakeId = formData.get("stakeId") as string;
-
-    if (!userId || !stakeId) {
-      throw new Error("Selecione um membro válido antes de promover.");
-    }
+    const validated = promoteToStakeAdminInputSchema.parse({
+      userId: formData.get("userId"),
+      stakeId: formData.get("stakeId"),
+    });
 
     const serviceClient = createSupabaseServiceClient();
 
@@ -142,8 +173,8 @@ export async function promoteToStakeAdminAction(
     const { data: profile } = await serviceClient
       .from("profiles")
       .select("id, full_name, role, stake_id")
-      .eq("id", userId)
-      .eq("stake_id", stakeId)
+      .eq("id", validated.userId)
+      .eq("stake_id", validated.stakeId)
       .maybeSingle();
 
     if (!profile) {
@@ -158,16 +189,27 @@ export async function promoteToStakeAdminAction(
     const { error: pError } = await serviceClient
       .from("profiles")
       .update({ role: "admin_estaca" })
-      .eq("id", userId);
+      .eq("id", validated.userId);
 
     if (pError) throw new Error(pError.message);
 
     // Sincronizar claims no Auth metadata
-    await serviceClient.auth.admin.updateUserById(userId, {
+    await serviceClient.auth.admin.updateUserById(validated.userId, {
       app_metadata: {
         role: "admin_estaca",
-        stake_id: stakeId,
+        stake_id: validated.stakeId,
       },
+    });
+
+    // Registrar em audit_logs (T010.5 / Artigo VI)
+    const auditRepo = new SupabaseAuditLogRepository(serviceClient);
+    await auditRepo.recordLog({
+      stakeId: validated.stakeId,
+      userId: superAdmin.id,
+      action: "PROMOTE_STAKE_ADMIN",
+      resourceType: "profiles",
+      resourceId: validated.userId,
+      details: { full_name: profile.full_name },
     });
 
     revalidatePath("/admins");
@@ -182,6 +224,7 @@ export async function promoteToStakeAdminAction(
     };
   }
 }
+
 
 /**
  * Lista todas as Estacas para exibição nas telas de Super Admin.
@@ -250,6 +293,23 @@ export async function getAdminsList(): Promise<AdminEstacaItem[]> {
   }
 }
 
+const toggleAdminStatusInputSchema = z.object({
+  userId: z.string().uuid("ID de usuário inválido"),
+  isActive: z.boolean(),
+});
+
+const updateAdminRoleInputSchema = z.object({
+  userId: z.string().uuid("ID de usuário inválido"),
+  newRole: z.enum(["admin_estaca", "member"], {
+    errorMap: () => ({ message: "Papel inválido. Deve ser 'admin_estaca' ou 'member'." }),
+  }),
+});
+
+const toggleStakeStatusInputSchema = z.object({
+  stakeId: z.string().uuid("ID de Estaca inválido"),
+  isActive: z.boolean(),
+});
+
 /**
  * Ativa ou desativa o acesso de um usuário administrador de Estaca.
  */
@@ -258,20 +318,22 @@ export async function toggleAdminStatusAction(
   isActive: boolean
 ): Promise<ActionState> {
   try {
+    const validated = toggleAdminStatusInputSchema.parse({ userId, isActive });
+
     await assertSuperAdmin();
     const serviceClient = createSupabaseServiceClient();
 
     const { error: pError } = await serviceClient
       .from("profiles")
-      .update({ is_active: isActive })
-      .eq("id", userId);
+      .update({ is_active: validated.isActive })
+      .eq("id", validated.userId);
 
     if (pError) throw new Error(pError.message);
 
     revalidatePath("/admins");
     return {
       success: true,
-      message: `Status do usuário atualizado para ${isActive ? "Ativo" : "Inativo"}.`,
+      message: `Status do usuário atualizado para ${validated.isActive ? "Ativo" : "Inativo"}.`,
     };
   } catch (err: unknown) {
     return {
@@ -289,23 +351,25 @@ export async function updateAdminRoleAction(
   newRole: "admin_estaca" | "member"
 ): Promise<ActionState> {
   try {
+    const validated = updateAdminRoleInputSchema.parse({ userId, newRole });
+
     await assertSuperAdmin();
     const serviceClient = createSupabaseServiceClient();
 
     // 1. Atualizar profile
     const { data: profile, error: pError } = await serviceClient
       .from("profiles")
-      .update({ role: newRole })
-      .eq("id", userId)
+      .update({ role: validated.newRole })
+      .eq("id", validated.userId)
       .select("stake_id")
       .single();
 
     if (pError) throw new Error(pError.message);
 
     // 2. Atualizar claims no Auth metadata
-    await serviceClient.auth.admin.updateUserById(userId, {
+    await serviceClient.auth.admin.updateUserById(validated.userId, {
       app_metadata: {
-        role: newRole,
+        role: validated.newRole,
         stake_id: profile?.stake_id,
       },
     });
@@ -313,7 +377,7 @@ export async function updateAdminRoleAction(
     revalidatePath("/admins");
     return {
       success: true,
-      message: `Permissão alterada com sucesso para "${newRole === "admin_estaca" ? "Admin da Estaca" : "Membro Comum"}".`,
+      message: `Permissão alterada com sucesso para "${validated.newRole === "admin_estaca" ? "Admin da Estaca" : "Membro Comum"}".`,
     };
   } catch (err: unknown) {
     return {
@@ -331,20 +395,22 @@ export async function toggleStakeStatusAction(
   isActive: boolean
 ): Promise<ActionState> {
   try {
+    const validated = toggleStakeStatusInputSchema.parse({ stakeId, isActive });
+
     await assertSuperAdmin();
     const serviceClient = createSupabaseServiceClient();
 
     const { error } = await serviceClient
       .from("stakes")
-      .update({ is_active: isActive })
-      .eq("id", stakeId);
+      .update({ is_active: validated.isActive })
+      .eq("id", validated.stakeId);
 
     if (error) throw new Error(error.message);
 
     revalidatePath("/estacas");
     return {
       success: true,
-      message: `Estaca ${isActive ? "ativada" : "desativada"} com sucesso.`,
+      message: `Estaca ${validated.isActive ? "ativada" : "desativada"} com sucesso.`,
     };
   } catch (err: unknown) {
     return {
@@ -353,3 +419,4 @@ export async function toggleStakeStatusAction(
     };
   }
 }
+

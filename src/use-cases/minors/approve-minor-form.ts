@@ -6,7 +6,7 @@
  */
 
 import { approveMinorFormSchema } from "@/domain/schemas/minor";
-import type { MinorRepository } from "@/domain/interfaces/minor-repository";
+import type { MinorRepository, AuditLogPort } from "@/domain/interfaces/minor-repository";
 import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
 import type { MinorApprovalForm, MinorFormStatus } from "@/domain/types/minor";
 
@@ -19,13 +19,14 @@ export interface ApproveMinorFormInput {
 export interface ApproveMinorFormDependencies {
   minorRepository: MinorRepository;
   profileRepository: ProfileRepository;
+  auditLogPort?: AuditLogPort;
 }
 
 export async function approveMinorForm(
   input: ApproveMinorFormInput,
   deps: ApproveMinorFormDependencies
 ): Promise<MinorApprovalForm> {
-  const { minorRepository, profileRepository } = deps;
+  const { minorRepository, profileRepository, auditLogPort } = deps;
 
   // 1. Validação Zod (Artigo V)
   const validated = approveMinorFormSchema.parse(input);
@@ -62,5 +63,21 @@ export async function approveMinorForm(
     admin.id
   );
 
+  // 6. Auditoria LGPD / Ação administrativa sensível (T010.5 / Artigo VI)
+  if (auditLogPort) {
+    await auditLogPort.recordLog({
+      stakeId: form.stake_id,
+      userId: admin.id,
+      action: validated.status === "approved" ? "APPROVE_MINOR_DOCUMENT" : "REJECT_MINOR_DOCUMENT",
+      resourceType: "minor_approval_forms",
+      resourceId: form.id,
+      details: {
+        reservationId: form.reservation_id,
+        status: validated.status,
+      },
+    });
+  }
+
   return updatedForm;
 }
+
