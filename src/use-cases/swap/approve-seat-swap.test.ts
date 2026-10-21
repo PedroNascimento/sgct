@@ -33,6 +33,8 @@ const mockReservationRepository: jest.Mocked<ReservationRepository> = {
   updateStatus: jest.fn(),
   updateBatch: jest.fn(),
   findPendingExpired: jest.fn(),
+  updateQrToken: jest.fn(),
+  transferSeat: jest.fn(),
 };
 
 const mockSwapRepository: jest.Mocked<SwapRepository> = {
@@ -167,6 +169,11 @@ describe("approveSeatSwap (T005.3, T005.4)", () => {
         status: "approved",
       };
       mockSwapRepository.updateStatus.mockResolvedValueOnce(approvedSwap);
+      mockReservationRepository.transferSeat.mockResolvedValueOnce({
+        ...confirmedReservation,
+        transferred_to_name: "Novo Passageiro Aprovado",
+        transferred_to_document: "123.456.789-00",
+      });
 
       const result = await approveSeatSwap(
         {
@@ -184,17 +191,17 @@ describe("approveSeatSwap (T005.3, T005.4)", () => {
       );
 
       expect(mockSwapRepository.updateStatus).toHaveBeenCalledWith(SWAP_ID, "approved");
-      expect(mockReservationRepository.addManifestEntry).toHaveBeenCalledWith(
-        expect.objectContaining({
-          reservation_id: RESERVATION_ID,
-          full_name: "Novo Passageiro Aprovado",
-        })
+      expect(mockReservationRepository.transferSeat).toHaveBeenCalledWith(
+        RESERVATION_ID,
+        "Novo Passageiro Aprovado",
+        "333.333.333-33"
       );
       // NUNCA deve gerar crédito (US-005.2)
       expect(mockCreditRepository.create).not.toHaveBeenCalled();
 
       expect(result.swapRequest.status).toBe("approved");
       expect(result.reservation.id).toBe(RESERVATION_ID);
+      expect(result.reservation.transferred_to_name).toBe("Novo Passageiro Aprovado");
     });
 
     it("Admin Estaca aprova permuta com sucesso", async () => {
@@ -206,6 +213,11 @@ describe("approveSeatSwap (T005.3, T005.4)", () => {
       mockSwapRepository.updateStatus.mockResolvedValueOnce({
         ...pendingSwapRequest,
         status: "approved",
+      });
+      mockReservationRepository.transferSeat.mockResolvedValueOnce({
+        ...confirmedReservation,
+        transferred_to_name: "Novo Passageiro Aprovado",
+        transferred_to_document: "333.333.333-33",
       });
 
       const result = await approveSeatSwap(
@@ -224,6 +236,11 @@ describe("approveSeatSwap (T005.3, T005.4)", () => {
       );
 
       expect(result.swapRequest.status).toBe("approved");
+      expect(mockReservationRepository.transferSeat).toHaveBeenCalledWith(
+        RESERVATION_ID,
+        "Novo Passageiro Aprovado",
+        "333.333.333-33"
+      );
     });
 
     it("rejeita se o aprovador for um membro comum que não é Líder da Caravana", async () => {

@@ -185,6 +185,9 @@ export class SupabaseReservationRepository implements ReservationRepository {
     if (data.confirmation_rank !== undefined) {
       updatePayload.confirmation_rank = data.confirmation_rank;
     }
+    if (data.payment_amount !== undefined) {
+      updatePayload.payment_amount = data.payment_amount;
+    }
 
     const { data: updated, error } = await this.supabase
       .from("reservations")
@@ -285,6 +288,31 @@ export class SupabaseReservationRepository implements ReservationRepository {
 
     if (error) {
       throw new Error(`Erro ao atualizar token QR da reserva: ${error.message}`);
+    }
+
+    return {
+      ...data,
+      payment_amount: Number(data.payment_amount),
+    };
+  }
+
+  async transferSeat(
+    id: string,
+    transferredToName: string,
+    transferredToDocument?: string | null
+  ): Promise<Reservation> {
+    const { data, error } = await this.supabase
+      .from("reservations")
+      .update({
+        transferred_to_name: transferredToName,
+        transferred_to_document: transferredToDocument ?? null,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao transferir titularidade da reserva: ${error.message}`);
     }
 
     return {

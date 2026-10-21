@@ -16,6 +16,7 @@ export interface CreateMinorFormData {
 export interface StoragePort {
   uploadFile(bucket: string, path: string, fileBytes: Uint8Array | Buffer, contentType: string): Promise<string>;
   getSignedUrl(bucket: string, path: string, expiresInSeconds: number): Promise<string>;
+  deleteFile(bucket: string, path: string): Promise<void>;
 }
 
 export interface AuditLogPort {

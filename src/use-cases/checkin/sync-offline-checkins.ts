@@ -40,8 +40,13 @@ export async function syncOfflineCheckIns(
   const secret =
     deps.secret ||
     process.env.QR_TOKEN_SECRET ||
-    process.env.SUPABASE_JWT_SECRET ||
-    "sgct-qr-token-secret-fallback-key-32chars";
+    process.env.SUPABASE_JWT_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      "Configuração de segurança ausente: QR_TOKEN_SECRET ou SUPABASE_JWT_SECRET não definidos."
+    );
+  }
 
   // Rastreia itens processados dentro do mesmo lote para evitar duplicatas em memória
   const seenInBatch = new Set<string>();

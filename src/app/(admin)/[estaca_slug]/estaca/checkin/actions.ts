@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseCheckInRepository } from "@/infrastructure/supabase/supabase-checkin-repository";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
+import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
+import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { validateCheckIn } from "@/use-cases/checkin/validate-checkin";
 import {
   syncOfflineCheckIns,
@@ -64,6 +66,8 @@ export async function validateCheckInAction(
 
     const checkInRepository = new SupabaseCheckInRepository(supabase);
     const reservationRepository = new SupabaseReservationRepository(supabase);
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
 
     const checkIn = await validateCheckIn(
       {
@@ -74,6 +78,8 @@ export async function validateCheckInAction(
       {
         checkInRepository,
         reservationRepository,
+        caravanRepository,
+        profileRepository,
       }
     );
 
@@ -169,6 +175,26 @@ export async function markNoShowsAction(caravanId: string) {
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+    const caravan = await caravanRepository.findById(caravanId);
+    if (!caravan) {
+      return { success: false, error: "Caravana não encontrada." };
+    }
+    const profile = await profileRepository.findById(user.id);
+    const isLeader = caravan.caravan_leader_id === user.id;
+    const isStakeAdmin =
+      profile?.role === "admin_estaca" &&
+      profile.stake_id === caravan.stake_id &&
+      profile.is_active;
+
+    if (!isLeader && !isStakeAdmin) {
+      return {
+        success: false,
+        error: "Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem marcar no-shows.",
+      };
+    }
+
     const checkInRepository = new SupabaseCheckInRepository(supabase);
     const reservationRepository = new SupabaseReservationRepository(supabase);
 
@@ -256,6 +282,26 @@ export async function getPassengerManifestAction(caravanId: string) {
 
     if (authError || !user) {
       return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+    const caravan = await caravanRepository.findById(caravanId);
+    if (!caravan) {
+      return { success: false, error: "Caravana não encontrada." };
+    }
+    const profile = await profileRepository.findById(user.id);
+    const isLeader = caravan.caravan_leader_id === user.id;
+    const isStakeAdmin =
+      profile?.role === "admin_estaca" &&
+      profile.stake_id === caravan.stake_id &&
+      profile.is_active;
+
+    if (!isLeader && !isStakeAdmin) {
+      return {
+        success: false,
+        error: "Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem acessar o manifesto.",
+      };
     }
 
     const { SupabaseManifestDataProvider } = await import(

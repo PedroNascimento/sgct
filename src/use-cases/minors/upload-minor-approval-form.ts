@@ -58,14 +58,22 @@ export async function uploadMinorApprovalForm(
   // 4. Upload no bucket privado 'minor-forms'
   await storagePort.uploadFile("minor-forms", storagePath, input.fileBytes, validated.fileType);
 
-  // 5. Registro em minor_approval_forms
-  const form = await minorRepository.createForm({
-    stake_id: reservation.stake_id,
-    ward_id: reservation.ward_id ?? undefined,
-    reservation_id: reservation.id,
-    storage_path: storagePath,
-    status: "pending",
-  });
+  // 5. Registro em minor_approval_forms com compensação atômica (A03)
+  try {
+    const form = await minorRepository.createForm({
+      stake_id: reservation.stake_id,
+      ward_id: reservation.ward_id ?? undefined,
+      reservation_id: reservation.id,
+      storage_path: storagePath,
+      status: "pending",
+    });
 
-  return form;
+    return form;
+  } catch (dbError) {
+    // Compensação: se o registro no banco falhar, remove o arquivo do Storage
+    if (typeof storagePort.deleteFile === "function") {
+      await storagePort.deleteFile("minor-forms", storagePath).catch(() => {});
+    }
+    throw dbError;
+  }
 }

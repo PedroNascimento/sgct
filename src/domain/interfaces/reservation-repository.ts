@@ -44,6 +44,7 @@ export interface UpdateReservationStatusData {
   status: ReservationStatus;
   confirmed_at?: string | null;
   confirmation_rank?: number | null;
+  payment_amount?: number;
 }
 
 export interface ReservationRepository {
@@ -66,4 +67,5 @@ export interface ReservationRepository {
   ): Promise<Reservation[]>;
   findPendingExpired(referenceDate: string, daysBeforeDeparture: number): Promise<Reservation[]>;
   updateQrToken(id: string, qrToken: string, qrTokenExpiresAt: string): Promise<Reservation>;
+  transferSeat(id: string, transferredToName: string, transferredToDocument?: string | null): Promise<Reservation>;
 }

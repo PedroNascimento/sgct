@@ -55,6 +55,8 @@ export interface Reservation {
   confirmation_rank: number | null;
   qr_token: string | null;
   qr_token_expires_at: string | null;
+  transferred_to_name?: string | null;
+  transferred_to_document?: string | null;
   created_at: string;
 }
 

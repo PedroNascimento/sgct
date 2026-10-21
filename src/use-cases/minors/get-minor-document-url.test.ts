@@ -58,6 +58,7 @@ describe("getMinorDocumentUrl (T006.8)", () => {
     mockStoragePort = {
       uploadFile: jest.fn(),
       getSignedUrl: jest.fn(),
+      deleteFile: jest.fn().mockResolvedValue(undefined),
     };
 
     mockProfileRepo = {

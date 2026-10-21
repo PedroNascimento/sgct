@@ -5,6 +5,8 @@
 
 import type { CheckInRepository } from "@/domain/interfaces/checkin-repository";
 import type { ReservationRepository } from "@/domain/interfaces/reservation-repository";
+import type { CaravanRepository } from "@/domain/interfaces/caravan-repository";
+import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
 import type { CheckIn, CheckInDirection } from "@/domain/types/checkin";
 import { verifyQrToken } from "./qr-token-crypto";
 
@@ -19,6 +21,8 @@ export interface ValidateCheckInInput {
 export interface ValidateCheckInDependencies {
   checkInRepository: CheckInRepository;
   reservationRepository: ReservationRepository;
+  caravanRepository?: CaravanRepository;
+  profileRepository?: ProfileRepository;
   secret?: string;
 }
 
@@ -26,13 +30,18 @@ export async function validateCheckIn(
   input: ValidateCheckInInput,
   deps: ValidateCheckInDependencies
 ): Promise<CheckIn> {
-  const { checkInRepository, reservationRepository, secret } = deps;
+  const { checkInRepository, reservationRepository, caravanRepository, profileRepository, secret } = deps;
 
   const tokenSecret =
     secret ||
     process.env.QR_TOKEN_SECRET ||
-    process.env.SUPABASE_JWT_SECRET ||
-    "sgct-qr-token-secret-fallback-key-32chars";
+    process.env.SUPABASE_JWT_SECRET;
+
+  if (!tokenSecret) {
+    throw new Error(
+      "Configuração de segurança ausente: QR_TOKEN_SECRET ou SUPABASE_JWT_SECRET não definidos."
+    );
+  }
 
   const verification = verifyQrToken(input.token, tokenSecret);
   if (!verification.valid || !verification.payload) {
@@ -54,6 +63,23 @@ export async function validateCheckIn(
     throw new Error(
       "Inconsistência de segurança: token não pertence a esta caravana ou Estaca"
     );
+  }
+
+  // Validação de Liderança da Caravana (A09): apenas o Líder designado ou Admin da Estaca
+  if (caravanRepository && profileRepository) {
+    const caravan = await caravanRepository.findById(reservation.caravan_id);
+    const operator = await profileRepository.findById(input.checkedInBy);
+    const isLeader = caravan?.caravan_leader_id === input.checkedInBy;
+    const isStakeAdmin =
+      operator?.role === "admin_estaca" &&
+      operator.stake_id === reservation.stake_id &&
+      operator.is_active;
+
+    if (!isLeader && !isStakeAdmin) {
+      throw new Error(
+        "Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem realizar check-in."
+      );
+    }
   }
 
   // Apenas reservas confirmadas ou já marcadas como presentes podem receber check-in

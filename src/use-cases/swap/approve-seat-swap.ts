@@ -99,16 +99,15 @@ export async function approveSeatSwap(
   // 6. Atualização do status do pedido de permuta
   const updatedSwap = await swapRepository.updateStatus(swapRequest.id, "approved");
 
-  // 7. Atualização da titularidade no manifesto de passageiros
-  await reservationRepository.addManifestEntry({
-    reservation_id: reservation.id,
-    full_name: swapRequest.new_holder_full_name,
-    birth_date: "1900-01-01", // Placeholder até atualização completa de cadastro do novo passageiro
-    filiation: "Permuta de Assento",
-  });
+  // 7. Atualização da titularidade do assento na reserva (A07)
+  const updatedReservation = await reservationRepository.transferSeat(
+    reservation.id,
+    swapRequest.new_holder_full_name,
+    swapRequest.new_holder_document ?? null
+  );
 
   return {
     swapRequest: updatedSwap,
-    reservation,
+    reservation: updatedReservation,
   };
 }

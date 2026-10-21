@@ -12,6 +12,7 @@ import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
+import { SupabaseAidRepository } from "@/infrastructure/supabase/supabase-aid-repository";
 import { createReservation } from "@/use-cases/reservation/create-reservation";
 import { addManifestEntry } from "@/use-cases/reservation/add-manifest-entry";
 import type { CreateReservationInput, AddManifestEntryInput } from "@/domain/schemas/reservation";
@@ -52,6 +53,7 @@ export async function createReservationAction(
     const reservationRepository = new SupabaseReservationRepository(supabase);
     const caravanRepository = new SupabaseCaravanRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
+    const aidRepository = new SupabaseAidRepository(supabase);
 
     const reservation = await createReservation(
       input,
@@ -60,6 +62,7 @@ export async function createReservationAction(
         reservationRepository,
         caravanRepository,
         profileRepository,
+        aidRepository,
       }
     );
 

@@ -206,4 +206,110 @@ describe("ValidateCheckIn (T007.2)", () => {
     // Não deve tentar recriar no banco
     expect(mockCheckInRepo.createCheckIn).not.toHaveBeenCalled();
   });
+
+  describe("Validação de Liderança da Caravana (A09)", () => {
+    const mockCaravanRepo = {
+      findById: jest.fn(),
+      findByStakeId: jest.fn(),
+      findUpcomingByStake: jest.fn(),
+      updateStatus: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const mockProfileRepo = {
+      findById: jest.fn(),
+      insert: jest.fn(),
+      updateRole: jest.fn(),
+      deactivateInactive: jest.fn(),
+    };
+
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const token = signQrToken(
+      {
+        reservationId: RESERVATION.id,
+        stakeId: RESERVATION.stake_id,
+        caravanId: RESERVATION.caravan_id,
+        seatNumber: RESERVATION.seat_number,
+        exp: futureExp,
+      },
+      SECRET
+    );
+
+    it("permite check-in quando o usuário operador for o líder da caravana", async () => {
+      mockReservationRepo.findById.mockResolvedValueOnce(RESERVATION);
+      mockCheckInRepo.findByReservationAndDirection.mockResolvedValueOnce(null);
+      mockCaravanRepo.findById.mockResolvedValueOnce({
+        id: RESERVATION.caravan_id,
+        caravan_leader_id: "leader-123",
+        stake_id: RESERVATION.stake_id,
+      });
+      mockProfileRepo.findById.mockResolvedValueOnce({
+        id: "leader-123",
+        stake_id: RESERVATION.stake_id,
+        role: "member",
+        is_active: true,
+      });
+
+      const checkInCreated: CheckIn = {
+        id: "ci-1",
+        stake_id: RESERVATION.stake_id,
+        ward_id: RESERVATION.ward_id!,
+        reservation_id: RESERVATION.id,
+        direction: "ida",
+        checked_in_by: "leader-123",
+        checked_in_at: new Date().toISOString(),
+        synced_offline: false,
+      };
+      mockCheckInRepo.createCheckIn.mockResolvedValueOnce(checkInCreated);
+
+      const res = await validateCheckIn(
+        {
+          token,
+          direction: "ida",
+          checkedInBy: "leader-123",
+        },
+        {
+          checkInRepository: mockCheckInRepo,
+          reservationRepository: mockReservationRepo,
+          caravanRepository: mockCaravanRepo as any,
+          profileRepository: mockProfileRepo as any,
+          secret: SECRET,
+        }
+      );
+
+      expect(res.id).toBe("ci-1");
+    });
+
+    it("rejeita check-in quando o usuário operador for um membro comum não designado como líder", async () => {
+      mockReservationRepo.findById.mockResolvedValueOnce(RESERVATION);
+      mockCaravanRepo.findById.mockResolvedValueOnce({
+        id: RESERVATION.caravan_id,
+        caravan_leader_id: "leader-outro",
+        stake_id: RESERVATION.stake_id,
+      });
+      mockProfileRepo.findById.mockResolvedValueOnce({
+        id: "membro-intruso",
+        stake_id: RESERVATION.stake_id,
+        role: "member",
+        is_active: true,
+      });
+
+      await expect(
+        validateCheckIn(
+          {
+            token,
+            direction: "ida",
+            checkedInBy: "membro-intruso",
+          },
+          {
+            checkInRepository: mockCheckInRepo,
+            reservationRepository: mockReservationRepo,
+            caravanRepository: mockCaravanRepo as any,
+            profileRepository: mockProfileRepo as any,
+            secret: SECRET,
+          }
+        )
+      ).rejects.toThrow("Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem realizar check-in.");
+    });
+  });
 });

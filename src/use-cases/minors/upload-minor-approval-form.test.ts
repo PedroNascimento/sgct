@@ -51,6 +51,7 @@ describe("uploadMinorApprovalForm (T006.6)", () => {
     mockStoragePort = {
       uploadFile: jest.fn(),
       getSignedUrl: jest.fn(),
+      deleteFile: jest.fn().mockResolvedValue(undefined),
     };
 
     mockReservationRepo = {
@@ -160,5 +161,35 @@ describe("uploadMinorApprovalForm (T006.6)", () => {
         }
       )
     ).rejects.toThrow("Apenas arquivos PDF, JPEG ou PNG são permitidos");
+  });
+
+  it("deve remover arquivo do storage por compensação se a criação no banco falhar (A03)", async () => {
+    mockReservationRepo.findById.mockResolvedValueOnce(reservation);
+    mockStoragePort.uploadFile.mockResolvedValueOnce("path-ok");
+    mockMinorRepo.createForm.mockRejectedValueOnce(new Error("Erro de banco de dados"));
+
+    await expect(
+      uploadMinorApprovalForm(
+        {
+          userId: reservation.user_id,
+          reservationId: reservation.id,
+          fileName: "documento.pdf",
+          fileType: "application/pdf",
+          fileSize: 1024,
+          fileBytes: Buffer.from("conteudo"),
+        },
+        {
+          minorRepository: mockMinorRepo,
+          storagePort: mockStoragePort,
+          reservationRepository: mockReservationRepo,
+        }
+      )
+    ).rejects.toThrow("Erro de banco de dados");
+
+    expect(mockStoragePort.uploadFile).toHaveBeenCalled();
+    expect(mockStoragePort.deleteFile).toHaveBeenCalledWith(
+      "minor-forms",
+      `${reservation.stake_id}/${reservation.ward_id}/${reservation.id}/documento.pdf`
+    );
   });
 });
