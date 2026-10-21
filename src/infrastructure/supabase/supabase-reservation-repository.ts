@@ -267,4 +267,29 @@ export class SupabaseReservationRepository implements ReservationRepository {
         return reservation as Reservation;
       });
   }
+
+  async updateQrToken(
+    id: string,
+    qrToken: string,
+    qrTokenExpiresAt: string
+  ): Promise<Reservation> {
+    const { data, error } = await this.supabase
+      .from("reservations")
+      .update({
+        qr_token: qrToken,
+        qr_token_expires_at: qrTokenExpiresAt,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar token QR da reserva: ${error.message}`);
+    }
+
+    return {
+      ...data,
+      payment_amount: Number(data.payment_amount),
+    };
+  }
 }

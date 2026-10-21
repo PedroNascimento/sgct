@@ -8,6 +8,7 @@ import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug
 import { listOwnReservations } from "@/use-cases/reservation/list-own-reservations";
 import { PublicHeader } from "@/components/ui/public-header";
 import { ReservationStatusPanel } from "@/components/reservation/reservation-status";
+import { ReservationQrCard } from "@/components/reservation/reservation-qr-card";
 import { MinorFormUploader } from "@/components/reservation/minor-form-uploader";
 import { SupabaseMinorRepository } from "@/infrastructure/supabase/supabase-minor-repository";
 import { ArrowLeftIcon, BusIcon, CalendarIcon, ClockIcon, LocationIcon } from "@/components/ui/icons";
@@ -136,6 +137,15 @@ export default async function MinhasReservasPage({ params }: Props) {
                     </div>
 
                     <ReservationStatusPanel status={reservation.status} />
+
+                    <div className="mt-6 border-t border-[#e0e2e2] pt-6">
+                      <ReservationQrCard
+                        reservationId={reservation.id}
+                        status={reservation.status}
+                        initialQrToken={reservation.qr_token}
+                        seatNumber={reservation.seat_number}
+                      />
+                    </div>
 
                     {reservation.participant_type === "jovem" && (
                       <div className="mt-6 border-t border-[#e0e2e2] pt-6">

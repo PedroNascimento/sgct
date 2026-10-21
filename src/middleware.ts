@@ -133,6 +133,14 @@ export async function middleware(request: NextRequest) {
 
   // ── Verificar se é rota autenticada ──────────────────────────────────────
   const remainingPath = "/" + segments.slice(1).join("/");
+
+  // Se acessar /[slug]/login, redirecionar amigavelmente para /[slug]/auth/login
+  if (remainingPath === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${slug}/auth/login`;
+    return NextResponse.redirect(url);
+  }
+
   const isLoginRoute = remainingPath.startsWith("/auth/login") || remainingPath.startsWith("/login");
   const isAuthRoute =
     (remainingPath.startsWith("/auth") ||
