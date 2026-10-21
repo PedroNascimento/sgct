@@ -121,4 +121,22 @@ describe("expirePendingReservations (T004.7)", () => {
     expect(result.expiredCount).toBe(0);
     expect(mockReservationRepository.updateBatch).not.toHaveBeenCalled();
   });
+
+  it("reservas com status 'aguardando_transferencia_interestaca' NUNCA são expiradas pelo timeout padrão de 7 dias (T013.9 / US-013.1 / D28)", async () => {
+    // Convidado inter-Estaca segue cadeia de repasse em 3 elos e não se submete ao timeout padrão de 7 dias
+    mockReservationRepository.findPendingExpired.mockResolvedValueOnce([]);
+
+    const result = await expirePendingReservations(
+      {
+        referenceDate: "2026-11-19T00:00:00Z", // 1 dia do embarque
+        daysBeforeDeparture: 7,
+      },
+      {
+        reservationRepository: mockReservationRepository,
+      }
+    );
+
+    expect(result.expiredCount).toBe(0);
+    expect(mockReservationRepository.updateBatch).not.toHaveBeenCalled();
+  });
 });

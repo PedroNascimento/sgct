@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SeatMap } from "./seat-map";
 import {
   createReservationAction,
+  createGuestReservationAction,
   addManifestEntryAction,
   uploadMinorApprovalFormAction,
 } from "@/app/(public)/[estaca_slug]/caravanas/[caravan_id]/reservar/actions";
@@ -34,6 +35,8 @@ export function ReservationForm({
   boardingPoints,
   initialOccupiedSeats,
 }: Props) {
+  const isGuest = userProfile.role === "guest";
+
   // Verificação de cadastro completo (US-003.5)
   const isProfileIncomplete = !userProfile.cpf || userProfile.cpf.trim() === "";
 
@@ -45,7 +48,15 @@ export function ReservationForm({
   );
   const [category, setCategory] = useState<ReservationCategory>("standard");
   const [participantType, setParticipantType] = useState<ParticipantType>("adulto");
-  const [fundingSource, setFundingSource] = useState<FundingSource>("membro");
+  const [fundingSource, setFundingSource] = useState<FundingSource>(
+    isGuest ? "convidado_transferencia_interestaca" : "membro"
+  );
+  const [originStakeName, setOriginStakeName] = useState<string>(
+    userProfile.home_stake_name || ""
+  );
+  const [originWardName, setOriginWardName] = useState<string>(
+    userProfile.home_ward_name || ""
+  );
   const [isPreferentialSeating, setIsPreferentialSeating] = useState<boolean>(false);
 
   // Grupo familiar e Investidura
@@ -145,9 +156,20 @@ export function ReservationForm({
           </div>
         )}
 
-        <div className="sgct-alert-info mx-auto mb-6 max-w-lg text-left">
-          Próximo passo: faça o pagamento pelos canais oficiais da sua Ala e aguarde a validação da Estaca.
-        </div>
+        {isGuest ? (
+          <div className="sgct-alert-info mx-auto mb-6 max-w-lg text-left">
+            <p><strong>Reserva de Convidado Inter-Estaca:</strong> Seu assento está pré-reservado.</p>
+            <p className="mt-1">
+              O status atual é <em>Aguardando Transferência Inter-Estaca</em>.
+              O Administrador da Estaca anfitriã confirmará sua vaga após receber a confirmação do repasse financeiro de sua Estaca ({originStakeName}).
+            </p>
+          </div>
+        ) : (
+          <div className="sgct-alert-info mx-auto mb-6 max-w-lg text-left">
+            Próximo passo: faça o pagamento pelos canais oficiais da sua Ala e aguarde a validação da Estaca.
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link
             href={`/${stakeSlug}/minhas-reservas`}
@@ -173,25 +195,40 @@ export function ReservationForm({
       return;
     }
 
+    if (isGuest && (!originStakeName.trim() || !originWardName.trim())) {
+      setErrorMessage("Informe sua Estaca e Ala de origem para prosseguir com a reserva de convidado.");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
     const seatAttempted = selectedSeat;
 
-    const result = await createReservationAction({
-      caravanId: caravan.id,
-      seatNumber: seatAttempted,
-      boardingPointId: boardingPointId || null,
-      category,
-      participantType,
-      fundingSource,
-      isPreferentialSeating,
-      familyGroupMemberNames: isFamilyGroup ? familyGroupMemberNames : null,
-      familyGroupLabel: isFamilyGroup ? (familyGroupLabel.trim() || null) : null,
-      companionForEndowmentName: hasCompanionForEndowment
-        ? companionForEndowmentName
-        : null,
-    });
+    const result = isGuest
+      ? await createGuestReservationAction({
+          caravanId: caravan.id,
+          seatNumber: seatAttempted,
+          originStakeName: originStakeName.trim(),
+          originWardName: originWardName.trim(),
+          category,
+          participantType,
+          boardingPointId: boardingPointId || null,
+        })
+      : await createReservationAction({
+          caravanId: caravan.id,
+          seatNumber: seatAttempted,
+          boardingPointId: boardingPointId || null,
+          category,
+          participantType,
+          fundingSource,
+          isPreferentialSeating,
+          familyGroupMemberNames: isFamilyGroup ? familyGroupMemberNames : null,
+          familyGroupLabel: isFamilyGroup ? (familyGroupLabel.trim() || null) : null,
+          companionForEndowmentName: hasCompanionForEndowment
+            ? companionForEndowmentName
+            : null,
+        });
 
     if (!result.success) {
       // Reversão de estado otimista: limpa a seleção e marca o assento como ocupado
@@ -381,32 +418,95 @@ export function ReservationForm({
             </select>
           </div>
 
-          {/* Fonte de Custeio (D30) */}
+          {/* Fonte de Custeio (D30 / Spec 013) */}
           <div>
             <label htmlFor="fundingSource" className="sgct-label">
               Forma de Custeio
             </label>
-            <select
-              value={fundingSource}
-              id="fundingSource"
-              onChange={(e) => setFundingSource(e.target.value as FundingSource)}
-              className="sgct-input"
-            >
-              <option value="membro">Pagamento Próprio (Membro)</option>
-              <option value="auxilio_area_investidura">Auxílio Área (Primeira Investidura)</option>
-              <option value="auxilio_recem_converso">Auxílio Recém-Converso</option>
-              <option value="auxilio_estaca_fundo_reserva">Auxílio Fundo de Reserva da Estaca</option>
-              <option value="convidado_transferencia_interestaca">
-                Convidado (Transferência Inter-Estaca)
-              </option>
-            </select>
-            {fundingSource !== "membro" && (
-              <p className="mt-2 text-sm font-semibold leading-snug text-warning-700">
-                Reserva sujeita à validação da fonte de auxílio junto à liderança da Ala/Estaca.
-              </p>
+            {isGuest ? (
+              <>
+                <input
+                  id="fundingSource"
+                  type="text"
+                  readOnly
+                  disabled
+                  value="Convidado (Transferência Inter-Estaca)"
+                  className="sgct-input bg-gray-50 text-gray-700 font-medium cursor-not-allowed"
+                />
+                <p className="mt-2 text-sm font-semibold leading-snug text-brand-700">
+                  O valor de R$ {currentPrice.toFixed(2)} será repassado pela sua Estaca de origem para a Estaca anfitriã.
+                </p>
+              </>
+            ) : (
+              <>
+                <select
+                  value={fundingSource}
+                  id="fundingSource"
+                  onChange={(e) => setFundingSource(e.target.value as FundingSource)}
+                  className="sgct-input"
+                >
+                  <option value="membro">Pagamento Próprio (Membro)</option>
+                  <option value="auxilio_area_investidura">Auxílio Área (Primeira Investidura)</option>
+                  <option value="auxilio_recem_converso">Auxílio Recém-Converso</option>
+                  <option value="auxilio_estaca_fundo_reserva">Auxílio Fundo de Reserva da Estaca</option>
+                </select>
+                {fundingSource !== "membro" && (
+                  <p className="mt-2 text-sm font-semibold leading-snug text-warning-700">
+                    Reserva sujeita à validação da fonte de auxílio junto à liderança da Ala/Estaca.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
+
+        {/* Bloco de Origem do Convidado (Spec 013 / US-013.1) */}
+        {isGuest && (
+          <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-5 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <InfoIcon className="mt-0.5 h-6 w-6 shrink-0 text-brand-700" />
+              <div>
+                <h3 className="text-base font-bold text-[#212225]">
+                  Dados de Origem do Convidado Inter-Estaca
+                </h3>
+                <p className="mt-1 text-sm text-[#53575b]">
+                  Confirme a Estaca e Ala às quais você pertence para que a liderança anfitriã possa identificar o repasse.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label htmlFor="originStakeName" className="sgct-label">
+                  Estaca de Origem <span className="text-danger-600">*</span>
+                </label>
+                <input
+                  id="originStakeName"
+                  type="text"
+                  required
+                  value={originStakeName}
+                  onChange={(e) => setOriginStakeName(e.target.value)}
+                  placeholder="Ex: Estaca Mossoró Brasil"
+                  className="sgct-input"
+                />
+              </div>
+              <div>
+                <label htmlFor="originWardName" className="sgct-label">
+                  Ala de Origem <span className="text-danger-600">*</span>
+                </label>
+                <input
+                  id="originWardName"
+                  type="text"
+                  required
+                  value={originWardName}
+                  onChange={(e) => setOriginWardName(e.target.value)}
+                  placeholder="Ex: Ala Abolição"
+                  className="sgct-input"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bloco de Autorização de Menor (Spec 006 / US-006.3) */}
         {participantType === "jovem" && (

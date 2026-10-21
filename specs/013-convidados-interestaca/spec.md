@@ -1,6 +1,6 @@
 # Spec 013: Reservas de Convidado Inter-Estaca
 
-**Status:** Ready for Planning
+**Status:** Implemented
 **Constitution:** v3.0.0
 **Depende de:** 000, 001, 002, 003, 004
 

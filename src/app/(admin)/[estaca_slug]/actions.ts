@@ -1309,6 +1309,63 @@ export async function rejectAidAction(
   }
 }
 
+/**
+ * Server Action: Confirmação de Repasse de Convidado Inter-Estaca pelo Admin da Estaca (Spec 013 / T013.5 / T013.11).
+ */
+export async function confirmGuestTransferAction(
+  transferConfirmationId: string,
+  estacaSlug: string
+): Promise<AdminActionState> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const { confirmGuestTransfer } = await import("@/use-cases/guest/confirm-guest-transfer");
+    const { SupabaseGuestRepository } = await import("@/infrastructure/supabase/supabase-guest-repository");
+
+    const reservationRepo = new SupabaseReservationRepository(supabase);
+    const caravanRepo = new SupabaseCaravanRepository(supabase);
+    const profileRepo = new SupabaseProfileRepository(supabase);
+    const guestRepo = new SupabaseGuestRepository(supabase);
+
+    const updatedReservation = await confirmGuestTransfer(
+      {
+        transferConfirmationId,
+        confirmedBy: user.id,
+      },
+      {
+        reservationRepository: reservationRepo,
+        caravanRepository: caravanRepo,
+        profileRepository: profileRepo,
+        guestRepository: guestRepo,
+      }
+    );
+
+    revalidatePath(`/${estacaSlug}/estaca/convidados`);
+    revalidatePath(`/${estacaSlug}/estaca/validacao-semanal`);
+    revalidatePath(`/${estacaSlug}/estaca/calendario`);
+
+    const statusMsg =
+      updatedReservation.status === "confirmado"
+        ? "Repasse confirmado com sucesso! Reserva confirmada no ônibus."
+        : "Repasse confirmado! Devido à capacidade e prioridade constitucional de membros da anfitriã, a reserva foi posicionada na lista de espera.";
+
+    return {
+      success: true,
+      message: statusMsg,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao confirmar repasse de convidado.";
+    return { success: false, error: message };
+  }
+}
+
 
 
 
