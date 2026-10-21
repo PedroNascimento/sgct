@@ -206,6 +206,22 @@ export async function uploadMinorApprovalFormAction(
       throw new Error("Não autenticado.");
     }
 
+    const { checkRateLimit, RATE_LIMIT_CONFIGS } = await import(
+      "@/infrastructure/rate-limit/rate-limiter"
+    );
+    const rateLimit = await checkRateLimit(
+      `minor-upload:${user.id}`,
+      RATE_LIMIT_CONFIGS.MINOR_UPLOAD.limit,
+      RATE_LIMIT_CONFIGS.MINOR_UPLOAD.windowSeconds,
+      supabase
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        error: "Limite de envios de formulário de menor excedido (máximo 5 por hora). Aguarde antes de tentar novamente.",
+      };
+    }
+
     const reservationId = formData.get("reservationId") as string;
     const file = formData.get("file") as File;
 

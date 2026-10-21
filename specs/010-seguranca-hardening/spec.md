@@ -1,6 +1,6 @@
 # Spec 010: Hardening de Segurança
 
-**Status:** Ready for Planning
+**Status:** Implemented
 **Constitution:** v2.0.0
 **Depende de:** 000-009 (todas as anteriores)
 

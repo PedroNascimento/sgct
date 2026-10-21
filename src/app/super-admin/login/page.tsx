@@ -9,9 +9,9 @@
 
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import { Brand } from "@/components/ui/brand";
 import { InfoIcon } from "@/components/ui/icons";
+import { signInAction } from "@/app/auth-actions";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -20,34 +20,18 @@ export default function SuperAdminLoginPage() {
     _prevState: { error?: string } | null,
     formData: FormData
   ) {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const result = await signInAction(formData);
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return { error: "E-mail ou senha inválidos." };
+    if (!result.success) {
+      return { error: result.error || "E-mail ou senha inválidos." };
     }
 
-    let role = data.user?.app_metadata?.role;
-    if (!role && data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      role = profile?.role;
-    }
-
-    if (role !== "super_admin") {
+    if (result.redirectUrl !== "/estacas") {
+      const { createBrowserClient } = await import("@supabase/ssr");
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       await supabase.auth.signOut();
       return {
         error:

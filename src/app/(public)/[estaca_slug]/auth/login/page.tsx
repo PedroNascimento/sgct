@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import { Brand } from "@/components/ui/brand";
 import { ArrowLeftIcon, InfoIcon } from "@/components/ui/icons";
+import { signInAction } from "@/app/auth-actions";
 
 export default function LoginPage() {
   const params = useParams();
@@ -13,34 +13,17 @@ export default function LoginPage() {
   const slug = String(params.estaca_slug ?? "");
 
   async function handleLogin(_prevState: { error?: string } | null, formData: FormData) {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    formData.set("stakeSlug", slug);
+    const result = await signInAction(formData);
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return { error: "E-mail ou senha inválidos." };
+    if (!result.success) {
+      return { error: result.error || "E-mail ou senha inválidos." };
     }
 
-    const role = data.user?.app_metadata?.role;
-    if (role === "super_admin") {
-      router.push("/estacas");
-    } else if (role === "admin_estaca") {
-      router.push(`/${slug}/estaca/calendario`);
-    } else if (role === "admin_ala") {
-      router.push(`/${slug}/ala/reservas`);
-    } else {
-      router.push(`/${slug}`);
+    if (result.redirectUrl) {
+      router.push(result.redirectUrl);
+      router.refresh();
     }
-    router.refresh();
 
     return null;
   }

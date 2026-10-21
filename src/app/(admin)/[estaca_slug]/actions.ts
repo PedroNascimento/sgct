@@ -10,6 +10,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import {
   createSupabaseServerClient,
   createSupabaseServiceClient,
@@ -45,6 +46,16 @@ export type AdminActionState = {
  * O membro deve estar na mesma Estaca do Admin Estaca logado.
  * DECISÃO D32: apenas membros já cadastrados podem ser promovidos.
  */
+const searchMemberWardAdminSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  stakeId: z.string().min(1, "ID de Estaca inválido"),
+});
+
+const promoteToWardAdminSchema = z.object({
+  userId: z.string({ invalid_type_error: "Selecione um membro válido", required_error: "Selecione um membro válido" }).min(1, "Selecione um membro válido"),
+  wardId: z.string({ invalid_type_error: "Selecione uma Ala válida", required_error: "Selecione uma Ala válida" }).min(1, "Selecione uma Ala válida"),
+});
+
 export async function searchMemberForWardAdminPromotion(
   email: string,
   stakeId: string
@@ -53,6 +64,8 @@ export async function searchMemberForWardAdminPromotion(
     const supabase = await createSupabaseServerClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return null;
+
+    searchMemberWardAdminSchema.parse({ email, stakeId });
 
     const callerRole = userData.user.app_metadata?.role;
     const callerStakeId = userData.user.app_metadata?.stake_id;
@@ -114,14 +127,16 @@ export async function promoteToWardAdminAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
-    const userId = formData.get("userId") as string;
-    const wardId = formData.get("wardId") as string;
+    const validated = promoteToWardAdminSchema.parse({
+      userId: formData.get("userId"),
+      wardId: formData.get("wardId"),
+    });
 
-    if (!userId || !wardId) {
-      throw new Error("Selecione um membro válido e uma Ala de destino.");
-    }
+    const userId = validated.userId;
+    const wardId = validated.wardId;
 
     const serviceClient = createSupabaseServiceClient();
+
 
     // Verificar que a Ala pertence à Estaca do admin (Artigo II.d)
     const { data: ward } = await serviceClient
@@ -173,9 +188,15 @@ export async function promoteToWardAdminAction(
       message: `"${profile.full_name}" foi promovido(a) a Admin da Ala ${ward.name} com sucesso!`,
     };
   } catch (err: unknown) {
+    let message = "Erro ao promover membro a Admin de Ala.";
+    if (err instanceof z.ZodError) {
+      message = err.errors.map((e) => e.message).join("; ");
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Erro ao promover membro a Admin de Ala.",
+      error: message,
     };
   }
 }
@@ -259,6 +280,27 @@ export async function createCaravanAction(
   }
 }
 
+const updateCaravanStatusSchema = z.object({
+  caravanId: z.string().min(1, "ID de caravana inválido"),
+  status: z.enum(["rascunho", "aberta", "em_andamento", "concluida", "cancelada"], {
+    errorMap: () => ({ message: "Status de caravana inválido" }),
+  }),
+});
+
+const editCaravanInputSchema = z.object({
+  caravanId: z.string().min(1, "ID de caravana inválido"),
+  departureDate: z.string().min(1, "Data de saída é obrigatória").optional().nullable(),
+  returnDate: z.string().nullable().optional(),
+  priceStandard: z.number().nonnegative().optional(),
+  priceOfficiant: z.number().nonnegative().optional(),
+  seatLimit: z.number().positive().optional(),
+  waitlistLimit: z.number().nonnegative().optional(),
+  registrationDeadline: z.string().optional().nullable(),
+  minQuorum: z.number().positive().optional(),
+  quorumCheckDate: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+});
+
 export async function updateCaravanStatusAction(
   _prevState: AdminActionState,
   formData: FormData
@@ -277,8 +319,13 @@ export async function updateCaravanStatusAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
-    const caravanId = formData.get("caravanId") as string;
-    const status = formData.get("status") as CaravanStatus;
+    const validated = updateCaravanStatusSchema.parse({
+      caravanId: formData.get("caravanId"),
+      status: formData.get("status"),
+    });
+
+    const caravanId = validated.caravanId;
+    const status = validated.status as CaravanStatus;
 
     const caravanRepository = new SupabaseCaravanRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
@@ -314,6 +361,8 @@ export async function confirmWardPaymentAction(
       throw new Error("Não autenticado.");
     }
 
+    z.string().min(1, "ID de reserva inválido").parse(reservationId);
+
     const user = userData.user;
     const reservationRepo = new SupabaseReservationRepository(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
@@ -346,6 +395,8 @@ export async function validateWeeklyTransfersAction(
     if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
+
+    z.string().min(1, "ID de caravana inválido").parse(caravanId);
 
     const user = userData.user;
     const reservationRepo = new SupabaseReservationRepository(supabase);
@@ -404,17 +455,21 @@ export async function editCaravanAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
-    const caravanId = formData.get("caravanId") as string;
-    const departureDate = formData.get("departureDate") as string;
-    const returnDate = (formData.get("returnDate") as string) || null;
-    const priceStandard = Number(formData.get("priceStandard"));
-    const priceOfficiant = Number(formData.get("priceOfficiant"));
-    const seatLimit = Number(formData.get("seatLimit") || 50);
-    const waitlistLimit = Number(formData.get("waitlistLimit") || 5);
-    const registrationDeadline = formData.get("registrationDeadline") as string;
-    const minQuorum = Number(formData.get("minQuorum") || 48);
-    const quorumCheckDate = formData.get("quorumCheckDate") as string;
-    const status = formData.get("status") as string;
+    const validated = editCaravanInputSchema.parse({
+      caravanId: formData.get("caravanId"),
+      departureDate: formData.get("departureDate") || undefined,
+      returnDate: (formData.get("returnDate") as string) || null,
+      priceStandard: formData.get("priceStandard") ? Number(formData.get("priceStandard")) : undefined,
+      priceOfficiant: formData.get("priceOfficiant") ? Number(formData.get("priceOfficiant")) : undefined,
+      seatLimit: formData.get("seatLimit") ? Number(formData.get("seatLimit")) : undefined,
+      waitlistLimit: formData.get("waitlistLimit") ? Number(formData.get("waitlistLimit")) : undefined,
+      registrationDeadline: formData.get("registrationDeadline") || undefined,
+      minQuorum: formData.get("minQuorum") ? Number(formData.get("minQuorum")) : undefined,
+      quorumCheckDate: formData.get("quorumCheckDate") || undefined,
+      status: formData.get("status") || undefined,
+    });
+
+    const caravanId = validated.caravanId;
 
     // Verificar se a caravana pertence à mesma Estaca
     const { data: existingCaravan } = await supabase
@@ -427,20 +482,21 @@ export async function editCaravanAction(
       throw new Error("Caravana não encontrada ou não pertence à sua Estaca.");
     }
 
+    const updatePayload: Record<string, unknown> = {};
+    if (validated.departureDate !== undefined) updatePayload.departure_date = validated.departureDate;
+    if (validated.returnDate !== undefined) updatePayload.return_date = validated.returnDate;
+    if (validated.priceStandard !== undefined) updatePayload.price_standard = validated.priceStandard;
+    if (validated.priceOfficiant !== undefined) updatePayload.price_officiant = validated.priceOfficiant;
+    if (validated.seatLimit !== undefined) updatePayload.seat_limit = validated.seatLimit;
+    if (validated.waitlistLimit !== undefined) updatePayload.waitlist_limit = validated.waitlistLimit;
+    if (validated.registrationDeadline !== undefined) updatePayload.registration_deadline = validated.registrationDeadline;
+    if (validated.minQuorum !== undefined) updatePayload.min_quorum = validated.minQuorum;
+    if (validated.quorumCheckDate !== undefined) updatePayload.quorum_check_date = validated.quorumCheckDate;
+    if (validated.status !== undefined) updatePayload.status = validated.status;
+
     const { error: updateError } = await supabase
       .from("caravans")
-      .update({
-        departure_date: departureDate,
-        return_date: returnDate,
-        price_standard: priceStandard,
-        price_officiant: priceOfficiant,
-        seat_limit: seatLimit,
-        waitlist_limit: waitlistLimit,
-        registration_deadline: registrationDeadline,
-        min_quorum: minQuorum,
-        quorum_check_date: quorumCheckDate,
-        status,
-      })
+      .update(updatePayload)
       .eq("id", caravanId);
 
     if (updateError) {
@@ -473,6 +529,8 @@ export async function confirmSingleTransferAction(
     if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
+
+    z.string().min(1, "ID de reserva inválido").parse(reservationId);
 
     const user = userData.user;
     const role = user.app_metadata?.role;
@@ -536,6 +594,8 @@ export async function rejectTransferAction(
     if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
+
+    z.string().min(1, "ID de reserva inválido").parse(reservationId);
 
     const user = userData.user;
     const role = user.app_metadata?.role;
@@ -603,6 +663,8 @@ export async function getEstacaMembersList(stakeId: string): Promise<EstacaMembe
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return [];
 
+    z.string().min(1, "ID de Estaca inválido").parse(stakeId);
+
     const callerRole = userData.user.app_metadata?.role;
     const callerStakeId = userData.user.app_metadata?.stake_id;
     if (callerRole !== "admin_estaca" || callerStakeId !== stakeId) return [];
@@ -652,6 +714,8 @@ export async function demoteWardAdminAction(userId: string): Promise<AdminAction
     if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
+
+    z.string().min(1, "ID de usuário inválido").parse(userId);
 
     const callerRole = userData.user.app_metadata?.role;
     const callerStakeId = userData.user.app_metadata?.stake_id;
@@ -713,6 +777,11 @@ export async function promoteWardMemberAction(
   userId: string,
   wardId: string
 ): Promise<AdminActionState> {
+  z.object({
+    userId: z.string().min(1, "ID de usuário inválido"),
+    wardId: z.string().min(1, "ID de Ala inválido"),
+  }).parse({ userId, wardId });
+
   const formData = new FormData();
   formData.set("userId", userId);
   formData.set("wardId", wardId);
@@ -733,6 +802,11 @@ export async function toggleWardMemberStatusAction(
     if (sessionError || !userData.user) {
       throw new Error("Não autenticado.");
     }
+
+    z.object({
+      userId: z.string().min(1, "ID de usuário inválido"),
+      isActive: z.boolean(),
+    }).parse({ userId, isActive });
 
     const callerRole = userData.user.app_metadata?.role;
     const callerStakeId = userData.user.app_metadata?.stake_id;
@@ -788,7 +862,8 @@ export async function createWardAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
-    const name = (formData.get("name") as string) || "";
+    const rawName = formData.get("name");
+    const name = z.string().min(2, "Nome da Ala deve ter no mínimo 2 caracteres").parse(rawName);
 
     const wardRepository = new SupabaseWardRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
@@ -838,14 +913,19 @@ export async function updateWardAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
-    const wardId = formData.get("wardId") as string;
-    const name = (formData.get("name") as string) || "";
+    const validated = z.object({
+      wardId: z.string().min(1, "ID de Ala inválido"),
+      name: z.string().min(2, "Nome da Ala deve ter no mínimo 2 caracteres"),
+    }).parse({
+      wardId: formData.get("wardId"),
+      name: formData.get("name"),
+    });
 
     const wardRepository = new SupabaseWardRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
 
     const updated = await updateWard(
-      { wardId, name },
+      { wardId: validated.wardId, name: validated.name },
       user.id,
       { wardRepository, profileRepository }
     );
@@ -888,6 +968,11 @@ export async function toggleWardStatusAction(
     if (role !== "admin_estaca" || !userStakeId) {
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
+
+    z.object({
+      wardId: z.string().min(1, "ID de Ala inválido"),
+      isActive: z.boolean(),
+    }).parse({ wardId, isActive });
 
     const wardRepository = new SupabaseWardRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
@@ -936,6 +1021,8 @@ export async function deleteWardAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
+    z.string().min(1, "ID de Ala inválido").parse(wardId);
+
     const wardRepository = new SupabaseWardRepository(supabase);
     const profileRepository = new SupabaseProfileRepository(supabase);
 
@@ -969,6 +1056,8 @@ export async function getWardsWithStats(stakeId: string): Promise<WardWithStats[
     const supabase = await createSupabaseServerClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return [];
+
+    z.string().min(1, "ID de Estaca inválido").parse(stakeId);
 
     const callerRole = userData.user.app_metadata?.role;
     const callerStakeId = userData.user.app_metadata?.stake_id;
@@ -1039,6 +1128,13 @@ export async function registerSeatSwapAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+      reservationId: z.string().min(1, "ID de reserva inválido"),
+      newHolderFullName: z.string().min(3, "Nome completo do novo titular deve ter no mínimo 3 caracteres"),
+      newHolderDocument: z.string().optional(),
+    }).parse({ estacaSlug, ...input });
+
     const reservationRepo = new SupabaseReservationRepository(supabase);
     const swapRepo = new SupabaseSwapRepository(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
@@ -1082,6 +1178,11 @@ export async function approveSeatSwapAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+      swapRequestId: z.string().min(1, "ID de solicitação de permuta inválido"),
+    }).parse({ estacaSlug, swapRequestId });
+
     const swapRepo = new SupabaseSwapRepository(supabase);
     const reservationRepo = new SupabaseReservationRepository(supabase);
     const caravanRepo = new SupabaseCaravanRepository(supabase);
@@ -1111,7 +1212,7 @@ export async function approveSeatSwapAction(
 }
 
 /**
- * Server Action para aprovação/rejeição de formulário de menor (T006.11 / US-006.3).
+ * Server Action para aprovação/rejeição de formulário de menor (T006.11 / US-006.3 / T010.5).
  */
 export async function evaluateMinorFormAction(
   estacaSlug: string,
@@ -1128,13 +1229,25 @@ export async function evaluateMinorFormAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+      formId: z.string().min(1, "ID de formulário inválido"),
+      status: z.enum(["approved", "rejected"], {
+        errorMap: () => ({ message: "Status deve ser 'approved' ou 'rejected'" }),
+      }),
+    }).parse({ estacaSlug, formId, status });
+
     const { approveMinorForm } = await import("@/use-cases/minors/approve-minor-form");
-    const { SupabaseMinorRepository } = await import(
+    const {
+      SupabaseMinorRepository,
+      SupabaseAuditLogPort,
+    } = await import(
       "@/infrastructure/supabase/supabase-minor-repository"
     );
 
     const minorRepo = new SupabaseMinorRepository(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
+    const auditLogPort = new SupabaseAuditLogPort(supabase);
 
     await approveMinorForm(
       {
@@ -1145,6 +1258,7 @@ export async function evaluateMinorFormAction(
       {
         minorRepository: minorRepo,
         profileRepository: profileRepo,
+        auditLogPort,
       }
     );
 
@@ -1176,6 +1290,8 @@ export async function getMinorDocumentViewUrlAction(
     if (!user) {
       return { success: false, error: "Usuário não autenticado." };
     }
+
+    z.string().min(1, "ID de formulário inválido").parse(formId);
 
     const { getMinorDocumentUrl } = await import("@/use-cases/minors/get-minor-document-url");
     const {
@@ -1227,6 +1343,12 @@ export async function approveAidAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      aidRequestId: z.string().min(1, "ID de auxílio inválido"),
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+      notes: z.string().optional(),
+    }).parse({ aidRequestId, estacaSlug, notes });
+
     const { approveAid } = await import("@/use-cases/aid/process-aid");
     const { SupabaseAidRepository } = await import("@/infrastructure/supabase/supabase-aid-repository");
     const { SupabaseNotificationQueueRepository } = await import("@/infrastructure/supabase/supabase-notification-queue-repository");
@@ -1277,6 +1399,12 @@ export async function rejectAidAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      aidRequestId: z.string().min(1, "ID de auxílio inválido"),
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+      reason: z.string().optional(),
+    }).parse({ aidRequestId, estacaSlug, reason });
+
     const { rejectAid } = await import("@/use-cases/aid/process-aid");
     const { SupabaseAidRepository } = await import("@/infrastructure/supabase/supabase-aid-repository");
     const { SupabaseNotificationQueueRepository } = await import("@/infrastructure/supabase/supabase-notification-queue-repository");
@@ -1326,6 +1454,11 @@ export async function confirmGuestTransferAction(
       return { success: false, error: "Usuário não autenticado." };
     }
 
+    z.object({
+      transferConfirmationId: z.string().min(1, "ID de confirmação inválido"),
+      estacaSlug: z.string().min(1, "Slug da Estaca é obrigatório"),
+    }).parse({ transferConfirmationId, estacaSlug });
+
     const { confirmGuestTransfer } = await import("@/use-cases/guest/confirm-guest-transfer");
     const { SupabaseGuestRepository } = await import("@/infrastructure/supabase/supabase-guest-repository");
 
@@ -1365,6 +1498,7 @@ export async function confirmGuestTransferAction(
     return { success: false, error: message };
   }
 }
+
 
 
 
