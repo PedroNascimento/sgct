@@ -1,6 +1,6 @@
 # Spec 011: UAT e Piloto com uma Caravana Real
 
-**Status:** Ready for Planning
+**Status:** Implemented
 **Constitution:** v2.0.0
 **Depende de:** 000-010 (todas as anteriores)
 
