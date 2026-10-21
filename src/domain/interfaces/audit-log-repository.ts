@@ -4,11 +4,11 @@
  */
 
 export interface CreateAuditLogData {
-  stake_id?: string;
-  actor_id: string;
+  stake_id?: string | null;
+  actor_id?: string | null;
   action: string;
   entity: string;
-  entity_id?: string;
+  entity_id?: string | null;
   metadata?: Record<string, unknown> | null;
 }
 
