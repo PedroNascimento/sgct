@@ -37,7 +37,16 @@ export default function SuperAdminLoginPage() {
       return { error: "E-mail ou senha inválidos." };
     }
 
-    const role = data.user?.app_metadata?.role;
+    let role = data.user?.app_metadata?.role;
+    if (!role && data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      role = profile?.role;
+    }
+
     if (role !== "super_admin") {
       await supabase.auth.signOut();
       return {

@@ -103,6 +103,20 @@ export default async function EstacaPublicPage({ params }: Props) {
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-[#e0e2e2] bg-white py-6">
+        <div className="sgct-container flex flex-col items-center justify-between gap-4 text-sm text-[#53575b] sm:flex-row">
+          <p>© {new Date().getFullYear()} {stake.name} — Sistema de Gestão de Caravanas ao Templo</p>
+          <div className="flex gap-6">
+            <Link
+              href={`/${estaca_slug}/privacidade`}
+              className="text-brand-700 hover:text-brand-900 font-medium underline decoration-brand-200"
+            >
+              Aviso de Privacidade & LGPD
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

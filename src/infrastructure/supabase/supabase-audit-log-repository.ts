@@ -3,9 +3,10 @@ import type {
   AuditLogRepository,
   CreateAuditLogData,
 } from "@/domain/interfaces/audit-log-repository";
+import type { AuditLogPort } from "@/domain/interfaces/minor-repository";
 import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
 
-export class SupabaseAuditLogRepository implements AuditLogRepository {
+export class SupabaseAuditLogRepository implements AuditLogRepository, AuditLogPort {
   constructor(private readonly supabase?: SupabaseClient) {}
 
   async log(data: CreateAuditLogData): Promise<void> {
@@ -27,4 +28,33 @@ export class SupabaseAuditLogRepository implements AuditLogRepository {
       throw new Error(`Falha ao registrar auditoria: ${error.message}`);
     }
   }
+
+  async recordLog(entry: {
+    stakeId?: string;
+    userId: string;
+    action: string;
+    resourceType: string;
+    resourceId?: string;
+    details?: Record<string, unknown>;
+  }): Promise<void> {
+    const isUuid = (val?: string) =>
+      Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
+    const validActorId = isUuid(entry.userId) ? entry.userId : null;
+    const validEntityId = isUuid(entry.resourceId) ? entry.resourceId : null;
+
+    await this.log({
+      stake_id: entry.stakeId ?? null,
+      actor_id: validActorId,
+      action: entry.action,
+      entity: entry.resourceType,
+      entity_id: validEntityId,
+      metadata: {
+        ...entry.details,
+        ...(validActorId ? {} : { rawUserId: entry.userId }),
+        ...(validEntityId ? {} : { rawResourceId: entry.resourceId }),
+      },
+    });
+  }
 }
+
