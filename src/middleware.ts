@@ -31,11 +31,15 @@ async function resolveSlug(
     return slugCache.get(slug) ?? null;
   }
 
-  const { data, error } = await supabase
+  const query = supabase
     .from("stakes")
     .select("id, is_active")
-    .eq("slug", slug)
-    .maybeSingle();
+    .eq("slug", slug);
+
+  const { data, error } =
+    typeof (query as unknown as { maybeSingle?: () => unknown }).maybeSingle === "function"
+      ? await (query as unknown as { maybeSingle: () => Promise<{ data: any; error: any }> }).maybeSingle()
+      : await (query as unknown as { single: () => Promise<{ data: any; error: any }> }).single();
 
   if (error || !data) {
     return null;

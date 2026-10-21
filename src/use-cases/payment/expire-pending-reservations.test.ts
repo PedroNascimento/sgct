@@ -103,4 +103,22 @@ describe("expirePendingReservations (T004.7)", () => {
     expect(result.expiredReservationIds).toEqual([]);
     expect(mockReservationRepository.updateBatch).not.toHaveBeenCalled();
   });
+
+  it("reservas com status 'aguardando_auxilio' NUNCA são expiradas pelo timeout de 7 dias (T012.6 / US-012.2 / D27)", async () => {
+    // O repositório busca estritamente status = 'pendente', logo aguardando_auxilio nunca retorna em findPendingExpired
+    mockReservationRepository.findPendingExpired.mockResolvedValueOnce([]);
+
+    const result = await expirePendingReservations(
+      {
+        referenceDate: "2026-11-18T00:00:00Z", // 2 dias do embarque
+        daysBeforeDeparture: 7,
+      },
+      {
+        reservationRepository: mockReservationRepository,
+      }
+    );
+
+    expect(result.expiredCount).toBe(0);
+    expect(mockReservationRepository.updateBatch).not.toHaveBeenCalled();
+  });
 });

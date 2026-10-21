@@ -1,6 +1,6 @@
 # Spec 012: Auxílio Financeiro (Aprovação e Fundo)
 
-**Status:** Ready for Planning
+**Status:** Implemented
 **Constitution:** v3.0.0
 **Depende de:** 000, 001, 003, 004
 

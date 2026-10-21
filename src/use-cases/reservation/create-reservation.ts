@@ -22,11 +22,14 @@ import type { Reservation, ReservationStatus } from "@/domain/types/reservation"
 import type { ReservationRepository } from "@/domain/interfaces/reservation-repository";
 import type { CaravanRepository } from "@/domain/interfaces/caravan-repository";
 import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
+import type { AidRepository } from "@/domain/interfaces/aid-repository";
+import type { AidType } from "@/domain/types/aid";
 
 export interface CreateReservationDependencies {
   reservationRepository: ReservationRepository;
   caravanRepository: CaravanRepository;
   profileRepository: ProfileRepository;
+  aidRepository?: AidRepository;
 }
 
 export async function createReservation(
@@ -101,7 +104,7 @@ export async function createReservation(
 
   // 7. Criar a reserva via repositório tratando concorrência de assento
   try {
-    return await deps.reservationRepository.create({
+    const reservation = await deps.reservationRepository.create({
       caravan_id: caravan.id,
       user_id: actingUser.id,
       seat_number: seatNumber,
@@ -116,6 +119,22 @@ export async function createReservation(
       status: initialStatus,
       payment_amount: paymentAmount,
     });
+
+    if (initialStatus === "aguardando_auxilio" && deps.aidRepository) {
+      try {
+        await deps.aidRepository.create({
+          reservation_id: reservation.id,
+          aid_type: fundingSource as AidType,
+          requested_by: actingUser.id,
+          stake_id: reservation.stake_id,
+          ward_id: reservation.ward_id ?? undefined,
+        });
+      } catch (aidErr) {
+        console.warn("Erro ao registrar aid_request atômico:", aidErr);
+      }
+    }
+
+    return reservation;
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const errorCode = (err as { code?: string })?.code;
