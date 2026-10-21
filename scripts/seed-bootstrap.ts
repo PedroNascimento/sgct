@@ -74,6 +74,7 @@ async function main() {
     password: senha,
     email_confirm: true,
     user_metadata: { full_name: "Super Admin" },
+    app_metadata: { role: "super_admin" },
   });
 
   if (authError) {

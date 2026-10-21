@@ -31,13 +31,17 @@ async function resolveSlug(
     return slugCache.get(slug) ?? null;
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("stakes")
     .select("id, is_active")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
 
-  const result = data ? { stake_id: data.id, is_active: data.is_active } : null;
+  if (error || !data) {
+    return null;
+  }
+
+  const result = { stake_id: data.id, is_active: data.is_active };
   slugCache.set(slug, result);
   return result;
 }
