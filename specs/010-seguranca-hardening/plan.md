@@ -1,19 +1,21 @@
 # Plan 010: Hardening de Segurança
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/X: nova matriz normativa e baseline local; testes verdes não fecham 24 achados. Fases 02–09. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/010-seguranca-hardening/spec.md`
 
 ## Verificação de Conformidade com a Constituição
 | Artigo | Conformidade | Observação |
 |---|---|---|
 | I | ✅ | Rate limiting implementado em `infrastructure/rate-limit/`, chamado por middleware — não em `use-cases`. |
-| II | ✅ | Esta spec é a auditoria final do próprio Artigo II — checklist completo executado aqui. |
-| III | ✅ | Auditoria confirma que nenhuma Server Action usa `update()` livre. |
-| IV | N/A | Esta spec é majoritariamente auditoria/configuração, não lógica de negócio nova. |
+| II | Pendente na implementação | RLS/RPC/Server Actions têm achados abertos; matriz de acesso v4.0.0 orienta a remediação. |
+| III | Pendente na implementação | Auditoria encontrou escritas diretas e permissões amplas; corrigir na Fase 02. |
+| IV | Baseline | Runner protegido e testes próprios; cobertura de branches ainda abaixo de 90%, com fechamento na Fase 09. |
 | V | ✅ | Esta spec **é** a implementação operacional do Artigo V. |
-| VI | ✅ | Confirma que os jobs de retenção (spec 009) estão realmente agendados em produção. |
+| VI | Pendente | Somente desenvolvimento local; jobs existentes não demonstram execução bem-sucedida nem retenção correta. |
 | VII | N/A | |
 | VIII | ✅ | Última spec antes do piloto (011) — todas as anteriores precisam estar concluídas. |
-| IX | ✅ | Checklist de `SETUP.md` re-executado do zero como parte desta spec. |
+| IX | Pendente | Instalação independente será executada na Fase 11; não está comprovada pelo teste de segunda Estaca. |
 
 ## Abordagem Técnica
 Ver `docs/SECURITY.md` completo. Rate limiting via tabela própria no Supabase (janela deslizante) por padrão, com opção de Upstash Redis documentada como alternativa (`.env.example` já prevê ambas as opções).
@@ -36,3 +38,11 @@ Nenhuma decisão de produto nova — esta spec consolida decisões de segurança
 - **Fase 3:** Execução completa do checklist de `docs/DATABASE_SCHEMA.md` seção 10 em todas as tabelas.
 - **Fase 4:** Teste de penetração manual (chamada direta à API do Supabase com token de outra Estaca) + relatório curto.
 - **Fase 5:** Re-execução do `SETUP.md` do zero em ambiente limpo, como sanity check de auto-hospedagem.
+
+## Fase adicional — Governança e baseline (21/10/2026)
+
+Autorizada pelo responsável conforme `docs/PLANO-REMEDIACAO-2026-10-21.md`, R01.1–R01.6. Entregas: constituição v4.0.0 e revisão dos 15 plans; inventário de acesso; status real do piloto; guarda loopback nos runners; CI local ao runner; baseline e matriz de remediação. Não altera migrations/policies nem comportamento operacional.
+
+Contratos da infraestrutura: `assertLocalTestEnvironment(env)` rejeita URL ausente/não loopback e credenciais locais ausentes sem imprimi-las; setupAfterEnv valida o destino antes de importar suítes de integração/RLS; runner chama Jest via argv sem shell. CI usa chaves efêmeras do Supabase do runner e não usa secrets remotos.
+
+Verificação constitucional desta fase: I — infraestrutura separada do domínio; II/V — protege o destino de testes, sem abrir acesso; III/VI — nenhuma mutação de produção; IV — testes negativos da trava e baseline separados do aceite; VII/VIII/X — regras confirmadas, spec/plan/tasks alinhados e emenda registrada; IX — configuração portátil. A conformidade da fase documental não equivale à conformidade do código operacional.

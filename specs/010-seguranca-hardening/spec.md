@@ -1,7 +1,7 @@
 # Spec 010: Hardening de Segurança
 
-**Status:** Implemented
-**Constitution:** v2.0.0
+**Status:** Aceite reaberto — remediação local em andamento
+**Constitution:** v4.0.0
 **Depende de:** 000-009 (todas as anteriores)
 
 ## Contexto e Objetivo
@@ -42,6 +42,13 @@ Como responsável técnico, quero simular um ataque simples de acesso cross-tena
 **Critérios de Aceite (EARS):**
 - WHEN um token JWT de um usuário da Estaca A é usado para chamar a API do Supabase diretamente (contornando o Next.js) tentando ler dado da Estaca B, THE SYSTEM SHALL retornar conjunto vazio.
 - THE SYSTEM SHALL documentar o resultado desse teste manual em um relatório curto, anexado ao checklist de release.
+
+### US-010.4: Governança e baseline de remediação local
+- THE SYSTEM SHALL impedir que testes RLS/integração iniciem clientes com destino remoto ou configuração local ausente, inclusive ao executar Jest diretamente.
+- THE SYSTEM SHALL fornecer CI mínimo com instalação reproduzível, lint, tipos, testes e banco descartável local ao runner, sem secrets de produção.
+- THE SYSTEM SHALL registrar inventário de ações/rotas/RPCs/policies/jobs, ator autorizado, teste e lacunas.
+- THE SYSTEM SHALL distinguir baseline verde de aceite de segurança e de piloto real. Achados críticos/altos permanecem abertos até correção e evidência.
+- A Fase 01 altera documentação e infraestrutura de testes; não altera regras operacionais nem executa deploy.
 
 ## Regras de Negócio Vinculadas
 `docs/SECURITY.md` completo; Constituição Artigos II e V.

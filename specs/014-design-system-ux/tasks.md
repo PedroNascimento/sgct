@@ -9,7 +9,7 @@
 - [x] T014.7 — Redesenhar calendário e validação administrativa, incluindo responsividade das tabelas.
 - [x] T014.8 — Redesenhar shell e telas de Super Admin.
 - [x] T014.9 — Executar testes, lint e build; corrigir regressões.
-- [x] T014.10 — Inspecionar visualmente os fluxos principais em mobile e desktop.
+- [ ] T014.10 — Inspecionar visualmente os fluxos principais em mobile e desktop.
 - [x] T014.11 — Exibir sessão ativa no cabeçalho, disponibilizar Minha Conta e logout, e coletar CPF no cadastro inicial.
 - [x] T014.12 — Coletar, validar e persistir o telefone de WhatsApp no cadastro inicial.
 
@@ -20,6 +20,9 @@
 - [ ] T014.15 — Refinar superfícies, formulários, tabelas e hierarquia preservando cores e tipografia.
 - [ ] T014.16 — Validar interações, lint, build e responsividade.
 
-Validação parcial: 17 testes de componentes passaram, incluindo navegação e resumo dos gráficos. Lint dos componentes alterados passou. Validação visual responsiva ainda pendente; checagem global encontra erros preexistentes no Super Admin e no formulário de equipe.
+Registro histórico da implementação visual (não é o baseline atual): 17 testes de componentes passaram, incluindo navegação e resumo dos gráficos. Lint dos componentes alterados passou. Validação visual responsiva ainda pendente; checagem global encontra erros preexistentes no Super Admin e no formulário de equipe.
 
 Recharts e Lucide React instalados por solicitação explícita. Gráficos integrados aos painéis da Estaca e Ala; biblioteca compartilhada de ícones migrada para Lucide.
+## Revalidação — 21/10/2026
+
+Build e tipos globais passam no baseline atual; a observação histórica de erros não descreve o estado de hoje. T014.10 reaberto para matriz completa de viewport/zoom/teclado/axe (R10.1–R10.7), sem alteração de paleta/tipografia. A aprovação histórica de telas principais não comprova todas as listas e painéis.

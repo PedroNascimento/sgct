@@ -12,8 +12,8 @@
 **Dependências:** 000 concluída (schema + triggers + claims).
 
 ## Fase 2 — RBAC de Admin Ala
-- [x] T001.6 — **Teste primeiro:** `createWardAdmin` por `admin_estaca` da Estaca A tentando criar admin para `ward_id` da Estaca B → rejeitado
-- [x] T001.7 — Implementar `createWardAdmin`
+- [ ] T001.6 — **Teste primeiro:** promoção de membro existente a Admin Ala rejeita outro tenant, Ala inválida, autoelevação e promoção de Admin Estaca; revogação retira poderes da sessão (R03.1–R03.4)
+- [ ] T001.7 — Concluir `promoteWardAdmin` sem criação de conta/senha pelo painel, com autorização e auditoria
 - [x] T001.8 — **Teste:** `member` tentando `UPDATE` do próprio `role` → bloqueado pela policy `profiles_update_self`
 
 **Dependências:** Fase 1.
@@ -24,3 +24,6 @@
 - [x] T001.11 — **Teste:** inativação nunca exclui linha nem dado relacionado (reservas, créditos permanecem intactos)
 
 **Dependências:** Fase 1.
+## Reabertura de aceite — 21/10/2026
+
+Concluir cadastro público efetivo/consentimento (A15), atividade e bloqueio de contas/sessões (A16). T001.9–11 registram implementação/testes históricos do job, não eficácia ponta a ponta da inativação. Ver R03.5–R03.6, R07.6 e `docs/REGISTRO-REMEDIACAO.md`.

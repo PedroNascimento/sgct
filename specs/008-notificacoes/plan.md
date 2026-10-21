@@ -1,5 +1,7 @@
 # Plan 008: Notificações por E-mail
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/V: fila interna não fica acessível a Super Admin ou calendário público; eventos/workers pendentes. Fase 07. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/008-notificacoes/spec.md`
 
 ## Verificação de Conformidade com a Constituição

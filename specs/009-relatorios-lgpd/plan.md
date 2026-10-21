@@ -1,5 +1,7 @@
 # Plan 009: Relatórios Financeiros e Conformidade LGPD
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/VI: financeiro e documentos não integram a projeção pública/lookup de promoção; totais, retenção e sessões pendentes. Fases 03/05/08. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/009-relatorios-lgpd/spec.md`
 
 ## Verificação de Conformidade com a Constituição

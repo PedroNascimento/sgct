@@ -1,8 +1,11 @@
 # Spec 011: UAT e Piloto com uma Caravana Real
 
-**Status:** Implemented
-**Constitution:** v2.0.0
+**Status:** Piloto real e instalação independente pendentes; apenas simulações locais evidenciadas
+**Constitution:** v4.0.0
 **Depende de:** 000-010 (todas as anteriores)
+
+## Situação em 21/10/2026
+O responsável confirmou que ainda não houve deploy na Vercel. Simulações automatizadas locais não satisfazem o piloto em caravana real, feedback de participantes ou instalação independente. Os aceites correspondentes foram reabertos, sem apagar a existência dos testes locais.
 
 ## Contexto e Objetivo
 Validar o sistema completo com uma caravana real da Estaca Natal, rodando em paralelo ao processo atual (Google Sites), antes do rollout definitivo e antes de convidar qualquer outra Estaca a usar a plataforma (SaaS compartilhada) ou clonar o repositório (auto-hospedagem).

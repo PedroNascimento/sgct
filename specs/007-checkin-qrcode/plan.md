@@ -1,5 +1,7 @@
 # Plan 007: Check-in de Embarque via QR Code
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II: promoção de papel não equivale a designação de líder; nenhuma exceção dá ao Super Admin acesso a check-in. Fase 06. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/007-checkin-qrcode/spec.md`
 
 ## Verificação de Conformidade com a Constituição

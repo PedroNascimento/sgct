@@ -1,0 +1,44 @@
+name: Baseline local e seguranca dos testes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Trava contra bancos remotos
+        run: npm run test:guard
+      - run: npm run lint
+      - run: npm run inventory:check
+      - name: Supabase descartavel do runner
+        run: npx supabase start
+      - name: Configuracao local sem secrets de producao
+        run: node scripts/configure-ci-tests.cjs
+      - name: Testes unitarios e componentes com cobertura baseline
+        run: npm run test:unit -- --coverage
+      - name: Integracao e RLS com credenciais locais
+        run: npm run test:db -- --silent
+      - run: npm run build
+      - run: npm run typecheck
+      - name: Dependencias de producao
+        run: npm audit --omit=dev --audit-level=high
+      - name: Baseline de dependencias de desenvolvimento (pendencia da Fase 09)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+      - name: Encerrar somente o Supabase descartavel do runner
+        if: always()
+        run: npx supabase stop --no-backup

@@ -12,3 +12,6 @@
 - [x] T009.10 — `npm run test:rls` verde antes de concluir
 
 **Definition of Done:** cobertura ≥80% em `src/use-cases/reports/` e `src/use-cases/retention/`; testes de limite exato obrigatoriamente verdes.
+## Aceite em remediação — 21/10/2026
+
+Os itens marcados acima registram o trabalho histórico; não equivalem ao encerramento dos achados da auditoria. Aceite final reaberto até os testes das fases responsáveis em `docs/REGISTRO-REMEDIACAO.md` e `docs/PLANO-REMEDIACAO-2026-10-21.md`. Ver baseline da Fase 01 e revisão constitucional v4.0.0 para escopo/limitações. Não há aprovação de produção ou de piloto real.

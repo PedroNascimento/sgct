@@ -1,7 +1,7 @@
 # Spec 007: Check-in de Embarque via QR Code
 
-**Status:** Ready for Planning
-**Constitution:** v2.0.0
+**Status:** Implementação existente; aceite de remediação pendente (auditoria de 21/10/2026)
+**Constitution:** v4.0.0
 **Depende de:** 000, 001, 002, 003, 004, 005, 006
 
 ## Contexto e Objetivo

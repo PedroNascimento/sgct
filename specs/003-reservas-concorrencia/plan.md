@@ -1,5 +1,7 @@
 # Plan 003: Mapa de Assentos e Reserva
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II/III: invariantes de reserva precisam sobreviver à API direta; C02/A05 permanecem abertos. Fases 02/04. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/003-reservas-concorrencia/spec.md`
 
 ## Verificação de Conformidade com a Constituição

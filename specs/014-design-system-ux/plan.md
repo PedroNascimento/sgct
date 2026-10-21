@@ -1,5 +1,7 @@
 # Plan 014: Design System e Experiência Responsiva
 
+> **Revisão constitucional de 21/10/2026 — v4.0.0:** II.e/g: navegação não altera role; nome/Ala públicos não permitem campos sensíveis em payloads. Inspeção visual ainda pendente. Fase 10. Ver [matriz de revisão](../../docs/REVISAO-CONSTITUCIONAL-4.0.0.md). As tabelas de conformidade descrevem o desenho; não são atestado de implementação ou rollout.
+
 **Spec de referência:** `specs/014-design-system-ux/spec.md`
 **Decisão visual:** `DESIGN.md`
 
@@ -31,7 +33,7 @@
 ## Decisões Técnicas
 
 - Fonte principal: Source Sans 3 quando disponível, seguida por fontes de sistema. Não haverá download de fonte em runtime nem redistribuição de Ensign.
-- SVGs simples e próprios serão usados para ícones essenciais, evitando emojis e dependências adicionais.
+- Lucide React fornece os ícones compartilhados; Recharts fornece gráficos com resumo textual acessível, conforme decisões explícitas do responsável. Preservar cores e tipografia.
 - Tailwind continuará sendo a tecnologia de composição; classes semânticas globais reduzirão repetição e divergência.
 - As ações de cadastro existentes serão estendidas somente para coletar CPF e telefone já previstos no perfil.
 - Tabelas críticas receberão visualização responsiva por cartões, mantendo tabela para desktop.

@@ -1,7 +1,7 @@
 # Spec 003: Mapa de Assentos e Reserva
 
-**Status:** Ready for Planning
-**Constitution:** v2.0.0
+**Status:** Implementação existente; aceite de remediação pendente (auditoria de 21/10/2026)
+**Constitution:** v4.0.0
 **Depende de:** 000-fundacao-multi-tenant-saas, 001-autenticacao-rbac, 002-gestao-caravanas
 
 ## Contexto e Objetivo

@@ -1,7 +1,7 @@
 # Spec 012: Auxílio Financeiro (Aprovação e Fundo)
 
-**Status:** Implemented
-**Constitution:** v3.0.0
+**Status:** Implementação existente; aceite de remediação pendente (auditoria de 21/10/2026)
+**Constitution:** v4.0.0
 **Depende de:** 000, 001, 003, 004
 
 ## Contexto e Objetivo

@@ -1,4 +1,6 @@
 # Arquitetura do Sistema — SGCT
+
+> **Alinhamento v4.0.0 (21/10/2026):** Super Admin cria Estacas e promove contas member existentes a Admin Estaca; Admin Estaca promove somente Admin Ala na própria Estaca. Lookup mínimo dirigido, sem varredura global de perfis. Nome/Ala podem ser públicos por projeção, sem dados pessoais/financeiros adicionais. Referências antigas a criação/bootstrap de administradores descrevem implementação legada, a substituir na Fase 03. Somente desenvolvimento local; automações e implantação remota ainda precisam aceite. Ver `REVISAO-CONSTITUCIONAL-4.0.0.md`.
 ### 🔄 v2 — Plataforma Multi-Tenant (múltiplas Estacas, um único deploy)
 
 ## 1. Visão Geral

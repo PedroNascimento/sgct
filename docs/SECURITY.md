@@ -1,12 +1,15 @@
 # Segurança — SGCT
 
+> **Estado normativo em 21/10/2026:** constituição v4.0.0. Super Admin cria Estacas/promove membros existentes a Admin Estaca; Admin Estaca promove somente Admin Ala da própria Estaca. Sem criação de contas/senhas por painéis e sem listagem global de membros. Nome/Ala são autorizados no calendário público; CPF, e-mail, telefone, documentos, tokens e informação individual de auxílio/financeiro não são. A aplicação está somente em desenvolvimento local e os achados da auditoria permanecem abertos. Ver `REGISTRO-REMEDIACAO.md` e `INVENTARIO-ACESSOS.md`.
+
+
 ## 1. Modelo de Ameaças (o que este sistema precisa proteger)
 
 | Ativo | Risco principal | Mitigação |
 |---|---|---|
 | Dados de menores (0-17) | Vazamento, acesso indevido | RLS estrito por Ala + Storage privado + audit log de leitura + retenção limitada (LGPD) |
 | 🔄 Vazamento entre Estacas (multi-tenant) | Estaca A lendo qualquer dado da Estaca B | `stake_id` derivado por trigger (não confiável do client) + RLS de 4 camadas + checagem redundante no middleware (slug vs. claim) |
-| 🔄 Abuso do papel `super_admin` | Papel global virar um ponto único de vazamento de todas as Estacas | Least privilege constitucional: `super_admin` só acessa `stakes` e faz bootstrap de `admin_estaca`; nenhuma policy concede acesso a `reservations`/`credit_ledger`/dados de menores |
+| 🔄 Abuso do papel `super_admin` | Papel global virar um ponto único de vazamento de todas as Estacas | Least privilege constitucional: `super_admin` cria `stakes` e promove membros existentes por lookup mínimo dirigido; nenhuma policy concede acesso a `reservations`/`credit_ledger`/dados de menores |
 | Dados financeiros (quem pagou quanto) | Vazamento entre Alas, fraude de confirmação | RLS por Ala + bloqueio de autoaprovação + Server Actions para toda transição de status |
 | Assentos do ônibus | Disputa/corrida na abertura de inscrições | Constraint `unique (caravan_id, seat_number)` no banco (fonte da verdade), não só lock otimista no client |
 | QR Code de check-in | Falsificação, replay | Token assinado (HMAC/JWT) de curta duração, gerado só após `CONFIRMADO`, checagem de idempotência |
@@ -92,3 +95,9 @@ Middleware é a **primeira** camada, não a única — RLS no banco é a camada 
 - [ ] `npm audit` sem vulnerabilidades altas
 - [ ] Nenhum segredo commitado (`git log -p | grep` sanity check antes de releases maiores)
 - [ ] QR Code testado quanto a expiração e replay
+
+## Baseline de segurança dos testes — Fase 01
+
+`test:db`, `test:rls` e `test:integration` validam URL explicitamente configurada em loopback (127.0.0.1, localhost ou ::1), sem credenciais na URL, caminhos extras, query ou fragmento, e exigem chaves locais. A guarda também executa antes de importar suítes de integração/RLS chamadas pelo Jest diretamente. Não existe bypass por variável para banco remoto. Um futuro ambiente remoto de testes precisará de contrato e isolamento explícitos antes de qualquer suporte no runner.
+
+A configuração CI usa o Supabase descartável do próprio runner, sem secrets remotos. A validação protege contra apontamento acidental; ainda é responsabilidade do operador usar chaves do projeto local correspondente e não tunelar o loopback para produção. A guarda não é isolamento de rede ou garantia contra suítes maliciosas.
