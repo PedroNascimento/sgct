@@ -30,7 +30,9 @@ export function QrCodeScanner({
   initialDirection = "ida",
 }: QrCodeScannerProps) {
   const [direction, setDirection] = useState<CheckInDirection>(initialDirection);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [lastPassenger, setLastPassenger] = useState<{
@@ -49,7 +51,6 @@ export function QrCodeScanner({
   const isProcessingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
