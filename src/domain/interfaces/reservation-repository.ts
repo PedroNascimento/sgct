@@ -65,4 +65,5 @@ export interface ReservationRepository {
     }>
   ): Promise<Reservation[]>;
   findPendingExpired(referenceDate: string, daysBeforeDeparture: number): Promise<Reservation[]>;
+  updateQrToken(id: string, qrToken: string, qrTokenExpiresAt: string): Promise<Reservation>;
 }
