@@ -17,9 +17,9 @@ import { z } from "zod";
 import type { ReservationRepository } from "@/domain/interfaces/reservation-repository";
 import type { CaravanRepository } from "@/domain/interfaces/caravan-repository";
 import type { Reservation, ReservationStatus } from "@/domain/types/reservation";
-import type { PositionChangeEvent } from "@/domain/events/position-change";
+import type { PositionChangeEvent, PositionChangeEventDispatcher } from "@/domain/events/position-change";
 
-export type { PositionChangeEvent };
+export type { PositionChangeEvent, PositionChangeEventDispatcher };
 
 export interface RecalculateCaravanRankingResult {
   confirmed: Reservation[];
@@ -30,6 +30,7 @@ export interface RecalculateCaravanRankingResult {
 export interface RecalculateCaravanRankingDependencies {
   reservationRepository: ReservationRepository;
   caravanRepository: CaravanRepository;
+  eventDispatcher?: PositionChangeEventDispatcher;
 }
 
 const caravanIdSchema = z.string().uuid("ID da caravana inválido.");
@@ -132,6 +133,13 @@ export async function recalculateCaravanRanking(
 
   // 5. Executa atualização em lote
   const updatedReservations = await reservationRepository.updateBatch(updates);
+
+  // 6. Despacha eventos de notificação para a fila (Spec 008 / T008.7)
+  if (deps.eventDispatcher && positionChangeEvents.length > 0) {
+    for (const event of positionChangeEvents) {
+      await deps.eventDispatcher.dispatch(event);
+    }
+  }
 
   const confirmed = updatedReservations.filter((r) => r.status === "confirmado");
   const waitlisted = updatedReservations.filter((r) => r.status === "lista_espera");

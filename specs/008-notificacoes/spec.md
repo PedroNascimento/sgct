@@ -1,6 +1,6 @@
 # Spec 008: Notificações por E-mail
 
-**Status:** Ready for Planning
+**Status:** Implemented
 **Constitution:** v2.0.0
 **Depende de:** 000, 004, 005, 006, 007
 

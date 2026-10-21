@@ -212,4 +212,44 @@ describe("recalculateCaravanRanking (T004.3)", () => {
     expect(result.waitlisted[0].funding_source).toBe("convidado_transferencia_interestaca");
     expect(result.waitlisted[0].confirmation_rank).toBe(51);
   });
+
+  it("invoca eventDispatcher quando fornecido e houver mudanças de posição (T008.7)", async () => {
+    // Reserva 1 passa de confirmado para lista de espera
+    const res1 = createMockReservation(1, "2026-10-05T08:00:00Z");
+    res1.status = "confirmado";
+
+    // Reserva 2 confirmou antes e vai tomar o assento
+    const res2 = createMockReservation(2, "2026-10-01T08:00:00Z");
+    res2.status = "lista_espera";
+
+    // Caravana com capacidade de 1 assento para forçar alternância
+    mockCaravanRepository.findById.mockResolvedValueOnce({
+      ...caravan,
+      seat_limit: 1,
+    });
+
+    const all = [res1, res2];
+    mockReservationRepository.findByCaravanAndStatuses.mockResolvedValueOnce(all);
+    mockReservationRepository.updateBatch.mockImplementationOnce(async (updates) =>
+      updates.map((u) => ({
+        ...all.find((r) => r.id === u.id)!,
+        status: u.status,
+        confirmation_rank: u.confirmation_rank ?? null,
+      }))
+    );
+
+    const mockDispatcher = {
+      dispatch: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const result = await recalculateCaravanRanking(CARAVAN_ID, {
+      reservationRepository: mockReservationRepository,
+      caravanRepository: mockCaravanRepository,
+      eventDispatcher: mockDispatcher,
+    });
+
+    expect(result.positionChangeEvents.length).toBeGreaterThan(0);
+    expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(result.positionChangeEvents.length);
+  });
 });
+
