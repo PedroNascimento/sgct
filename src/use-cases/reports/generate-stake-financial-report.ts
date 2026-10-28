@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { FinancialReportRepository } from "@/domain/interfaces/financial-report-repository";
 import { buildSimplePdf } from "./simple-pdf-builder";
+import { formatCsvRow } from "@/domain/utils/csv-sanitizer";
 
 export const GenerateStakeFinancialReportSchema = z.object({
   stakeId: z.string().uuid("stakeId deve ser um UUID válido"),
@@ -45,13 +46,25 @@ export async function generateStakeFinancialReport(
 
     for (const ward of data.byWard) {
       lines.push(
-        `${ward.wardName};${ward.totalConfirmed};${ward.totalPagoAla};${ward.totalPendente};${ward.totalCollected.toFixed(2)}`
+        formatCsvRow([
+          ward.wardName,
+          ward.totalConfirmed,
+          ward.totalPagoAla,
+          ward.totalPendente,
+          ward.totalCollected.toFixed(2),
+        ])
       );
     }
 
     lines.push("");
     lines.push(
-      `TOTAL GERAL;${data.totalConfirmed};${data.totalPagoAla};${data.totalPendente};${data.totalCollected.toFixed(2)}`
+      formatCsvRow([
+        "TOTAL GERAL",
+        data.totalConfirmed,
+        data.totalPagoAla,
+        data.totalPendente,
+        data.totalCollected.toFixed(2),
+      ])
     );
 
     return Buffer.from(lines.join("\n"), "utf-8");

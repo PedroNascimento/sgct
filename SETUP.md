@@ -39,6 +39,13 @@ supabase status
 # service_role key -> SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
+Para que os jobs agendados (`pg_cron`) locais consigam acionar a aplicação Next.js rodando no host:
+```sql
+-- No Studio local (http://localhost:54323 -> SQL Editor):
+ALTER DATABASE postgres SET app.settings.service_url = 'http://host.docker.internal:3000';
+ALTER DATABASE postgres SET app.settings.cron_secret = 'seu-cron-secret-local';
+```
+
 **Fluxo do dia a dia:**
 ```bash
 supabase migration new nome_da_migration   # cria um novo arquivo em supabase/migrations/
@@ -74,7 +81,15 @@ supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
    supabase functions deploy provision-user --no-verify-jwt
    ```
    A função faz sua própria validação de JWT nas operações administrativas e mantém públicas somente as operações de autocadastro.
-6. Habilite pg_cron em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md secao 6) foram criados pelas migrations.
+6. Habilite `pg_cron` e `pg_net` em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md seção 6) foram criados pelas migrations.
+   - **Configuração de Endpoint e Segredo dos Jobs (`M03`):**
+     Os jobs agendados (`pg_cron`) invocam os endpoints `/api/cron/*` da aplicação via requisições HTTP (`net.http_post`). O PostgreSQL precisa conhecer a URL base e o segredo compartilhado de autorização. Execute no SQL Editor do Supabase:
+     ```sql
+     -- Em Produção (Supabase remoto + Vercel):
+     ALTER DATABASE postgres SET app.settings.service_url = 'https://seu-dominio.vercel.app';
+     ALTER DATABASE postgres SET app.settings.cron_secret = 'seu-cron-secret-de-producao';
+     ```
+     *Importante:* O valor de `app.settings.cron_secret` deve ser idêntico à variável de ambiente `CRON_SECRET` configurada na Vercel (Seção 5 / Seção 7). Cada execução é autenticada pelo cabeçalho `Authorization: Bearer <CRON_SECRET>` e tem métricas gravadas na tabela de auditoria `cron_execution_logs`.
 7. Configure o Auth Hook custom_access_token_hook em Authentication -> Hooks (aponta para a funcao ja criada pela migration — ver docs/DATABASE_SCHEMA.md secao 8).
 8. Crie o bucket privado minor-forms em Storage (as migrations ja aplicam as policies; so o bucket em si precisa ser criado manualmente na primeira vez).
 

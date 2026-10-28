@@ -3,9 +3,10 @@ import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
 import { SupabaseNotificationQueueRepository } from "@/infrastructure/supabase/supabase-notification-queue-repository";
 import { ResendEmailGateway } from "@/infrastructure/email/resend-email-gateway";
 import { processNotificationQueue } from "@/use-cases/notifications/process-notification-queue";
+import { runCronWithLogging } from "@/infrastructure/logging/cron-logger";
 
 /**
- * Endpoint de cron: Processamento assíncrono da fila de notificações por e-mail (Spec 008 / T008.5).
+ * Endpoint de cron: Processamento assíncrono da fila de notificações por e-mail (Spec 008 / T008.5 / M03).
  *
  * Agendado para rodar a cada 5 minutos via pg_cron ou webhook de infraestrutura.
  * Autenticado estritamente via CRON_SECRET (Artigo V da Constituição).
@@ -19,14 +20,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const supabase = createSupabaseServiceClient();
-    const repository = new SupabaseNotificationQueueRepository(supabase);
-    const emailGateway = new ResendEmailGateway();
+    const result = await runCronWithLogging("process-notifications", async () => {
+      const supabase = createSupabaseServiceClient();
+      const repository = new SupabaseNotificationQueueRepository(supabase);
+      const emailGateway = new ResendEmailGateway();
 
-    const result = await processNotificationQueue(
-      { batchSize: 25 },
-      { repository, emailGateway }
-    );
+      const out = await processNotificationQueue(
+        { batchSize: 25 },
+        { repository, emailGateway }
+      );
+
+      return {
+        ...out,
+        recordsAffected: out.sent,
+        processedCount: out.processed,
+      };
+    });
 
     return NextResponse.json({
       success: true,

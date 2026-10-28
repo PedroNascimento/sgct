@@ -30,6 +30,10 @@ export interface NotificationQueueItem {
   lastAttemptAt?: string | null;
   sentAt?: string | null;
   errorMessage?: string | null;
+  priority?: number;
+  scheduledFor?: string | null;
+  leaseUntil?: string | null;
+  dedupKey?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -95,4 +95,35 @@ describe("generateWardFinancialReport (T009.1 / T009.3)", () => {
       )
     ).rejects.toThrow();
   });
+
+  it("neutraliza payload de fórmula maliciosa em dados de passageiro no CSV (M02)", async () => {
+    mockRepo.getWardFinancialData.mockResolvedValueOnce({
+      ...mockWardData,
+      rows: [
+        {
+          reservationId: "res-malicious",
+          caravanDepartureDate: "2026-11-20",
+          passengerName: "=cmd|' /C calc'!A0",
+          participantType: "+adulto",
+          category: "@standard",
+          paymentAmount: 130.0,
+          status: "-confirmado",
+        },
+      ],
+    });
+
+    const result = await generateWardFinancialReport(
+      {
+        wardId: "7b4ac10b-58cc-4372-a567-0e02b2c3d479",
+        format: "csv",
+      },
+      { repository: mockRepo }
+    );
+
+    const csvContent = result.toString("utf-8");
+    expect(csvContent).toContain("\"'=cmd|' /C calc'!A0\"");
+    expect(csvContent).toContain("\"'+adulto\"");
+    expect(csvContent).toContain("\"'@standard\"");
+    expect(csvContent).toContain("\"'-confirmado\"");
+  });
 });

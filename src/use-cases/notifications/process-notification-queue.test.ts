@@ -122,4 +122,89 @@ describe("processNotificationQueue (T008.5)", () => {
 
     expect(mockRepo.fetchPending).toHaveBeenCalledWith(5);
   });
+
+  it("utiliza claimPending atômico quando disponível no repositório (A11)", async () => {
+    mockRepo.claimPending = jest.fn().mockResolvedValueOnce([pendingItem]);
+
+    const result = await processNotificationQueue(
+      { batchSize: 10 },
+      { repository: mockRepo, emailGateway: mockGateway }
+    );
+
+    expect(mockRepo.claimPending).toHaveBeenCalledWith(10);
+    expect(result.sent).toBe(1);
+    expect(mockRepo.updateStatus).not.toHaveBeenCalledWith(pendingItem.id, "processing");
+  });
+
+  it("garante que dois workers concorrentes não processam o mesmo item (A11)", async () => {
+    const itemA = { ...pendingItem, id: "notif-a", recipientEmail: "a@exemplo.com" };
+    const itemB = { ...pendingItem, id: "notif-b", recipientEmail: "b@exemplo.com" };
+
+    // Simula claim atômico: Worker 1 recebe itemA, Worker 2 recebe itemB
+    const mockRepoWorker1: jest.Mocked<NotificationQueueRepository> = {
+      ...mockRepo,
+      claimPending: jest.fn().mockResolvedValueOnce([itemA]),
+      updateStatus: jest.fn().mockResolvedValue(undefined),
+    };
+    const mockRepoWorker2: jest.Mocked<NotificationQueueRepository> = {
+      ...mockRepo,
+      claimPending: jest.fn().mockResolvedValueOnce([itemB]),
+      updateStatus: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const [res1, res2] = await Promise.all([
+      processNotificationQueue({ batchSize: 10 }, { repository: mockRepoWorker1, emailGateway: mockGateway }),
+      processNotificationQueue({ batchSize: 10 }, { repository: mockRepoWorker2, emailGateway: mockGateway }),
+    ]);
+
+    expect(res1.sent).toBe(1);
+    expect(res2.sent).toBe(1);
+    expect(mockGateway.send).toHaveBeenCalledWith(expect.objectContaining({ to: "a@exemplo.com" }));
+    expect(mockGateway.send).toHaveBeenCalledWith(expect.objectContaining({ to: "b@exemplo.com" }));
+    expect(mockRepoWorker1.updateStatus).toHaveBeenCalledWith("notif-a", "sent", expect.anything());
+    expect(mockRepoWorker2.updateStatus).toHaveBeenCalledWith("notif-b", "sent", expect.anything());
+  });
+
+  it("calcula backoff exponencial com scheduledFor ao falhar envio (A11)", async () => {
+    mockGateway.send.mockRejectedValueOnce(new Error("Falha temporária de rede"));
+    mockRepo.claimPending = jest.fn().mockResolvedValueOnce([{ ...pendingItem, attempts: 1 }]);
+
+    const result = await processNotificationQueue(
+      { batchSize: 10 },
+      { repository: mockRepo, emailGateway: mockGateway }
+    );
+
+    expect(result.failed).toBe(1);
+    expect(mockRepo.updateStatus).toHaveBeenCalledWith(
+      "notif-1",
+      "pending",
+      expect.objectContaining({
+        attempts: 2,
+        scheduledFor: expect.any(String),
+        errorMessage: expect.stringContaining("Falha temporária de rede"),
+      })
+    );
+  });
+
+  it("respeita cota diária de e-mails da Estaca postergando o envio (A11)", async () => {
+    mockRepo.claimPending = jest.fn().mockResolvedValueOnce([pendingItem]);
+    mockRepo.checkDailyQuota = jest.fn().mockResolvedValueOnce(false); // cota estourada
+
+    const result = await processNotificationQueue(
+      { batchSize: 10 },
+      { repository: mockRepo, emailGateway: mockGateway }
+    );
+
+    expect(result.sent).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(mockGateway.send).not.toHaveBeenCalled();
+    expect(mockRepo.updateStatus).toHaveBeenCalledWith(
+      "notif-1",
+      "pending",
+      expect.objectContaining({
+        scheduledFor: expect.any(String),
+        errorMessage: expect.stringContaining("Cota diária"),
+      })
+    );
+  });
 });

@@ -104,6 +104,8 @@ export class GeneratePassengerManifest {
  * Utilitário para formatar a lista de passageiros em formato CSV compatível
  * com o padrão exigido por fiscalizações de transporte rodoviário e Excel no Brasil.
  */
+import { sanitizeCsvField } from "@/domain/utils/csv-sanitizer";
+
 export function formatManifestAsCsv(rows: ManifestRow[]): string {
   const headers = [
     "Poltrona",
@@ -120,11 +122,8 @@ export function formatManifestAsCsv(rows: ManifestRow[]): string {
   const lines = [headers.join(";")];
 
   for (const row of rows) {
-    const escapeCsv = (val: string | null | undefined) => {
-      if (!val) return "";
-      const cleaned = val.replace(/"/g, '""');
-      return `"${cleaned}"`;
-    };
+    const escapeCsv = (val: string | null | undefined) =>
+      val ? sanitizeCsvField(val, { alwaysQuote: true }) : "";
 
     const line = [
       row.seatLabel,

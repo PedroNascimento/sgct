@@ -3,9 +3,10 @@ import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
 import { SupabaseRetentionRepository } from "@/infrastructure/supabase/supabase-retention-repository";
 import { SupabaseAuditLogRepository } from "@/infrastructure/supabase/supabase-audit-log-repository";
 import { purgeExpiredMinorData } from "@/use-cases/retention/purge-expired-minor-data";
+import { runCronWithLogging } from "@/infrastructure/logging/cron-logger";
 
 /**
- * Endpoint de cron: Expurgo semanal de documentos e dados de menores vencidos (>90 dias) (Spec 009 / T009.6 / Artigo VI).
+ * Endpoint de cron: Expurgo semanal de documentos e dados de menores vencidos (>90 dias) (Spec 009 / T009.6 / Artigo VI / M03).
  *
  * Agendado para rodar semanalmente via pg_cron.
  * Autenticado estritamente via CRON_SECRET (Artigo V da Constituição).
@@ -19,14 +20,21 @@ export async function POST(request: Request) {
   }
 
   try {
-    const supabase = createSupabaseServiceClient();
-    const retentionRepository = new SupabaseRetentionRepository(supabase);
-    const auditLogPort = new SupabaseAuditLogRepository(supabase);
+    const result = await runCronWithLogging("purge-expired-minor-data", async () => {
+      const supabase = createSupabaseServiceClient();
+      const retentionRepository = new SupabaseRetentionRepository(supabase);
+      const auditLogPort = new SupabaseAuditLogRepository(supabase);
 
-    const result = await purgeExpiredMinorData(
-      {},
-      { retentionRepository, auditLogPort }
-    );
+      const out = await purgeExpiredMinorData(
+        {},
+        { retentionRepository, auditLogPort }
+      );
+
+      return {
+        ...out,
+        recordsAffected: out.purgedCount,
+      };
+    });
 
     return NextResponse.json({
       success: true,

@@ -278,7 +278,7 @@ O plano está organizado em **5 Fases Sequenciais**, respeitando as dependência
 | **Fase 1** | Bloqueios Críticos de Banco | C01, C02, A02, A05, A14 | Zero EXECUTE anônimo em RPCs privilegiadas; sem INSERT forjado de reservas; índice de assento ativo implementado; testes RLS 100% verdes. | ✅ **Concluído** |
 | **Fase 2** | Fechamento de Jornadas | A03, A04, A06, A07, A09, A10 | Upload de menor, convidado e QR Code funcionando com sessões comuns; permuta sem duplicatas; uso de crédito atômico. | ✅ **Concluído** |
 | **Fase 3** | Privacidade e LGPD | A01, A08, A12, A13, A15, A16, M01 | Super Admin sem listagem global de membros; calendário público sem menção a auxílio; offline particionado e seguro; retenção e auditoria blindadas. | ✅ **Concluído** |
-| **Fase 4** | Automação e Finanças | A11, M02, M03 | Outbox ativo com claim atômico; relatórios com status `presente` e convidados; jobs pg_cron documentados e monitorados. | ⏳ Pendente |
+| **Fase 4** | Automação e Finanças | A11, M02, M03 | Outbox ativo com claim atômico; relatórios com status `presente` e convidados; jobs pg_cron documentados e monitorados. | ✅ **Concluído** |
 | **Fase 5** | Hardening, CI e UX | M04, M05, M06, T014.15/16 | Headers HTTP ativos; workflow GitHub Actions criado; gates de 90% em use-cases; cartões mobile e alvos de 48px; relatório final saneado. | ⏳ Pendente |
 
 ---
