@@ -1,8 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { ReservationsChart } from "@/components/ui/reservations-chart";
+import dynamic from "next/dynamic";
 import { formatCurrency, formatDate } from "@/components/ui/format";
+
+const ReservationsChart = dynamic(
+  () => import("@/components/ui/reservations-chart").then((m) => m.ReservationsChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="sgct-card p-6 text-center text-sm text-[#53575b]">
+        Carregando panorama das reservas...
+      </div>
+    ),
+  }
+);
 import {
   confirmWardPaymentAction,
   approveAidAction,

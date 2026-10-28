@@ -9,8 +9,20 @@ import {
   editCaravanAction,
   type AdminActionState,
 } from "../../actions";
-import { ReservationsChart } from "@/components/ui/reservations-chart";
+import dynamic from "next/dynamic";
 import { formatCurrency, formatDate } from "@/components/ui/format";
+
+const ReservationsChart = dynamic(
+  () => import("@/components/ui/reservations-chart").then((m) => m.ReservationsChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="sgct-card p-6 text-center text-sm text-[#53575b]">
+        Carregando panorama das reservas...
+      </div>
+    ),
+  }
+);
 import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards, X } from "lucide-react";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";

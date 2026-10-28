@@ -3,8 +3,19 @@ import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseStakeRepository } from "@/infrastructure/supabase/supabase-stake-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
 import { resolveStakeFromSlug } from "@/use-cases/tenant/resolve-stake-from-slug";
-import { QrCodeScanner } from "@/components/checkin/qr-code-scanner";
+import nextDynamic from "next/dynamic";
 import { formatDate } from "@/components/ui/format";
+
+const QrCodeScanner = nextDynamic(
+  () => import("@/components/checkin/qr-code-scanner").then((mod) => mod.QrCodeScanner),
+  {
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+        <p className="text-sm text-gray-500">Carregando leitor de QR Code...</p>
+      </div>
+    ),
+  }
+);
 
 interface Props {
   params: Promise<{ estaca_slug: string }>;
@@ -71,8 +82,8 @@ export default async function CheckInPage({ params, searchParams }: Props) {
                 id="select-caravan"
                 defaultValue={selectedCaravan.id}
                 className="sgct-input max-w-md"
-                // eslint-disable-next-line @next/next/no-html-link-for-pages
                 onChange={(e) => {
+                  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                   window.location.href = `/${estaca_slug}/estaca/checkin?caravan_id=${e.target.value}`;
                 }}
               >

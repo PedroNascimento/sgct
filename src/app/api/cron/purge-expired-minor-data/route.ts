@@ -31,13 +31,13 @@ export async function POST(request: Request) {
       );
 
       return {
+        success: true,
         ...out,
-        recordsAffected: out.purgedCount,
+        recordsAffected: out.purgedFormsCount + out.purgedManifestCount,
       };
     });
 
     return NextResponse.json({
-      success: true,
       ...result,
     });
   } catch (err: unknown) {

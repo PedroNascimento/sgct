@@ -1371,7 +1371,7 @@ export async function evaluateMinorFormAction(
             recipientEmail: authUser.user.email,
             recipientName: memberProfile?.full_name ?? null,
             status: status as "approved" | "rejected",
-            reservationId: formRecord.reservation_id,
+            reservationId: formRecord?.reservation_id,
           });
         }
       }

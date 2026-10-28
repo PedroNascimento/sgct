@@ -91,55 +91,106 @@ export function NotificacoesMetricsClient({ metrics, estacaSlug }: Props) {
             Nenhuma notificação registrada para esta Estaca até o momento.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Data</th>
-                  <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Total Enfileirado</th>
-                  <th scope="col" className="px-6 py-3 font-semibold text-emerald-700">Enviados com Sucesso</th>
-                  <th scope="col" className="px-6 py-3 font-semibold text-rose-700">Falhas</th>
-                  <th scope="col" className="px-6 py-3 font-semibold text-amber-700">Pendentes</th>
-                  <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Taxa de Sucesso</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {metrics.map((row) => {
-                  const successRate = row.totalCount > 0
-                    ? Math.round((row.sentCount / row.totalCount) * 100)
-                    : 100;
+          <div>
+            {/* Visualização em Cartões no Mobile (Artigo X / M04 / T014.15) */}
+            <div className="grid grid-cols-1 gap-3 p-4 md:hidden">
+              {metrics.map((row) => {
+                const successRate = row.totalCount > 0
+                  ? Math.round((row.sentCount / row.totalCount) * 100)
+                  : 100;
 
-                  return (
-                    <tr key={row.sendDate} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                return (
+                  <div
+                    key={row.sendDate}
+                    className="rounded-2xl border border-gray-200 bg-white p-4 shadow-2xs space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-900 text-sm">
                         {row.sendDate}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-gray-500">
-                        {row.totalCount}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 font-semibold text-emerald-600">
-                        {row.sentCount}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-rose-600 font-medium">
-                        {row.failedCount}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-amber-600 font-medium">
-                        {row.pendingCount}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-gray-700">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          successRate >= 95 ? "bg-emerald-100 text-emerald-800" :
-                          successRate >= 80 ? "bg-amber-100 text-amber-800" :
-                          "bg-rose-100 text-rose-800"
-                        }`}>
-                          {successRate}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        successRate >= 95 ? "bg-emerald-100 text-emerald-800" :
+                        successRate >= 80 ? "bg-amber-100 text-amber-800" :
+                        "bg-rose-100 text-rose-800"
+                      }`}>
+                        {successRate}% sucesso
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-100">
+                      <div>
+                        <span className="text-gray-500 block">Total</span>
+                        <span className="font-bold text-gray-900 text-sm">{row.totalCount}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 block">Enviados</span>
+                        <span className="font-bold text-emerald-600 text-sm">{row.sentCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block">Falhas</span>
+                        <span className="font-medium text-rose-600">{row.failedCount}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 block">Pendentes</span>
+                        <span className="font-medium text-amber-600">{row.pendingCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Visualização em Tabela no Desktop */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Data</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Total Enfileirado</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-emerald-700">Enviados com Sucesso</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-rose-700">Falhas</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-amber-700">Pendentes</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-gray-900">Taxa de Sucesso</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {metrics.map((row) => {
+                    const successRate = row.totalCount > 0
+                      ? Math.round((row.sentCount / row.totalCount) * 100)
+                      : 100;
+
+                    return (
+                      <tr key={row.sendDate} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                          {row.sendDate}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-gray-500">
+                          {row.totalCount}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 font-semibold text-emerald-600">
+                          {row.sentCount}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-rose-600 font-medium">
+                          {row.failedCount}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-amber-600 font-medium">
+                          {row.pendingCount}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-gray-700">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            successRate >= 95 ? "bg-emerald-100 text-emerald-800" :
+                            successRate >= 80 ? "bg-amber-100 text-amber-800" :
+                            "bg-rose-100 text-rose-800"
+                          }`}>
+                            {successRate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

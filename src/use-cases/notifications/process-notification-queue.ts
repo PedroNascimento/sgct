@@ -10,6 +10,8 @@ import { renderEmailTemplate } from "./templates";
 
 export interface ProcessNotificationQueueInput {
   batchSize?: number;
+  dailyQuotaPerStake?: number;
+  maxRetries?: number;
 }
 
 export interface ProcessNotificationQueueResult {

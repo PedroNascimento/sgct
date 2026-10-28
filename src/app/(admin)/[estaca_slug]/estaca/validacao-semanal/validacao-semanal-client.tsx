@@ -206,28 +206,20 @@ export function ValidacaoSemanalClient({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
-                <thead className="bg-[#f7f8f8] text-[#3a3d40]">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-medium">Assento</th>
-                    <th className="px-6 py-3 text-left font-medium">Passageiro</th>
-                    <th className="px-6 py-3 text-left font-medium">Ala de Origem</th>
-                    <th className="px-6 py-3 text-left font-medium">Valor Repassado</th>
-                    <th className="px-6 py-3 text-right font-medium">Ações da Estaca</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e0e2e2] bg-white">
-                  {caravan.pagoAlaList.map((passenger) => (
-                    <tr key={passenger.id} className="hover:bg-brand-50/40">
-                      <td className="px-6 py-4">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-xs">
-                          {passenger.seat_number ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-[#212225]">{passenger.profiles?.full_name}</p>
-                        <div className="mt-0.5">
+            <div>
+              {/* Visualização em Cartões no Mobile (Artigo X / M04 / T014.15) */}
+              <div className="grid grid-cols-1 gap-3 p-4 md:hidden">
+                {caravan.pagoAlaList.map((passenger) => (
+                  <div
+                    key={passenger.id}
+                    className="rounded-2xl border border-[#e0e2e2] bg-white p-4 shadow-2xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-[#212225] text-base">
+                          {passenger.profiles?.full_name}
+                        </p>
+                        <div className="mt-1">
                           <MaskedCpf
                             cpf={passenger.profiles?.cpf}
                             isRevealed={revealedCpfIds.has(passenger.id)}
@@ -235,37 +227,109 @@ export function ValidacaoSemanalClient({
                             memberName={passenger.profiles?.full_name}
                           />
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-[#3a3d40]">
-                        {passenger.wards?.name}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-brand-900">
-                        {formatCurrency(Number(passenger.payment_amount))}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => handleConfirmSingle(passenger.id, passenger.profiles?.full_name)}
-                            className="inline-flex items-center rounded-lg bg-success-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-success-800 transition-colors shadow-2xs disabled:opacity-50"
-                          >
-                            ✓ Validar
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => handleReject(passenger.id, passenger.profiles?.full_name)}
-                            className="inline-flex items-center rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50"
-                          >
-                            ✕ Recusar p/ Ala
-                          </button>
-                        </div>
-                      </td>
+                      </div>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-xs shrink-0">
+                        {passenger.seat_number ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f0f2f2] text-xs">
+                      <div>
+                        <span className="text-gray-500 block">Ala</span>
+                        <span className="font-medium text-gray-800">{passenger.wards?.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 block">Valor</span>
+                        <span className="font-bold text-brand-900 text-sm">
+                          {formatCurrency(Number(passenger.payment_amount))}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleConfirmSingle(passenger.id, passenger.profiles?.full_name)}
+                        className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-success-700 px-3 py-2 text-xs font-bold text-white hover:bg-success-800 transition-colors shadow-2xs disabled:opacity-50"
+                      >
+                        ✓ Validar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleReject(passenger.id, passenger.profiles?.full_name)}
+                        className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50"
+                      >
+                        ✕ Recusar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Visualização em Tabela no Desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
+                  <thead className="bg-[#f7f8f8] text-[#3a3d40]">
+                    <tr>
+                      <th className="px-6 py-3 text-left font-medium">Assento</th>
+                      <th className="px-6 py-3 text-left font-medium">Passageiro</th>
+                      <th className="px-6 py-3 text-left font-medium">Ala de Origem</th>
+                      <th className="px-6 py-3 text-left font-medium">Valor Repassado</th>
+                      <th className="px-6 py-3 text-right font-medium">Ações da Estaca</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#e0e2e2] bg-white">
+                    {caravan.pagoAlaList.map((passenger) => (
+                      <tr key={passenger.id} className="hover:bg-brand-50/40">
+                        <td className="px-6 py-4">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-xs">
+                            {passenger.seat_number ?? "—"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-[#212225]">{passenger.profiles?.full_name}</p>
+                          <div className="mt-0.5">
+                            <MaskedCpf
+                              cpf={passenger.profiles?.cpf}
+                              isRevealed={revealedCpfIds.has(passenger.id)}
+                              onToggle={() => toggleCpfVisibility(passenger.id)}
+                              memberName={passenger.profiles?.full_name}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-[#3a3d40]">
+                          {passenger.wards?.name}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-brand-900">
+                          {formatCurrency(Number(passenger.payment_amount))}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleConfirmSingle(passenger.id, passenger.profiles?.full_name)}
+                              className="inline-flex min-h-[40px] items-center rounded-lg bg-success-700 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-success-800 transition-colors shadow-2xs disabled:opacity-50"
+                            >
+                              ✓ Validar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleReject(passenger.id, passenger.profiles?.full_name)}
+                              className="inline-flex min-h-[40px] items-center rounded-lg border border-danger-200 bg-danger-50 px-3.5 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50"
+                            >
+                              ✕ Recusar p/ Ala
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </section>

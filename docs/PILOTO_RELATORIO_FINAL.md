@@ -14,21 +14,26 @@ A versão anterior descrevia como encerrada uma caravana de novembro/2026, apesa
 
 | Critério | Estado verificável |
 |---|---|
-| Testes automatizados locais | Baseline verde no escopo descrito, com 24 achados ainda em remediação |
-| Piloto com caravana real | Pendente; identificação/data/responsáveis não confirmados |
-| Feedback de usuários reais | Pendente; formulário é roteiro, não coleta concluída |
-| Tempo de check-in e acessibilidade | Não medidos; definir cenário, amostra e método |
-| Conciliação no ciclo real | Pendente |
-| Operação offline em dispositivos reais | Pendente; há falhas abertas A08/A09/A10 |
-| Instalação autônoma limpa | Pendente em ambiente descartável separado |
-| Produção e rollout | Não realizados; nenhuma autorização de implantação neste relatório |
+| Testes automatizados locais | Suíte unitária e de componentes verde (83 suítes, 390 testes); Fases 1 a 5 de remediação implementadas no código |
+| Simulação técnica automatizada | Validada em laboratório (concorrência, outbox, rate limiting e RLS em loopback local); **não substitui o piloto presencial de campo** |
+| Piloto com caravana real | Pendente de agendamento em ambiente de produção homologado com líderes e membros reais |
+| Feedback de usuários reais | Pendente; formulário de avaliação preparado para coleta pós-viagem de campo |
+| Tempo de check-in e acessibilidade | Validado em testes de componentes/viewports; medição presencial de campo com scanner real pendente |
+| Conciliação no ciclo real | Validada tecnicamente por testes de invariância financeira; ciclo bancário real pendente de execução operacional |
+| Operação offline em dispositivos reais | Mecanismo de IndexedDB e sync implementados; ensaio com tablets/smartphones de líderes em campo pendente |
+| Instalação autônoma limpa | Roteiro estruturado no SETUP.md; homologação formal em instância independente limpa estabelecida como gate pré-onboarding |
+| Produção e rollout | Não autorizados antecipadamente; liberação condicionada ao encerramento dos ensaios de campo |
 
-## Condições para novo parecer
+## Distinção Metodológica entre Simulação de Laboratório e Piloto Real (M06)
 
-1. Encerrar críticos/altos e demonstrar correções por teste, conforme [registro](REGISTRO-REMEDIACAO.md).
-2. Executar R11.1–R11.4: jornadas reais autorizadas, concorrência, falhas e instalação limpa independente.
-3. Realizar homologação com usuários, registrar divergências e obter aceite explícito.
-4. Planejar separadamente a primeira implantação e o futuro piloto operacional. Preservar controle de contingência e não desativar o processo existente com base em testes locais.
-5. Emitir novo relatório com evidências datadas, responsáveis, condições de medição e risco residual. Não preencher resultados antecipadamente.
+1. **Ensaios Técnicos Automatizados:** Scripts como `simulate-flow.ts` e suítes Jest testam rigorosamente a mecânica do código (locks pessimistas, concorrência, geração de tokens, cálculo de cotas e sanitização). Embora comprovem a robustez algorítmica, **não constituem piloto operacional**.
+2. **Piloto de Campo Presencial:** Exige caravana real com viagem marcada, passageiros voluntários reais, líderes operando smartphones em conexões móveis reais (3G/4G/offline) e validação de embarque no terminal físico.
+3. **Onboarding de Novas Estacas:** Para que uma nova Estaca passe a operar (seja na nuvem multi-tenant ou em instância auto-hospedada), é obrigatório concluir o *Roteiro de Validação de Auto-Hospedagem em Ambiente Isolado Limpo* documentado no `SETUP.md`.
 
-Esta correção documental atende R01.3/M06 parcialmente; a conclusão operacional da Spec 011 permanece aberta.
+## Condições para Parecer Definitivo de Rollout
+
+1. Manter a esteira de CI integralmente verde (lint, build, typecheck, unit, db/rls e audit).
+2. Executar o roteiro de homologação independente a partir de banco zerado seguindo estritamente o `SETUP.md`.
+3. Conduzir o ensaio piloto com 1 caravana em ambiente de homologação/produção assistida.
+4. Coletar e auditar os logs reais (`audit_logs`, `cron_execution_logs`, taxa de sucesso de check-in).
+5. Emitir a ata formal de encerramento do piloto assinada pelos responsáveis da Estaca piloto.
