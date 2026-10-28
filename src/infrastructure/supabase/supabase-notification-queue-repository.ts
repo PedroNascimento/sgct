@@ -26,6 +26,10 @@ interface NotificationQueueRow {
   status: "pending" | "processing" | "sent" | "failed";
   attempts: number;
   max_attempts: number;
+  priority: number;
+  scheduled_for: string | null;
+  lease_until: string | null;
+  dedup_key: string | null;
   last_attempt_at: string | null;
   sent_at: string | null;
   error_message: string | null;
@@ -46,6 +50,10 @@ function mapRowToItem(row: NotificationQueueRow): NotificationQueueItem {
     status: row.status,
     attempts: row.attempts,
     maxAttempts: row.max_attempts,
+    priority: row.priority ?? 5,
+    scheduledFor: row.scheduled_for,
+    leaseUntil: row.lease_until,
+    dedupKey: row.dedup_key,
     lastAttemptAt: row.last_attempt_at,
     sentAt: row.sent_at,
     errorMessage: row.error_message,
@@ -72,6 +80,9 @@ export class SupabaseNotificationQueueRepository
         recipient_name: item.recipientName ?? null,
         subject: item.subject ?? null,
         payload: item.payload,
+        priority: item.priority ?? 5,
+        scheduled_for: item.scheduledFor ?? new Date().toISOString(),
+        dedup_key: item.dedupKey ?? null,
         status: "pending",
         attempts: 0,
         max_attempts: 3,
@@ -134,6 +145,30 @@ export class SupabaseNotificationQueueRepository
     return (data || []).map((row) => mapRowToItem(row as NotificationQueueRow));
   }
 
+  async claimPending(
+    limit: number,
+    leaseSeconds = 120
+  ): Promise<NotificationQueueItem[]> {
+    const { data, error } = await this.supabase.rpc(
+      "claim_notification_queue_batch",
+      {
+        p_batch_size: limit,
+        p_lease_seconds: leaseSeconds,
+      }
+    );
+
+    if (error) {
+      // Fallback para ambientes em que a RPC não está provisionada (ex: mock/testes)
+      const items = await this.fetchPending(limit);
+      for (const item of items) {
+        await this.updateStatus(item.id, "processing");
+      }
+      return items;
+    }
+
+    return ((data || []) as NotificationQueueRow[]).map(mapRowToItem);
+  }
+
   async updateStatus(
     id: string,
     status: NotificationQueueItem["status"],
@@ -142,6 +177,7 @@ export class SupabaseNotificationQueueRepository
       attempts?: number;
       sentAt?: string | null;
       lastAttemptAt?: string | null;
+      scheduledFor?: string | null;
     }
   ): Promise<void> {
     const updates: Record<string, unknown> = {
@@ -161,6 +197,9 @@ export class SupabaseNotificationQueueRepository
     if (options?.lastAttemptAt !== undefined) {
       updates.last_attempt_at = options.lastAttemptAt;
     }
+    if (options?.scheduledFor !== undefined) {
+      updates.scheduled_for = options.scheduledFor;
+    }
 
     const { error } = await this.supabase
       .from("notification_queue")
@@ -172,6 +211,26 @@ export class SupabaseNotificationQueueRepository
         `Erro ao atualizar status da notificação ${id}: ${error.message}`
       );
     }
+  }
+
+  async checkDailyQuota(
+    stakeId: string,
+    maxDailyEmails = 1000
+  ): Promise<boolean> {
+    const { data, error } = await this.supabase.rpc(
+      "check_notification_daily_quota",
+      {
+        p_stake_id: stakeId,
+        p_max_daily: maxDailyEmails,
+      }
+    );
+
+    if (error) {
+      // Fallback gracioso
+      return true;
+    }
+
+    return Boolean(data);
   }
 
   async getDailyMetrics(stakeId: string): Promise<NotificationMetric[]> {

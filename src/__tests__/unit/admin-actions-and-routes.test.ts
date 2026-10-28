@@ -33,6 +33,29 @@ import { redirect } from "next/navigation";
 
 jest.mock("@/infrastructure/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(),
+  createSupabaseServiceClient: jest.fn(() => ({
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { id: "notif-1" }, error: null }),
+      }),
+    }),
+    update: jest.fn().mockResolvedValue({ data: null, error: null }),
+    eq: jest.fn().mockReturnThis(),
+    gte: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: { stake_id: "test-stake" }, error: null }),
+    auth: {
+      admin: {
+        getUserById: jest.fn().mockResolvedValue({
+          data: { user: { email: "membro@exemplo.com" } },
+          error: null,
+        }),
+      },
+    },
+  })),
 }));
 
 jest.mock("@/use-cases/payment/confirm-ward-payment", () => ({
@@ -78,7 +101,15 @@ describe("Server Actions Administrativas e de Acesso", () => {
   const mockFrom = jest.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockFrom.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: { id: "user-1", full_name: "Pedro Silva", stake_id: "test-stake" }, error: null }),
+      maybeSingle: jest.fn().mockResolvedValue({ data: { id: "user-1", full_name: "Pedro Silva", stake_id: "test-stake" }, error: null }),
+      insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+      update: jest.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
     (createSupabaseServerClient as jest.Mock).mockResolvedValue({
       auth: {
         getUser: mockGetUser,
@@ -213,6 +244,8 @@ describe("Server Actions Administrativas e de Acesso", () => {
       });
       (confirmWardPayment as jest.Mock).mockResolvedValue({
         id: "reservation-123",
+        stake_id: "a0000000-0000-0000-0000-000000000001",
+        user_id: "b0000000-0000-0000-0000-000000000002",
         status: "pago_ala",
       });
 

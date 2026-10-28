@@ -65,7 +65,10 @@ export function verifyQrToken(
     const payload = JSON.parse(payloadStr) as CheckInTokenPayload;
 
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < nowSeconds) {
+    if (!payload.exp || typeof payload.exp !== "number") {
+      return { valid: false, payload, error: "Token de check-in sem data de expiração obrigatória" };
+    }
+    if (payload.exp < nowSeconds) {
       return { valid: false, payload, error: "Token de check-in expirado" };
     }
 

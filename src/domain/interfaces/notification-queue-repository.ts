@@ -17,6 +17,9 @@ export interface EnqueueNotificationInput {
   recipientName?: string | null;
   subject?: string | null;
   payload: Record<string, unknown>;
+  priority?: number;
+  scheduledFor?: string | null;
+  dedupKey?: string | null;
 }
 
 export interface NotificationQueueRepository {
@@ -28,6 +31,7 @@ export interface NotificationQueueRepository {
     windowMinutes?: number
   ): Promise<NotificationQueueItem | null>;
   fetchPending(limit: number): Promise<NotificationQueueItem[]>;
+  claimPending(limit: number, leaseSeconds?: number): Promise<NotificationQueueItem[]>;
   updateStatus(
     id: string,
     status: NotificationQueueItem["status"],
@@ -36,7 +40,9 @@ export interface NotificationQueueRepository {
       attempts?: number;
       sentAt?: string | null;
       lastAttemptAt?: string | null;
+      scheduledFor?: string | null;
     }
   ): Promise<void>;
+  checkDailyQuota(stakeId: string, maxDailyEmails?: number): Promise<boolean>;
   getDailyMetrics(stakeId: string): Promise<NotificationMetric[]>;
 }

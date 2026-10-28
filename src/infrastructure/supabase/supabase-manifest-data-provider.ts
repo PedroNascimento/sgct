@@ -18,6 +18,8 @@ export class SupabaseManifestDataProvider implements ManifestDataProvider {
         seat_number,
         participant_type,
         status,
+        transferred_to_name,
+        transferred_to_document,
         profiles (
           full_name,
           cpf,
@@ -41,11 +43,17 @@ export class SupabaseManifestDataProvider implements ManifestDataProvider {
       const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
       const ward = Array.isArray(row.wards) ? row.wards[0] : row.wards;
 
+      const hasTransferredHolder = Boolean(row.transferred_to_name);
+
       return {
         reservationId: row.id,
         seatNumber: row.seat_number,
-        passengerName: profile?.full_name || "Membro",
-        document: profile?.cpf || null,
+        passengerName: hasTransferredHolder
+          ? row.transferred_to_name
+          : profile?.full_name || "Membro",
+        document: hasTransferredHolder
+          ? row.transferred_to_document || profile?.cpf || null
+          : profile?.cpf || null,
         birthDate: profile?.birth_date || null,
         passengerType: row.participant_type,
         wardName: ward?.name || "Ala Não Identificada",

@@ -260,11 +260,11 @@ export async function getAdminsList(): Promise<AdminEstacaItem[]> {
     await assertSuperAdmin();
     const serviceClient = createSupabaseServiceClient();
 
-    // 1. Buscar profiles com role admin_estaca ou que possuam stake_id
+    // 1. Buscar profiles exclusivamente com role admin_estaca (Artigo II.f / A01)
     const { data: profiles, error: pError } = await serviceClient
       .from("profiles")
       .select("id, full_name, role, is_active, stake_id, created_at, stakes(id, name, slug)")
-      .in("role", ["admin_estaca", "member"])
+      .eq("role", "admin_estaca")
       .not("stake_id", "is", null)
       .order("created_at", { ascending: false });
 
@@ -326,7 +326,8 @@ export async function toggleAdminStatusAction(
     const { error: pError } = await serviceClient
       .from("profiles")
       .update({ is_active: validated.isActive })
-      .eq("id", validated.userId);
+      .eq("id", validated.userId)
+      .eq("role", "admin_estaca");
 
     if (pError) throw new Error(pError.message);
 

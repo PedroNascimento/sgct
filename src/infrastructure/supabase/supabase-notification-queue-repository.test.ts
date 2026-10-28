@@ -146,4 +146,78 @@ describe("SupabaseNotificationQueueRepository", () => {
       p_stake_id: "stake-1",
     });
   });
+
+  it("claimPending executa a RPC claim_notification_queue_batch com parâmetros corretos (A11)", async () => {
+    const rawRow = {
+      id: "claimed-1",
+      stake_id: "stake-1",
+      event_type: "RESERVATION_CONFIRMED_QR",
+      recipient_id: "user-1",
+      recipient_email: "teste@exemplo.com",
+      recipient_name: "Irmão Teste",
+      subject: "Assunto",
+      payload: {},
+      status: "processing",
+      attempts: 0,
+      max_attempts: 3,
+      priority: 1,
+      scheduled_for: "2026-10-21T10:00:00Z",
+      lease_until: "2026-10-21T10:02:00Z",
+      dedup_key: "key-1",
+      created_at: "2026-10-21T10:00:00Z",
+      updated_at: "2026-10-21T10:00:00Z",
+    };
+
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: [rawRow],
+      error: null,
+    });
+
+    const claimed = await repo.claimPending(15, 180);
+    expect(mockSupabase.rpc).toHaveBeenCalledWith("claim_notification_queue_batch", {
+      p_batch_size: 15,
+      p_lease_seconds: 180,
+    });
+    expect(claimed).toHaveLength(1);
+    expect(claimed[0].id).toBe("claimed-1");
+    expect(claimed[0].priority).toBe(1);
+    expect(claimed[0].dedupKey).toBe("key-1");
+  });
+
+  it("checkDailyQuota chama RPC check_notification_daily_quota (A11)", async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: true,
+      error: null,
+    });
+
+    const hasQuota = await repo.checkDailyQuota("stake-1", 500);
+    expect(mockSupabase.rpc).toHaveBeenCalledWith("check_notification_daily_quota", {
+      p_stake_id: "stake-1",
+      p_max_daily: 500,
+    });
+    expect(hasQuota).toBe(true);
+  });
+
+  it("updateStatus atualiza status, tentativas, errorMessage e scheduled_for (A11)", async () => {
+    const mockEq = jest.fn().mockResolvedValueOnce({ error: null });
+    const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ update: mockUpdate });
+
+    await repo.updateStatus("notif-1", "pending", {
+      attempts: 2,
+      errorMessage: "Erro de timeout",
+      scheduledFor: "2026-10-21T12:00:00Z",
+    });
+
+    expect(mockSupabase.from).toHaveBeenCalledWith("notification_queue");
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "pending",
+        attempts: 2,
+        error_message: "Erro de timeout",
+        scheduled_for: "2026-10-21T12:00:00Z",
+      })
+    );
+    expect(mockEq).toHaveBeenCalledWith("id", "notif-1");
+  });
 });

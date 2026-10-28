@@ -39,6 +39,13 @@ supabase status
 # service_role key -> SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
+Para que os jobs agendados (`pg_cron`) locais consigam acionar a aplicação Next.js rodando no host:
+```sql
+-- No Studio local (http://localhost:54323 -> SQL Editor):
+ALTER DATABASE postgres SET app.settings.service_url = 'http://host.docker.internal:3000';
+ALTER DATABASE postgres SET app.settings.cron_secret = 'seu-cron-secret-local';
+```
+
 **Fluxo do dia a dia:**
 ```bash
 supabase migration new nome_da_migration   # cria um novo arquivo em supabase/migrations/
@@ -74,7 +81,15 @@ supabase stop   # derruba o ambiente local quando não estiver desenvolvendo
    supabase functions deploy provision-user --no-verify-jwt
    ```
    A função faz sua própria validação de JWT nas operações administrativas e mantém públicas somente as operações de autocadastro.
-6. Habilite pg_cron em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md secao 6) foram criados pelas migrations.
+6. Habilite `pg_cron` e `pg_net` em Database -> Extensions e confirme que os jobs agendados (docs/ARCHITECTURE.md seção 6) foram criados pelas migrations.
+   - **Configuração de Endpoint e Segredo dos Jobs (`M03`):**
+     Os jobs agendados (`pg_cron`) invocam os endpoints `/api/cron/*` da aplicação via requisições HTTP (`net.http_post`). O PostgreSQL precisa conhecer a URL base e o segredo compartilhado de autorização. Execute no SQL Editor do Supabase:
+     ```sql
+     -- Em Produção (Supabase remoto + Vercel):
+     ALTER DATABASE postgres SET app.settings.service_url = 'https://seu-dominio.vercel.app';
+     ALTER DATABASE postgres SET app.settings.cron_secret = 'seu-cron-secret-de-producao';
+     ```
+     *Importante:* O valor de `app.settings.cron_secret` deve ser idêntico à variável de ambiente `CRON_SECRET` configurada na Vercel (Seção 5 / Seção 7). Cada execução é autenticada pelo cabeçalho `Authorization: Bearer <CRON_SECRET>` e tem métricas gravadas na tabela de auditoria `cron_execution_logs`.
 7. Configure o Auth Hook custom_access_token_hook em Authentication -> Hooks (aponta para a funcao ja criada pela migration — ver docs/DATABASE_SCHEMA.md secao 8).
 8. Crie o bucket privado minor-forms em Storage (as migrations ja aplicam as policies; so o bucket em si precisa ser criado manualmente na primeira vez).
 
@@ -132,6 +147,47 @@ supabase db push
 ```
 Nenhuma configuracao especifica da sua Estaca (nome, valores, e-mails) e perdida — tudo vive em variaveis de ambiente ou no banco (stakes, caravans), nunca em codigo (Artigo IX da constituicao).
 
-## Baseline e instalação de testes
+## 10. Roteiro de Validação de Auto-Hospedagem em Ambiente Isolado Limpo (Gate Pré-Onboarding — M06)
 
-Use `npm ci` para reproduzir o lockfile; configure somente URL/chaves do Supabase local e execute `npm run test:guard`, `npm run test:unit` e `npm run test:db`. O runner recusa destinos remotos. Conferir `.github/workflows/ci.yml` para banco descartável de CI, sem secrets remotos. Jobs exigem URL alcançável pelo banco/container e segredo configurados; existência em cron.job não comprova execução. Configuração/monitoramento completos ficam na Fase 07. A segunda instalação independente e o primeiro deploy continuam pendentes.
+Antes de colocar qualquer instância em produção para atender uma nova Estaca, os mantenedores locais devem executar este roteiro formal em um projeto Supabase zerado e isolado, certificando a conformidade:
+
+1. **Instância Limpa e Isolada:**
+   - Criar um novo projeto Supabase independente (ou subir um container local zerado).
+   - Nunca reaproveitar bancos ou esquemas com dados de testes legados.
+2. **Aplicação do Esquema Versionado:**
+   ```bash
+   supabase db push
+   ```
+   - Confirmar que todas as migrações foram aplicadas sem warnings ou skips.
+3. **Parametrização Obrigatória de Cron e Observabilidade:**
+   - No SQL Editor do Supabase, definir a URL do serviço e o segredo:
+     ```sql
+     ALTER DATABASE postgres SET app.settings.service_url = 'https://seu-dominio.vercel.app';
+     ALTER DATABASE postgres SET app.settings.cron_secret = 'seu-cron-secret-de-producao';
+     ```
+4. **Deploy da Edge Function de Provisionamento:**
+   ```bash
+   supabase functions deploy provision-user --no-verify-jwt
+   ```
+5. **Configuração de Storage e Hooks:**
+   - Confirmar criação do bucket privado `minor-forms`.
+   - Confirmar apontamento do Auth Hook `custom_access_token_hook`.
+6. **Bootstrap e Hierarquia de Promoções (Constituição v4.0.0 / D32):**
+   ```bash
+   npm run seed:super-admin -- --email="superadmin@sua-estaca.org" --senha="senha-segura"
+   ```
+   - Logar em `/super-admin/login`.
+   - Criar a Estaca.
+   - Solicitar que o futuro Admin Estaca cadastre sua própria conta como membro em `/[slug]/auth/cadastro`.
+   - Em `/admins`, realizar o lookup mínimo e promover a `admin_estaca`.
+   - Como Admin Estaca, criar as Alas e promover membros existentes a `admin_ala`.
+7. **Jornada Operacional de Fumaça (Smoke Test):**
+   - Criar 1 caravana piloto.
+   - Criar 1 reserva via sessão comum de membro.
+   - Validar repasse de Ala e confirmação da Estaca.
+   - Emitir QR Code e testar leitura no leitor offline.
+8. **Sanity Check Final de RLS:**
+   ```bash
+   npm run test:rls
+   ```
+   - Apenas após 100% de aprovação neste sanity check a instância está liberada para receber cadastros oficiais da congregação.

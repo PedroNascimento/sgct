@@ -31,6 +31,8 @@ import { requestSeatSwap } from "@/use-cases/swap/request-seat-swap";
 import { approveSeatSwap } from "@/use-cases/swap/approve-seat-swap";
 import { SupabaseSwapRepository } from "@/infrastructure/supabase/supabase-swap-repository";
 import { SupabaseCreditRepository } from "@/infrastructure/supabase/supabase-credit-repository";
+import { SupabaseNotificationQueueRepository } from "@/infrastructure/supabase/supabase-notification-queue-repository";
+import { NotificationEventDispatcher } from "@/infrastructure/notifications/notification-event-dispatcher";
 import type { CaravanStatus } from "@/domain/types/caravan";
 import type { WardWithStats } from "@/domain/types/ward";
 import { formatDate } from "@/components/ui/format";
@@ -372,6 +374,31 @@ export async function confirmWardPaymentAction(
       { reservationRepository: reservationRepo, profileRepository: profileRepo }
     );
 
+    // Despacho de notificação transacional ao membro (A11)
+    try {
+      const serviceClient = createSupabaseServiceClient();
+      const queueRepo = new SupabaseNotificationQueueRepository(serviceClient);
+      const dispatcher = new NotificationEventDispatcher({
+        queueRepository: queueRepo,
+        profileRepository: profileRepo,
+      });
+
+      const { data: memberAuth } = await serviceClient.auth.admin.getUserById(updated.user_id);
+      const memberProfile = await profileRepo.findById(updated.user_id);
+
+      if (memberAuth?.user?.email) {
+        await dispatcher.notifyPaymentConfirmedWard({
+          stakeId: updated.stake_id,
+          recipientId: updated.user_id,
+          recipientEmail: memberAuth.user.email,
+          recipientName: memberProfile?.full_name ?? null,
+          reservationId: updated.id,
+        });
+      }
+    } catch (notifErr) {
+      console.warn("[confirmWardPaymentAction] Falha ao enfileirar notificação:", notifErr);
+    }
+
     revalidatePath("/[estaca_slug]/ala/reservas");
     return {
       success: true,
@@ -417,6 +444,28 @@ export async function validateWeeklyTransfersAction(
         success: false,
         message: result.reason,
       };
+    }
+
+    // Despacho dos eventos de recálculo/promoção/confirmação para a fila (A11)
+    if (result.positionChangeEvents && result.positionChangeEvents.length > 0) {
+      try {
+        const serviceClient = createSupabaseServiceClient();
+        const queueRepo = new SupabaseNotificationQueueRepository(serviceClient);
+        const dispatcher = new NotificationEventDispatcher({
+          queueRepository: queueRepo,
+          profileRepository: profileRepo,
+          findUserEmail: async (userId: string) => {
+            const { data: authUser } = await serviceClient.auth.admin.getUserById(userId);
+            return authUser?.user?.email ?? null;
+          },
+        });
+
+        for (const event of result.positionChangeEvents) {
+          await dispatcher.dispatch(event);
+        }
+      } catch (notifErr) {
+        console.warn("[validateWeeklyTransfersAction] Falha ao despachar eventos:", notifErr);
+      }
     }
 
     revalidatePath("/[estaca_slug]/estaca/validacao-semanal");
@@ -543,7 +592,7 @@ export async function confirmSingleTransferAction(
     // Buscar reserva e validar Estaca
     const { data: reservation } = await supabase
       .from("reservations")
-      .select("id, stake_id, status")
+      .select("id, stake_id, status, user_id, caravan_id")
       .eq("id", reservationId)
       .single();
 
@@ -565,6 +614,37 @@ export async function confirmSingleTransferAction(
 
     if (updateError) {
       throw new Error(updateError.message);
+    }
+
+    // Despacho de notificação de confirmação e QR Code (A11)
+    if (reservation.user_id) {
+      try {
+        const serviceClient = createSupabaseServiceClient();
+        const queueRepo = new SupabaseNotificationQueueRepository(serviceClient);
+        const profileRepo = new SupabaseProfileRepository(serviceClient);
+        const { data: memberAuth } = await serviceClient.auth.admin.getUserById(reservation.user_id);
+        const memberProfile = await profileRepo.findById(reservation.user_id);
+
+        if (memberAuth?.user?.email) {
+          const { enqueueNotification } = await import("@/use-cases/notifications/enqueue-notification");
+          await enqueueNotification(
+            {
+              stakeId: reservation.stake_id,
+              eventType: "RESERVATION_CONFIRMED_QR",
+              recipientId: reservation.user_id,
+              recipientEmail: memberAuth.user.email,
+              recipientName: memberProfile?.full_name ?? null,
+              payload: {
+                reservationId: reservation.id,
+                caravanId: reservation.caravan_id,
+              },
+            },
+            { repository: queueRepo }
+          );
+        }
+      } catch (notifErr) {
+        console.warn("[confirmSingleTransferAction] Falha ao enfileirar notificação:", notifErr);
+      }
     }
 
     revalidatePath("/[estaca_slug]/estaca/validacao-semanal");
@@ -1247,7 +1327,8 @@ export async function evaluateMinorFormAction(
 
     const minorRepo = new SupabaseMinorRepository(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
-    const auditLogPort = new SupabaseAuditLogPort(supabase);
+    const serviceClient = createSupabaseServiceClient();
+    const auditLogPort = new SupabaseAuditLogPort(serviceClient);
 
     await approveMinorForm(
       {
@@ -1261,6 +1342,42 @@ export async function evaluateMinorFormAction(
         auditLogPort,
       }
     );
+
+    // Despacho de notificação de decisão de menor (A11)
+    try {
+      const { data: formRecord } = await serviceClient
+        .from("minor_approval_forms")
+        .select("id, reservation_id, reservations(user_id, stake_id)")
+        .eq("id", formId)
+        .single();
+
+      const memberUserId = (formRecord?.reservations as any)?.user_id;
+      const stakeId = (formRecord?.reservations as any)?.stake_id;
+
+      if (memberUserId && stakeId) {
+        const { data: authUser } = await serviceClient.auth.admin.getUserById(memberUserId);
+        const memberProfile = await profileRepo.findById(memberUserId);
+
+        if (authUser?.user?.email) {
+          const queueRepo = new SupabaseNotificationQueueRepository(serviceClient);
+          const dispatcher = new NotificationEventDispatcher({
+            queueRepository: queueRepo,
+            profileRepository: profileRepo,
+          });
+
+          await dispatcher.notifyMinorDecision({
+            stakeId,
+            recipientId: memberUserId,
+            recipientEmail: authUser.user.email,
+            recipientName: memberProfile?.full_name ?? null,
+            status: status as "approved" | "rejected",
+            reservationId: formRecord?.reservation_id,
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.warn("[evaluateMinorFormAction] Falha ao despachar notificação:", notifErr);
+    }
 
     revalidatePath(`/${estacaSlug}/ala/menores`);
     revalidatePath(`/${estacaSlug}/ala/reservas`);
@@ -1303,7 +1420,8 @@ export async function getMinorDocumentViewUrlAction(
     const minorRepo = new SupabaseMinorRepository(supabase);
     const storagePort = new SupabaseStoragePort(supabase);
     const profileRepo = new SupabaseProfileRepository(supabase);
-    const auditLogPort = new SupabaseAuditLogPort(supabase);
+    const serviceClient = createSupabaseServiceClient();
+    const auditLogPort = new SupabaseAuditLogPort(serviceClient);
 
     const result = await getMinorDocumentUrl(
       {

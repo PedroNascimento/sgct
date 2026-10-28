@@ -3,10 +3,12 @@ import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
 import { SupabaseCheckInRepository } from "@/infrastructure/supabase/supabase-checkin-repository";
 import { MarkNoShows } from "@/use-cases/checkin/mark-no-shows";
+import { runCronWithLogging } from "@/infrastructure/logging/cron-logger";
 
 /**
- * Endpoint de cron / automação: Marcação de No-Shows pós-embarque (T007.7 / US-007.3)
+ * Endpoint de cron / automação: Marcação de No-Shows pós-embarque (T007.7 / US-007.3 / M03).
  *
+ * Suporta execução pontual com caravan_id ou varredura de todas as caravanas cujo embarque ocorreu.
  * Autenticado estritamente via CRON_SECRET (Artigo V da Constituição).
  */
 export async function POST(request: Request) {
@@ -19,24 +21,53 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const caravanId = body.caravan_id;
+    const targetCaravanId = body.caravan_id;
 
-    if (!caravanId) {
-      return NextResponse.json(
-        { error: "caravan_id é obrigatório para execução do job pós-embarque." },
-        { status: 400 }
-      );
-    }
+    const result = await runCronWithLogging("mark-no-shows", async () => {
+      const supabase = createSupabaseServiceClient();
+      const reservationRepo = new SupabaseReservationRepository(supabase);
+      const checkInRepo = new SupabaseCheckInRepository(supabase);
+      const markNoShows = new MarkNoShows(reservationRepo, checkInRepo);
 
-    const supabase = createSupabaseServiceClient();
-    const reservationRepo = new SupabaseReservationRepository(supabase);
-    const checkInRepo = new SupabaseCheckInRepository(supabase);
+      let caravanIdsToProcess: string[] = [];
 
-    const markNoShows = new MarkNoShows(reservationRepo, checkInRepo);
-    const result = await markNoShows.execute({ caravanId });
+      if (targetCaravanId) {
+        caravanIdsToProcess = [targetCaravanId];
+      } else {
+        // Varredura autônoma: caravanas cujo embarque ocorreu e que ainda possuem confirmações
+        const nowIso = new Date().toISOString();
+        const { data: departedCaravans, error } = await supabase
+          .from("caravans")
+          .select("id")
+          .lte("departure_date", nowIso.split("T")[0])
+          .in("status", ["confirmada", "em_andamento", "em_transito", "encerrada"]);
+
+        if (error) {
+          throw new Error(`Erro ao buscar caravanas para no-show: ${error.message}`);
+        }
+
+        caravanIdsToProcess = (departedCaravans || []).map((c) => c.id);
+      }
+
+      let totalMarked = 0;
+      const details: Array<{ caravanId: string; markedCount: number }> = [];
+
+      for (const caravanId of caravanIdsToProcess) {
+        const out = await markNoShows.execute({ caravanId });
+        totalMarked += out.markedCount;
+        details.push({ caravanId, markedCount: out.markedCount });
+      }
+
+      return {
+        success: true,
+        markedCount: totalMarked,
+        recordsAffected: totalMarked,
+        processedCount: caravanIdsToProcess.length,
+        details,
+      };
+    });
 
     return NextResponse.json({
-      success: true,
       ...result,
     });
   } catch (err: unknown) {

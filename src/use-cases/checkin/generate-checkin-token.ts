@@ -58,8 +58,13 @@ export async function generateCheckInToken(
   const tokenSecret =
     secret ||
     process.env.QR_TOKEN_SECRET ||
-    process.env.SUPABASE_JWT_SECRET ||
-    "sgct-qr-token-secret-fallback-key-32chars";
+    process.env.SUPABASE_JWT_SECRET;
+
+  if (!tokenSecret) {
+    throw new Error(
+      "Configuração de segurança ausente: QR_TOKEN_SECRET ou SUPABASE_JWT_SECRET não definidos."
+    );
+  }
 
   const payload: CheckInTokenPayload = {
     reservationId: reservation.id,

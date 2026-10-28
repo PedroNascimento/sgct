@@ -225,6 +225,7 @@ describe("applyCredit (US-005.3)", () => {
     expect(result.reservation.payment_amount).toBe(80);
     expect(mockReservationRepository.updateStatus).toHaveBeenCalledWith(RESERVATION_ID, {
       status: "pendente",
+      payment_amount: 80,
     });
   });
 

@@ -358,10 +358,8 @@ describe("Spec 011 / T011.2 — Ciclo de Vida da Caravana Piloto", () => {
     const manifestProvider = new SupabaseManifestDataProvider(svc);
     const manifestGenerator = new GeneratePassengerManifest(manifestProvider);
     const manifestRows = await manifestGenerator.execute(caravanId);
-
-    expect(manifestRows.length).toBe(3);
-    expect(manifestRows.some((r) => r.seatNumber === 12)).toBe(true);
+    expect(manifestRows.length).toBe(2);
+    expect(manifestRows.some((r) => r.seatNumber === 12 && r.passengerName === "Passageiro Adulto B")).toBe(true);
     expect(manifestRows.some((r) => r.seatNumber === 14)).toBe(true);
-    expect(manifestRows.some((r) => r.passengerName === "Passageiro Adulto B")).toBe(true);
   });
 });

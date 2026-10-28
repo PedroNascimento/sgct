@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { SupabaseCheckInRepository } from "@/infrastructure/supabase/supabase-checkin-repository";
 import { SupabaseReservationRepository } from "@/infrastructure/supabase/supabase-reservation-repository";
+import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
+import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { validateCheckIn } from "@/use-cases/checkin/validate-checkin";
 import {
   syncOfflineCheckIns,
@@ -21,7 +23,8 @@ const validateCheckInInputSchema = z.object({
 const offlineItemSchema = z.object({
   token: z.string().min(1, "Token é obrigatório"),
   direction: z.enum(["ida", "volta"]),
-  offlineCheckedInAt: z.string(),
+  checkedInAt: z.string().optional(),
+  offlineCheckedInAt: z.string().optional(),
 });
 
 const grantCreditInputSchema = z.object({
@@ -64,6 +67,8 @@ export async function validateCheckInAction(
 
     const checkInRepository = new SupabaseCheckInRepository(supabase);
     const reservationRepository = new SupabaseReservationRepository(supabase);
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
 
     const checkIn = await validateCheckIn(
       {
@@ -74,6 +79,8 @@ export async function validateCheckInAction(
       {
         checkInRepository,
         reservationRepository,
+        caravanRepository,
+        profileRepository,
       }
     );
 
@@ -88,7 +95,7 @@ export async function validateCheckInAction(
 
 export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
   try {
-    z.array(offlineItemSchema).parse(items);
+    const validatedItems = z.array(offlineItemSchema).parse(items);
 
     const supabase = await createSupabaseServerClient();
     const {
@@ -103,10 +110,12 @@ export async function syncOfflineCheckInsAction(items: OfflineCheckInItem[]) {
     const checkInRepository = new SupabaseCheckInRepository(supabase);
     const reservationRepository = new SupabaseReservationRepository(supabase);
 
-    // Garante que o checkedInBy dos itens seja o usuário autenticado
-    const enrichedItems = items.map((item) => ({
-      ...item,
+    // Garante que o checkedInBy dos itens seja o usuário autenticado e unifica o timestamp (A08)
+    const enrichedItems: OfflineCheckInItem[] = validatedItems.map((item) => ({
+      token: item.token,
+      direction: item.direction,
       checkedInBy: user.id,
+      checkedInAt: item.checkedInAt || item.offlineCheckedInAt || new Date().toISOString(),
     }));
 
     const result = await syncOfflineCheckIns(enrichedItems, {
@@ -167,6 +176,26 @@ export async function markNoShowsAction(caravanId: string) {
 
     if (authError || !user) {
       return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+    const caravan = await caravanRepository.findById(caravanId);
+    if (!caravan) {
+      return { success: false, error: "Caravana não encontrada." };
+    }
+    const profile = await profileRepository.findById(user.id);
+    const isLeader = caravan.caravan_leader_id === user.id;
+    const isStakeAdmin =
+      profile?.role === "admin_estaca" &&
+      profile.stake_id === caravan.stake_id &&
+      profile.is_active;
+
+    if (!isLeader && !isStakeAdmin) {
+      return {
+        success: false,
+        error: "Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem marcar no-shows.",
+      };
     }
 
     const checkInRepository = new SupabaseCheckInRepository(supabase);
@@ -256,6 +285,26 @@ export async function getPassengerManifestAction(caravanId: string) {
 
     if (authError || !user) {
       return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const caravanRepository = new SupabaseCaravanRepository(supabase);
+    const profileRepository = new SupabaseProfileRepository(supabase);
+    const caravan = await caravanRepository.findById(caravanId);
+    if (!caravan) {
+      return { success: false, error: "Caravana não encontrada." };
+    }
+    const profile = await profileRepository.findById(user.id);
+    const isLeader = caravan.caravan_leader_id === user.id;
+    const isStakeAdmin =
+      profile?.role === "admin_estaca" &&
+      profile.stake_id === caravan.stake_id &&
+      profile.is_active;
+
+    if (!isLeader && !isStakeAdmin) {
+      return {
+        success: false,
+        error: "Não autorizado: apenas o Líder da Caravana ou Admin da Estaca podem acessar o manifesto.",
+      };
     }
 
     const { SupabaseManifestDataProvider } = await import(

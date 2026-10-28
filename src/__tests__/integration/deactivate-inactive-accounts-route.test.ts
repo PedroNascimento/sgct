@@ -45,6 +45,6 @@ describe("POST /api/cron/deactivate-inactive-accounts", () => {
     }));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ success: true, deactivatedCount: 3 });
+    await expect(response.json()).resolves.toMatchObject({ success: true, deactivatedCount: 3 });
   });
 });

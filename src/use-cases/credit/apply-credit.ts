@@ -84,13 +84,11 @@ export async function applyCredit(
 
   const updatedReservation = await reservationRepository.updateStatus(reservation.id, {
     status: newStatus,
+    payment_amount: newAmount,
   });
 
   return {
     credit: updatedCredit,
-    reservation: {
-      ...updatedReservation,
-      payment_amount: newAmount,
-    },
+    reservation: updatedReservation,
   };
 }

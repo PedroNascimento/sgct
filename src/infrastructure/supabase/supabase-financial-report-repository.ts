@@ -81,7 +81,7 @@ export class SupabaseFinancialReportRepository
     let totalCollected = 0;
 
     for (const r of rows) {
-      if (r.status === "confirmado") {
+      if (r.status === "confirmado" || r.status === "presente") {
         totalConfirmed++;
         totalCollected += r.paymentAmount;
       } else if (r.status === "pago_ala") {
@@ -153,6 +153,7 @@ export class SupabaseFinancialReportRepository
     }
 
     const allRes = reservations || [];
+    const wardIdSet = new Set((wards || []).map((w: any) => w.id));
 
     const byWard = (wards || []).map((w: any) => {
       const wardReservations = allRes.filter((r: any) => r.ward_id === w.id);
@@ -163,7 +164,7 @@ export class SupabaseFinancialReportRepository
 
       for (const r of wardReservations) {
         const val = Number(r.payment_amount || 0);
-        if (r.status === "confirmado") {
+        if (r.status === "confirmado" || r.status === "presente") {
           totalConfirmed++;
           totalCollected += val;
         } else if (r.status === "pago_ala") {
@@ -183,6 +184,40 @@ export class SupabaseFinancialReportRepository
         totalCollected,
       };
     });
+
+    // 4. Reconciliação dos Convidados Inter-Estaca da Estaca anfitriã (M02 / Artigo II.d)
+    const guestReservations = allRes.filter(
+      (r: any) => !r.ward_id || !wardIdSet.has(r.ward_id)
+    );
+
+    if (guestReservations.length > 0) {
+      let guestConfirmed = 0;
+      let guestPagoAla = 0;
+      let guestPendente = 0;
+      let guestCollected = 0;
+
+      for (const r of guestReservations) {
+        const val = Number(r.payment_amount || 0);
+        if (r.status === "confirmado" || r.status === "presente") {
+          guestConfirmed++;
+          guestCollected += val;
+        } else if (r.status === "pago_ala") {
+          guestPagoAla++;
+          guestCollected += val;
+        } else if (r.status === "pendente") {
+          guestPendente++;
+        }
+      }
+
+      byWard.push({
+        wardId: "convidados",
+        wardName: "Convidados Inter-Estaca",
+        totalConfirmed: guestConfirmed,
+        totalPagoAla: guestPagoAla,
+        totalPendente: guestPendente,
+        totalCollected: guestCollected,
+      });
+    }
 
     const totalConfirmed = byWard.reduce(
       (acc: number, w: any) => acc + w.totalConfirmed,

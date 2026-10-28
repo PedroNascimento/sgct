@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { FinancialReportRepository } from "@/domain/interfaces/financial-report-repository";
 import { buildSimplePdf } from "./simple-pdf-builder";
+import { formatCsvRow } from "@/domain/utils/csv-sanitizer";
 
 export const GenerateWardFinancialReportSchema = z.object({
   wardId: z.string().uuid("wardId deve ser um UUID válido"),
@@ -46,7 +47,14 @@ export async function generateWardFinancialReport(
 
     for (const row of data.rows) {
       lines.push(
-        `${row.caravanDepartureDate};${row.passengerName};${row.participantType};${row.category};${row.paymentAmount.toFixed(2)};${row.status}`
+        formatCsvRow([
+          row.caravanDepartureDate,
+          row.passengerName,
+          row.participantType,
+          row.category,
+          row.paymentAmount.toFixed(2),
+          row.status,
+        ])
       );
     }
 

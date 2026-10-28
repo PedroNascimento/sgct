@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/infrastructure/supabase/server";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { deactivateInactiveAccounts } from "@/use-cases/auth/deactivate-inactive-accounts";
+import { runCronWithLogging } from "@/infrastructure/logging/cron-logger";
 
 /**
- * Job interno da spec 001: inativa perfis sem login há 24 meses.
+ * Job interno da spec 001: inativa perfis sem login há 24 meses (M03).
  * A chave privilegiada só é criada depois da autenticação do job.
  */
 export async function POST(request: Request) {
@@ -14,8 +15,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const repository = new SupabaseProfileRepository(createSupabaseServiceClient());
-    const result = await deactivateInactiveAccounts(repository);
+    const result = await runCronWithLogging("deactivate-inactive-accounts", async () => {
+      const repository = new SupabaseProfileRepository(createSupabaseServiceClient());
+      const out = await deactivateInactiveAccounts(repository);
+      return {
+        ...out,
+        recordsAffected: out.deactivatedCount,
+      };
+    });
+
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     return NextResponse.json(

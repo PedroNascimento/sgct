@@ -135,6 +135,16 @@ export class SupabaseStoragePort implements StoragePort {
 
     return data.signedUrl;
   }
+
+  async deleteFile(bucket: string, path: string): Promise<void> {
+    const { error } = await this.supabase.storage
+      .from(bucket)
+      .remove([path]);
+
+    if (error) {
+      throw new Error(`Erro ao remover arquivo do Storage: ${error.message}`);
+    }
+  }
 }
 
 export class SupabaseAuditLogPort implements AuditLogPort {
@@ -159,6 +169,9 @@ export class SupabaseAuditLogPort implements AuditLogPort {
 
     if (error) {
       console.error("Falha ao registrar auditoria LGPD:", error);
+      throw new Error(
+        `Falha crítica de conformidade LGPD: não foi possível registrar auditoria (${error.message}). Ação bloqueada.`
+      );
     }
   }
 }
