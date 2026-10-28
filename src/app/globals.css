@@ -24,15 +24,20 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    box-sizing: border-box;
   }
 
   html {
     min-width: 320px;
+    max-width: 100%;
+    overflow-x: hidden;
     scroll-behavior: smooth;
   }
 
   body {
     min-width: 320px;
+    max-width: 100%;
+    overflow-x: hidden;
     background: var(--color-background);
     color: var(--color-text);
     font-family: "Source Sans 3", system-ui, -apple-system, BlinkMacSystemFont,
@@ -99,11 +104,11 @@
 
 @layer components {
   .sgct-page {
-    @apply min-h-screen bg-[#f7f8f8];
+    @apply min-h-screen bg-[#f7f8f8] w-full max-w-full;
   }
 
   .sgct-container {
-    @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-content px-3 sm:px-6 lg:px-8;
   }
 
   .sgct-narrow {
@@ -111,11 +116,11 @@
   }
 
   .sgct-card {
-    @apply rounded-xl border border-[#d0d3d3] bg-white shadow-card;
+    @apply rounded-xl border border-[#d0d3d3] bg-white shadow-card max-w-full;
   }
 
   .sgct-panel {
-    @apply rounded-2xl border border-[#e0e2e2] bg-white shadow-card;
+    @apply rounded-2xl border border-[#e0e2e2] bg-white shadow-card max-w-full;
   }
 
   .sgct-label {
@@ -249,7 +254,7 @@ body:has(.workspace-chrome[data-collapsed="true"]) { --sidebar-width: 88px; }
 .workspace-account-menu form { border-top: 1px solid var(--color-border-subtle); margin-top: 6px; padding-top: 6px; }
 .workspace-account-menu button { color: var(--color-danger); }
 .workspace-account-menu button:hover { background: #fdedec; }
-.workspace-content { max-width: 1440px; margin: 0 auto; padding: 32px; min-width: 0; }
+.workspace-content { width: 100%; max-width: 1440px; margin: 0 auto; padding: 32px; min-width: 0; box-sizing: border-box; }
 .workspace-page .sgct-subtitle { max-width: 70ch; }
 .workspace-page .sgct-title { font-size: clamp(1.75rem, 2.5vw, 2.25rem); }
 .sgct-card, .sgct-panel { box-shadow: 0 2px 4px rgb(13 15 16 / 2%), 0 8px 28px rgb(13 15 16 / 4%); border-color: var(--color-border-subtle); }
@@ -282,11 +287,11 @@ body:has(.workspace-chrome[data-collapsed="true"]) { --sidebar-width: 88px; }
   .workspace-chrome[data-collapsed="true"] .workspace-brand { padding: 24px; }
   .workspace-chrome[data-collapsed="true"] .workspace-collapse { justify-content: center; }
 }
-@media (max-width: 639px) {
-  .workspace-topbar { padding: 0 16px; gap: 8px; }
-  .workspace-topbar .workspace-context { max-width: 130px; }
+@media (max-width: 767px) {
+  .workspace-topbar { padding: 0 12px; gap: 8px; }
+  .workspace-topbar .workspace-context { max-width: 120px; }
   .workspace-topbar > div:first-child > div { display: none; }
-  .workspace-content { padding: 24px 16px; }
+  .workspace-content { padding: 16px 12px; width: 100%; max-width: 100%; box-sizing: border-box; }
   .workspace-sidebar { width: min(288px, calc(100vw - 24px)); }
   .workspace-page .sgct-panel, .workspace-page .sgct-card { border-radius: 12px; }
 }
