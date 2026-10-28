@@ -3,13 +3,19 @@ const path = require("node:path");
 const ts = require("typescript");
 const root = path.resolve(__dirname, "..");
 function files(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    return entry.isDirectory() ? files(full) : [full];
-  });
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      return entry.isDirectory() ? files(full) : [full];
+    });
 }
 const relative = (file) => path.relative(root, file).split(path.sep).join("/");
-const tests = files(path.join(root, "src")).filter((file) => /\.test\.tsx?$/.test(file)).map((file) => ({ file: relative(file), source: fs.readFileSync(file, "utf8") }));
+const tests = files(path.join(root, "src"))
+  .filter((file) => /\.test\.tsx?$/.test(file))
+  .sort((a, b) => a.localeCompare(b))
+  .map((file) => ({ file: relative(file), source: fs.readFileSync(file, "utf8") }));
 const roles = {
   signInAction: "Público; validação e antiabuso", signOutAction: "Própria sessão", superAdminSignOutAction: "Própria sessão",
   createStakeAction: "Super Admin", searchMemberByEmailForPromotion: "Super Admin; lookup mínimo dirigido", promoteToStakeAdminAction: "Super Admin; member existente na Estaca alvo", getStakesList: "Super Admin", getAdminsList: "Super Admin; somente contexto mínimo de administração", toggleAdminStatusAction: "Restrito à autoridade aprovada; revisar A01/A16", updateAdminRoleAction: "Super Admin; transições aprovadas, sem UPDATE genérico", toggleStakeStatusAction: "Gestão de Estaca; revisar escopo formal antes de ampliar",
@@ -29,7 +35,7 @@ for (const file of files(path.join(root, "src/app")).sort()) {
     const rel = relative(file);
     const actor = rel.includes("/api/cron/") ? "Job autenticado por CRON_SECRET" : rel.includes("/api/reports/stake/") ? "Admin Estaca; própria Estaca" : rel.includes("/api/reports/ward/") ? "Admin Ala/Estaca conforme escopo da spec 009" : roles[name];
     if (!actor) throw new Error(`Fronteira sem classificação: ${rel}#${name}`);
-    const refs = tests.filter((test) => new RegExp("\\b" + name + "\\b").test(test.source)).map((test) => test.file);
+    const refs = tests.filter((test) => new RegExp("\\b" + name + "\\b").test(test.source)).map((test) => test.file).sort((a, b) => a.localeCompare(b));
     rows.push(`| ${rel} :: ${name} | ${actor} | ${refs.length ? refs.map((ref) => "\u0060" + ref + "\u0060").join("<br>") : "Sem referência nominal localizada; adicionar teste direto"} |`);
   }
 }
@@ -54,7 +60,7 @@ function sqlActor(key) {
 }
 function sqlTestRefs(key) {
   const name = (key.split(" on ")[1] || key.split(" ")[1]).split(".").pop();
-  const refs = tests.filter((item) => new RegExp("\\b" + name + "\\b").test(item.source)).map((item) => item.file);
+  const refs = tests.filter((item) => new RegExp("\\b" + name + "\\b").test(item.source)).map((item) => item.file).sort((a, b) => a.localeCompare(b));
   return refs.length ? refs.map((ref) => "\u0060" + ref + "\u0060").join("<br>") : "Sem referência nominal; regressão direta pendente";
 }
 for (const file of files(path.join(root, "supabase/migrations")).filter((f) => f.endsWith(".sql")).sort()) {
@@ -75,7 +81,7 @@ const jobs = files(path.join(root, "src/app/api/cron")).filter((f) => path.basen
 const content = `# Inventário de fronteiras — baseline da Fase 01\n\nGerado por \u0060npm run inventory:access\u0060; para verificar deriva: \u0060npm run inventory:check\u0060. Esta lista estática é uma baseline de fontes, não certificação de autorização. Cada referência nominal de teste precisa de revisão de cenários/asserções; presença do nome não comprova cobertura. Novas funções exportadas nos arquivos de fronteira exigem classificação explícita.\n\n## Server Actions e métodos HTTP (${rows.length})\n\n| Fonte / export | Ator e escopo normativos (v4.0.0) | Referências nominais em testes, não aceite |\n|---|---|---|\n${rows.join("\n")}\n\n## Páginas e rotas de UI (${pages.length})\n\n${pages.map((p) => "- \u0060" + p + "\u0060").join("\n")}\n\nMiddleware: \u0060src/middleware.ts\u0060. Páginas/Server Actions precisam autorização própria; nomes de route groups não protegem APIs. Calendário público: nome/Ala permitidos; demais dados restritos (II.g).\n\n## Objetos SQL declarados (${sql.size})\n\nA última declaração textual é listada abaixo. DROP, permissões efetivas, sobrecargas e alterações posteriores precisam confirmação por introspecção; este índice não representa automaticamente o estado final instalado. Os testes RLS por tabela estão em \u0060src/__tests__/rls\u0060; C01/C02 e A02 da auditoria exigem casos adicionais por operação.\n\n| Objeto | Última declaração localizada | Ator normativo (não grant efetivo) | Referências nominais de teste |\n|---|---|---|---|\n${[...sql].sort(([a], [b]) => a.localeCompare(b)).map(([key, ref]) => "| " + key + " | " + ref + " | " + sqlActor(key) + " | " + sqlTestRefs(key) + " |").join("\n")}\n\n## Grants e revogações declarados\n\nÍndice textual das migrations; defaults PostgreSQL e herança não são avaliados aqui. Confirmar privilégios efetivos/owner/BYPASSRLS na Fase 02.\n\n| Fonte | Declaração |\n|---|---|\n${privileges.join("\n")}\n\n## Habilitação RLS declarada\n\n| Fonte | Declaração |\n|---|---|\n${rls.join("\n")}\n\n## Edge Function, Storage, jobs e configurações\n\n- \u0060supabase/functions/provision-user/index.ts\u0060: autocadastro público; operações legadas create_ward_admin/create_bootstrap_admin permanecem no código e devem ser removidas na Fase 03. JWT administrativo é verificado no handler; verify_jwt=false não equivale a autorização. Falta teste ponta a ponta do endpoint real.\n- \u0060storage.objects\u0060 / bucket \u0060minor-forms\u0060: envio pelo titular e leitura autorizada/auditada; policies atuais e lacunas em A03/A12/A13. Teste: \u0060minor-forms-isolation.test.ts\u0060; cobrir falhas intermediárias e leitura sem log nas fases seguintes.\n- \u0060src/infrastructure/storage/checkin-offline-db.ts\u0060: IndexedDB; lacunas de partição, expiração e descarte de pendências (A08).\n- Grants amplos/defaults na fundação e RPC de promoção SECURITY DEFINER: C01; execução anônima deve ser negada na Fase 02.\n- Perfis, pagamentos, filas, logs e métricas: matriz detalhada e lacunas em \u0060docs/AUDITORIA-2026-10-21.md\u0060 e \u0060docs/REVISAO-CONSTITUCIONAL-4.0.0.md\u0060.\n- Jobs HTTP (${jobs.length} handlers; não confundir com quantidade agendada):\n${jobs.map((j) => "  - \u0060" + j + "\u0060").join("\n")}\n- Jobs esperados: validação semanal, expiração de reservas/créditos, quórum, fila de e-mail, retenção e inativação; no-show depende do encerramento autorizado com caravan_id. Verificar execução real e contexto temporal na Fase 07, não apenas cron.job.\n- Configurações: \u0060.env.example\u0060 e \u0060supabase/config.toml\u0060. Nenhum segredo é incluído neste inventário. CI usa Supabase efêmero no loopback do runner.\n`;
 const output = path.join(root, "docs/INVENTARIO-ACESSOS.md");
 if (process.argv.includes("--check")) {
-  if (!fs.existsSync(output) || fs.readFileSync(output, "utf8").replace(/\r\n/g, "\n") !== content) {
+  if (!fs.existsSync(output) || fs.readFileSync(output, "utf8").replace(/\r\n/g, "\n") !== content.replace(/\r\n/g, "\n")) {
     console.error("Inventário desatualizado: execute npm run inventory:access e revise o diff.");
     process.exitCode = 1;
   }
