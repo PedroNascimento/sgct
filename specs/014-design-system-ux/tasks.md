@@ -26,3 +26,11 @@ Recharts e Lucide React instalados por solicitação explícita. Gráficos integ
 ## Revalidação — 21/10/2026
 
 Build e tipos globais passam no baseline atual; a observação histórica de erros não descreve o estado de hoje. T014.10 reaberto para matriz completa de viewport/zoom/teclado/axe (R10.1–R10.7), sem alteração de paleta/tipografia. A aprovação histórica de telas principais não comprova todas as listas e painéis.
+
+## Correção Super Admin — 28/10/2026
+
+- [x] T014.17 — Escrever regressões de filtros acessíveis, busca, paginação e promoção com nome longo, usando somente mocks em memória.
+- [x] T014.18 — Ajustar login, formulários, listas, ações e paginação responsivos, preservando código local e regras de acesso.
+- [x] T014.19 — Conferir viewports no navegador com conta existente; executar testes, lint, tipos e build. Não criar perfis, alterar permissões ou outros cadastros na verificação.
+
+Evidência de 28/10/2026: regressões novas primeiro falharam (4 casos), depois as três suítes focadas passaram (18 testes). Suíte completa sem banco: 86 suítes/407 testes aprovados; lint, tipos e build aprovados. Login conferido em 320/390/768/1280px; Estacas e Administradores em 320–1600px, incluindo largura disponível descontando scrollbar e overflow interno das células. Busca, estado vazio, limpeza e paginação verificados no navegador; confirmações canceladas cobertas por mocks. Nenhum usuário criado, Estaca ativada/desativada ou permissão alterada no ensaio visual. O aviso preexistente de migração middleware→proxy permanece fora deste escopo. Este aceite é restrito ao Super Admin; T014.10 continua aberto para a matriz global do sistema.

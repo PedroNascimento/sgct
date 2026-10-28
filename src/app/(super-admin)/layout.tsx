@@ -5,7 +5,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   return (
-    <div className="sgct-page workspace-page">
+    <div className="sgct-page workspace-page platform-workspace">
       <WorkspaceChrome name={user?.user_metadata?.full_name || "Administrador"} role="super_admin" mode="platform" />
       <main id="conteudo-principal" className="workspace-content">{children}</main>
     </div>

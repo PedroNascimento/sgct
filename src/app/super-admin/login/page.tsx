@@ -49,20 +49,20 @@ export default function SuperAdminLoginPage() {
   return (
     <main
       id="conteudo-principal"
-      className="sgct-page grid min-h-screen lg:grid-cols-[.8fr_1.2fr]"
+      className="sgct-page platform-login grid min-h-[100svh] lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]"
     >
       {/* Painel lateral — visível apenas em telas grandes */}
-      <section className="hidden bg-brand-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <section className="platform-login-aside hidden bg-brand-900 p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-12">
         <Brand href="/super-admin/login" context="Administração da plataforma" />
         <div className="max-w-md">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-brand-200">
             Acesso restrito
           </p>
-          <h1 className="mt-4 text-4xl font-bold leading-tight tracking-[-0.03em]">
+          <h2 className="mt-4 text-4xl font-bold leading-tight tracking-[-0.03em]">
             Painel de controle da plataforma SGCT.
-          </h1>
+          </h2>
           <p className="mt-5 text-lg leading-relaxed text-brand-100">
-            Gerencie Estacas e seus primeiros Administradores. Acesso exclusivo
+            Gerencie Estacas e promova seus Administradores. Acesso exclusivo
             para Super Admins credenciados.
           </p>
         </div>
@@ -70,13 +70,13 @@ export default function SuperAdminLoginPage() {
       </section>
 
       {/* Formulário */}
-      <section className="flex min-h-screen items-center px-4 py-8 sm:px-8 lg:px-16">
-        <div className="mx-auto w-full max-w-md">
+      <section className="flex min-h-[100svh] min-w-0 items-center px-4 py-8 sm:px-8 lg:px-12 xl:px-16">
+        <div className="mx-auto w-full min-w-0 max-w-md">
           <div className="mb-10 lg:hidden">
             <Brand href="/super-admin/login" context="Administração da plataforma" />
           </div>
 
-          <h2 className="sgct-title">Acesso de Super Admin</h2>
+          <h1 className="sgct-title">Acesso de Super Admin</h1>
           <p className="sgct-subtitle">
             Use as credenciais de Super Administrador da plataforma.
           </p>
@@ -99,7 +99,9 @@ export default function SuperAdminLoginPage() {
                   type="email"
                   name="email"
                   required
-                  autoComplete="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   inputMode="email"
                   className="sgct-input"
                 />

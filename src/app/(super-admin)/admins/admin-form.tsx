@@ -54,13 +54,13 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
   };
 
   return (
-    <div className="sgct-card w-full space-y-6 p-6 sm:p-8">
+    <div className="sgct-card platform-form w-full space-y-5 sm:space-y-6">
       <div>
         <h2 className="text-xl font-bold text-[#212225]">Promover membro a Admin de Estaca</h2>
         <p className="mt-1.5 text-sm leading-relaxed text-[#53575b]">
           O usuário precisa <strong>já ter criado uma conta de membro</strong> na Estaca desejada. Aqui você apenas eleva a permissão de acesso dele.
         </p>
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="sgct-alert-info mt-4">
           <strong>Como funciona:</strong> Selecione a Estaca → informe o e-mail do membro → clique em Buscar → confirme e promova.
         </div>
       </div>
@@ -77,7 +77,7 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div className="platform-form-grid">
         {/* Passo 1: Selecionar Estaca */}
         <div>
           <label htmlFor="stakeId" className="sgct-label">
@@ -108,7 +108,7 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
           <label htmlFor="memberEmail" className="sgct-label">
             2. E-mail do Membro Já Cadastrado
           </label>
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="platform-member-search">
             <input
               type="email"
               id="memberEmail"
@@ -121,13 +121,13 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
               disabled={!selectedStakeId}
               placeholder={selectedStakeId ? "email@exemplo.com" : "Selecione uma Estaca primeiro"}
               autoComplete="email"
-              className="sgct-input w-full flex-1"
+              className="sgct-input min-w-0"
             />
             <button
               type="button"
               onClick={handleSearch}
               disabled={!selectedStakeId || !emailInput || isSearching}
-              className="sgct-button-primary whitespace-nowrap w-full sm:w-auto text-sm shrink-0"
+              className="sgct-button-primary w-full min-h-[48px]"
             >
               {isSearching ? "Buscando..." : "Buscar membro"}
             </button>
@@ -137,15 +137,15 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
 
       {/* Resultado da busca */}
       {searchError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="sgct-alert-danger">
           {searchError}
         </div>
       )}
 
       {foundMember && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
-          <p className="text-sm font-semibold text-emerald-800">✓ Membro encontrado</p>
-          <div className="mt-2 space-y-1 text-sm text-emerald-700">
+        <div id="promotion-candidate" role="status" className="platform-member-result sgct-alert-success">
+          <p className="text-sm font-semibold text-success-700">✓ Membro encontrado</p>
+          <div className="mt-2 space-y-1 text-sm text-success-700">
             <p><span className="font-medium">Nome:</span> {foundMember.full_name}</p>
             {foundMember.ward_name && (
               <p><span className="font-medium">Ala:</span> {foundMember.ward_name}</p>
@@ -170,17 +170,17 @@ export function AdminForm({ stakes }: { stakes: Stake[] }) {
           <button
             type="submit"
             disabled={isPending}
-            className="sgct-button-primary w-full sm:w-auto"
+            aria-describedby="promotion-candidate" className="sgct-button-primary w-full sm:w-auto min-h-[48px]"
           >
             {isPending
               ? "Promovendo..."
-              : `Promover "${foundMember.full_name}" a Admin de Estaca`}
+              : "Promover a Admin de Estaca"}
           </button>
         </form>
       )}
 
       {foundMember && foundMember.role === "admin_estaca" && (
-        <p className="text-sm text-amber-700">
+        <p className="text-sm text-warning-700">
           Este membro já possui permissão de Admin de Estaca. Use a tabela abaixo para alterar ou revogar o acesso.
         </p>
       )}

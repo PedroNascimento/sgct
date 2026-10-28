@@ -10,12 +10,11 @@ import {
   Building2,
   CheckCircle2,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { toggleStakeStatusAction } from "../actions";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 interface StakeItem {
   id: string;
@@ -125,7 +124,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
     <>
       {feedbackModal}
 
-      <section className="sgct-card overflow-hidden w-full max-w-full min-w-0">
+      <section className="sgct-card platform-collection overflow-hidden w-full max-w-full min-w-0">
         {/* Header do Card */}
         <div className="border-b border-[#e0e2e2] p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -144,12 +143,13 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
           </div>
 
           {/* Barra de Filtros e Pesquisa */}
-          <div className="mt-4 sm:mt-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-[#f0f2f2]">
+          <div className="platform-list-toolbar mt-5 border-t border-[#f0f2f2] pt-4">
             {/* Campo de Busca Reativo */}
-            <div className="relative flex-1 w-full min-w-0">
+            <div className="platform-list-search relative w-full min-w-0">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7b8084] pointer-events-none" />
               <input
-                type="text"
+                type="search"
+                aria-label="Buscar Estacas"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -174,14 +174,15 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
             </div>
 
             {/* Filtros de Status (Todas, Ativas, Inativas) */}
-            <div className="grid grid-cols-3 gap-1 p-1 bg-[#f4f5f5] rounded-xl w-full sm:w-auto sm:flex sm:items-center">
+            <div className="platform-filters" role="group" aria-label="Filtros da lista">
               <button
                 type="button"
+                aria-pressed={statusFilter === "all"}
                 onClick={() => {
                   setStatusFilter("all");
                   setCurrentPage(1);
                 }}
-                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[44px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[48px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   statusFilter === "all"
                     ? "bg-white text-brand-900 shadow-sm"
                     : "text-[#53575b] hover:text-[#212225] hover:bg-white/60"
@@ -202,11 +203,12 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
 
               <button
                 type="button"
+                aria-pressed={statusFilter === "active"}
                 onClick={() => {
                   setStatusFilter("active");
                   setCurrentPage(1);
                 }}
-                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[44px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[48px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   statusFilter === "active"
                     ? "bg-white text-brand-900 shadow-sm"
                     : "text-[#53575b] hover:text-[#212225] hover:bg-white/60"
@@ -227,11 +229,12 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
 
               <button
                 type="button"
+                aria-pressed={statusFilter === "inactive"}
                 onClick={() => {
                   setStatusFilter("inactive");
                   setCurrentPage(1);
                 }}
-                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[44px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center justify-center gap-1 min-[400px]:gap-1.5 px-1 min-[400px]:px-2.5 sm:px-3 min-h-[48px] sm:min-h-0 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   statusFilter === "inactive"
                     ? "bg-white text-brand-900 shadow-sm"
                     : "text-[#53575b] hover:text-[#212225] hover:bg-white/60"
@@ -281,7 +284,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
         ) : (
           <>
             {/* VISUALIZAÇÃO MOBILE (Cards confortáveis com alvo touch de 48px e zero overflow horizontal) */}
-            <div className="block md:hidden divide-y divide-[#e0e2e2] bg-white">
+            <div className="platform-list-cards divide-y divide-[#e0e2e2] bg-white">
               {paginatedStakes.map((stake) => {
                 const isItemPending = isPending && pendingStakeId === stake.id;
                 return (
@@ -289,7 +292,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
                     key={stake.id}
                     className="p-4 space-y-3 hover:bg-brand-50/20 transition-colors"
                   >
-                    <div className="flex items-start justify-between gap-3 min-w-0">
+                    <div className="platform-record-header">
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-[#212225] text-base leading-snug break-words">
                           {stake.name}
@@ -316,7 +319,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
                       </span>
                     </div>
 
-                    <div className="pt-2 grid grid-cols-2 gap-2 border-t border-[#f0f2f2]">
+                    <div className="platform-actions platform-actions--compact pt-3 border-t border-[#f0f2f2]">
                       <a
                         href={`/${stake.slug}`}
                         target="_blank"
@@ -353,7 +356,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
             </div>
 
             {/* VISUALIZAÇÃO DESKTOP / TABLET (Tabela com ajuste fluido, sem barra de rolagem horizontal) */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="platform-list-table">
               <table className="w-full table-fixed divide-y divide-[#e0e2e2] text-sm">
                 <colgroup>
                   <col className="w-[34%] min-w-0" />
@@ -425,7 +428,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
                               href={`/${stake.slug}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 min-h-[32px] px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-lg border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 hover:text-brand-900 hover:border-brand-300 transition-colors shadow-2xs whitespace-nowrap shrink-0"
+                              className="inline-flex items-center gap-1 min-h-[48px] px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-lg border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 hover:text-brand-900 hover:border-brand-300 transition-colors shadow-2xs whitespace-nowrap shrink-0"
                               title={`Abrir página pública da Estaca ${stake.name}`}
                               aria-label={`Abrir página pública da Estaca ${stake.name}`}
                             >
@@ -436,7 +439,7 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
                               type="button"
                               disabled={isItemPending}
                               onClick={() => handleToggle(stake)}
-                              className={`inline-flex items-center gap-1 min-h-[32px] px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors shadow-2xs whitespace-nowrap shrink-0 ${
+                              className={`inline-flex items-center gap-1 min-h-[48px] px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors shadow-2xs whitespace-nowrap shrink-0 ${
                                 stake.is_active
                                   ? "border-danger-200 bg-danger-50/80 text-danger-700 hover:bg-danger-100 hover:border-danger-300"
                                   : "border-success-200 bg-success-50/80 text-success-700 hover:bg-success-100 hover:border-success-300"
@@ -462,73 +465,15 @@ export function StakeList({ stakes }: { stakes: StakeItem[] }) {
               </table>
             </div>
 
-            {/* Rodapé com Paginação e Contadores */}
-            <div className="border-t border-[#e0e2e2] p-4 sm:px-6 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-[#fcfdfd]">
-              <div className="text-xs text-[#53575b] text-center sm:text-left">
-                Mostrando{" "}
-                <span className="font-semibold text-[#212225]">
-                  {filteredStakes.length === 0 ? 0 : startIndex + 1}
-                </span>{" "}
-                a{" "}
-                <span className="font-semibold text-[#212225]">
-                  {Math.min(startIndex + pageSize, filteredStakes.length)}
-                </span>{" "}
-                de{" "}
-                <span className="font-semibold text-[#212225]">
-                  {filteredStakes.length}
-                </span>{" "}
-                estacas
-              </div>
-
-              <div className="flex items-center justify-center gap-3 w-full sm:w-auto">
-                {/* Seletor de Itens por Página */}
-                <div className="flex items-center gap-1.5 text-xs text-[#53575b]">
-                  <span>Exibir:</span>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="min-h-9 rounded-md border border-[#d0d3d3] bg-white px-2 py-1 text-xs text-[#212225] focus:border-brand-600 focus:outline-none"
-                  >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                  </select>
-                </div>
-
-                {/* Controles Anterior / Próxima */}
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={safeCurrentPage <= 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    title="Página anterior"
-                    aria-label="Página anterior"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-
-                  <span className="px-2 text-xs font-semibold text-[#3a3d40]">
-                    {safeCurrentPage} / {totalPages}
-                  </span>
-
-                  <button
-                    type="button"
-                    disabled={safeCurrentPage >= totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-[#d0d3d3] bg-white text-[#3a3d40] hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    title="Próxima página"
-                    aria-label="Próxima página"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
+            <ListPagination
+            page={safeCurrentPage}
+            pageSize={pageSize}
+            total={filteredStakes.length}
+            itemLabel="estacas"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
+        </>
         )}
       </section>
     </>

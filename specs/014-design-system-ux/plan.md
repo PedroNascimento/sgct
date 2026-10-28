@@ -59,3 +59,9 @@ Conformidade: Artigos I/III/V — apresentação sem novas mutações; II — ac
 - **Quebra mobile:** validar em 320, 360, 390, 768 e 1280 px.
 - **Contraste inconsistente:** usar somente tokens semânticos com pares registrados no `DESIGN.md`.
 - **Fonte indisponível:** fallback de sistema preserva legibilidade e layout.
+
+## Correção responsiva do Super Admin — 28/10/2026
+
+Escopo autorizado: login, Estacas e Administradores (US-014.1/2/4/5/6), mantendo cores, fonte, dados, paginação e alterações locais existentes. Corrigir dimensionamento intrínseco de grids/flex e campos; filtros quebráveis com estado anunciado; ações de 48px; informações longas legíveis; paginação acessível compartilhada e cartões até haver espaço real para tabela. Não ocultar conteúdo para simular responsividade.
+
+Conformidade: I/III — somente apresentação e testes; II/V/VI — mesmas ações e autorizações, sem consultas novas nem contas/fixtures no banco; IV — regressões de interação antes dos ajustes; VII/VIII — sem regra de negócio nova e dentro da spec aprovada; IX — textos sem tenant fixo; X — sem emenda constitucional. Validar login, filtros, busca, paginação, confirmação cancelada, nomes/e-mails longos e larguras 320/360/390/440/768/1280/1440 com sessão de teste existente. Não executar promoções/ativações reais na verificação visual.

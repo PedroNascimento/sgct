@@ -15,12 +15,12 @@ export default async function AdminsPage() {
   ]);
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="platform-page">
+      <div className="platform-page-header">
         <p className="sgct-eyebrow">Acesso e permissões</p>
         <h1 className="sgct-title mt-3">Administradores de Estaca</h1>
         <p className="sgct-subtitle">
-          Cadastre novos administradores de Estaca e gerencie o status e as permissões de acesso dos usuários.
+          Promova membros já cadastrados e gerencie os acessos de administração de cada Estaca.
         </p>
       </div>
 
@@ -33,10 +33,10 @@ export default async function AdminsPage() {
           >
             Cadastre uma Estaca primeiro
           </Link>{" "}
-          antes de criar o primeiro Administrador.
+          antes de promover um membro a Administrador.
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="grid min-w-0 grid-cols-1 gap-6 sm:gap-8">
           <AdminForm stakes={stakes} />
           <AdminList admins={admins} />
         </div>

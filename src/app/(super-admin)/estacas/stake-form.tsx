@@ -14,7 +14,7 @@ export function StakeForm() {
   );
 
   return (
-    <form action={formAction} className="sgct-card space-y-5 p-4 sm:p-6 w-full max-w-full min-w-0">
+    <form action={formAction} className="sgct-card platform-form space-y-5 w-full">
       <div>
         <h2 className="text-xl font-bold text-[#212225]">Cadastrar Estaca</h2>
         <p className="mt-2 text-sm leading-relaxed text-[#53575b]">
@@ -43,7 +43,7 @@ export function StakeForm() {
           id="name"
           name="name"
           required
-          placeholder="Ex: Estaca Natal Brasil"
+          placeholder="Ex.: Estaca Central"
           autoComplete="organization"
           className="sgct-input w-full"
         />
@@ -51,7 +51,7 @@ export function StakeForm() {
 
       <div className="w-full min-w-0">
         <label htmlFor="slug" className="sgct-label">
-          Slug da URL (kebab-case)
+          Endereço da Estaca
         </label>
         <div className="flex items-center w-full min-w-0">
           <span className="mr-2 text-base text-[#53575b] shrink-0 font-mono">/</span>
@@ -61,13 +61,13 @@ export function StakeForm() {
             name="slug"
             required
             pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-            title="Apenas letras minúsculas, números e hífens. Ex: natal ou recife-sul"
-            placeholder="ex: natal"
-            className="sgct-input flex-1 min-w-0 w-full"
+            title="Use letras minúsculas, números e hífens. Exemplo: estaca-central"
+            placeholder="ex.: estaca-central"
+            aria-describedby="stake-slug-help" autoCapitalize="none" spellCheck={false} className="sgct-input flex-1 min-w-0 w-full"
           />
         </div>
-        <p className="mt-1.5 text-xs sm:text-sm text-[#53575b]">
-          Identificador único usado nas rotas e isolamento de tenant.
+        <p id="stake-slug-help" className="mt-2 text-sm text-[#53575b]">
+          Use um endereço único, sem espaços ou acentos. Ele será usado no link público da Estaca.
         </p>
       </div>
 

@@ -18,7 +18,7 @@ export default function RootLayout({
         <a href="#conteudo-principal" className="sgct-skip-link">
           Ir para o conteúdo principal
         </a>
-        <div className="flex-1 flex flex-col">{children}</div>
+        <div className="flex w-full min-w-0 flex-1 flex-col">{children}</div>
         <AppFooter />
       </body>
     </html>
