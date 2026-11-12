@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X, PanelLeftClose, PanelLeftOpen, ChevronDown, LogOut } from "lucide-react";
+import { Menu, X, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BusIcon, CalendarIcon, CheckIcon, UserIcon, BuildingIcon } from "./icons";
@@ -105,13 +105,16 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
   const logout = mode === "platform" || role === "super_admin" ? superAdminSignOutAction : signOutAction.bind(null, stakeSlug!);
 
   return (
-    <div className="workspace-chrome" data-collapsed={collapsed}>
+    <div className="workspace-chrome" data-collapsed={collapsed} data-variant={mode === "member" ? "member" : "console"}>
       {mobileOpen && <div className="workspace-overlay" onClick={() => setMobileOpen(false)} aria-hidden="true" />}
       <aside ref={sidebar} id="workspace-navigation" className="workspace-sidebar" data-open={mobileOpen} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined} aria-label="Menu de navegação">
         <div className="workspace-brand">
           <Link href={mode === "platform" ? "/estacas" : prefix} aria-label="SGCT — Início" onClick={() => setMobileOpen(false)}>
-            <BusIcon className="h-7 w-7" /><span className="sidebar-label">SGCT<span className="workspace-brand-caption">Caravanas ao Templo</span></span>
+            <span className="workspace-logo"><BusIcon className="h-5 w-5" /></span><span className="sidebar-label">SGCT<span className="workspace-brand-caption">Caravanas ao Templo</span></span>
           </Link>
+          <button type="button" className="workspace-collapse" onClick={toggleCollapsed} aria-expanded={!collapsed} aria-controls="workspace-navigation" aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}>
+            {collapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}
+          </button>
           <button type="button" className="workspace-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={20} aria-hidden="true" /></button>
         </div>
         <div className="workspace-nav-body">
@@ -126,9 +129,6 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
         </div>
         <div className="workspace-sidebar-footer">
           <p className="sidebar-label text-sm leading-relaxed text-brand-100">{context || "Organização em cada etapa da viagem."}</p>
-          <button type="button" className="workspace-collapse" onClick={toggleCollapsed} aria-expanded={!collapsed} aria-controls="workspace-navigation" aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}>
-            {collapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}<span className="sidebar-label">Recolher menu</span>
-          </button>
         </div>
       </aside>
 
@@ -138,7 +138,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
             <Menu size={20} aria-hidden="true" />
             <span>Menu</span>
           </button>
-          <div className="min-w-0"><p className="workspace-context">{context || modeLabel}</p><p className="truncate font-semibold text-[#212225]">{active?.label || modeLabel}</p></div>
+          <div className="workspace-heading"><p className="workspace-context">{context || modeLabel}</p><ChevronRight className="workspace-heading-separator" size={14} aria-hidden="true" /><p className="truncate font-semibold text-[#212225]" aria-current="page">{active?.label || modeLabel}</p></div>
         </div>
         <div ref={account} className="workspace-account" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setAccountOpen(false); }}>
           <button ref={accountButton} type="button" className="workspace-account-trigger" aria-expanded={accountOpen} aria-controls="workspace-account-menu" onClick={() => setAccountOpen(!accountOpen)} aria-label={`Abrir opções de perfil de ${name}`}>
