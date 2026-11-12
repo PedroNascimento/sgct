@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { BusIcon, CalendarIcon, CheckIcon, UserIcon, BuildingIcon } from "./icons";
+import { BusIcon, CalendarIcon, CheckIcon, UserIcon, BuildingIcon, SidebarCollapseIcon, SidebarExpandIcon } from "./icons";
 import { signOutAction, superAdminSignOutAction } from "@/app/auth-actions";
 
 interface Props {
@@ -112,9 +112,6 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
           <Link href={mode === "platform" ? "/estacas" : prefix} aria-label="SGCT — Início" onClick={() => setMobileOpen(false)}>
             <span className="workspace-logo"><BusIcon className="h-5 w-5" /></span><span className="sidebar-label">SGCT<span className="workspace-brand-caption">Caravanas ao Templo</span></span>
           </Link>
-          <button type="button" className="workspace-collapse" onClick={toggleCollapsed} aria-expanded={!collapsed} aria-controls="workspace-navigation" aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}>
-            {collapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}
-          </button>
           <button type="button" className="workspace-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={20} aria-hidden="true" /></button>
         </div>
         <div className="workspace-nav-body">
@@ -134,10 +131,14 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
 
       <header className="workspace-topbar">
         <div className="flex min-w-0 items-center gap-3">
+          <button type="button" className="workspace-collapse" onClick={toggleCollapsed} aria-expanded={!collapsed} aria-controls="workspace-navigation" aria-label={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"} title={collapsed ? "Expandir menu lateral" : "Recolher menu lateral"}>
+            {collapsed ? <SidebarExpandIcon className="h-5 w-5" /> : <SidebarCollapseIcon className="h-5 w-5" />}
+          </button>
           <button ref={menuButton} type="button" className="workspace-menu-trigger" aria-expanded={mobileOpen} aria-controls="workspace-navigation" onClick={() => setMobileOpen(true)} aria-label="Abrir menu de navegação">
             <Menu size={20} aria-hidden="true" />
             <span>Menu</span>
           </button>
+          <span className="workspace-topbar-divider" aria-hidden="true" />
           <div className="workspace-heading"><p className="workspace-context">{context || modeLabel}</p><ChevronRight className="workspace-heading-separator" size={14} aria-hidden="true" /><p className="truncate font-semibold text-[#212225]" aria-current="page">{active?.label || modeLabel}</p></div>
         </div>
         <div ref={account} className="workspace-account" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setAccountOpen(false); }}>
