@@ -47,7 +47,7 @@ export default async function MinhasReservasPage({ params }: Props) {
   );
 
   return (
-    <div className="sgct-page">
+    <div className="sgct-page workspace-page">
       <PublicHeader stakeSlug={estaca_slug} stakeName={stake.name} />
       <main id="conteudo-principal" className="py-8 sm:py-12">
         <div className="sgct-container max-w-5xl">

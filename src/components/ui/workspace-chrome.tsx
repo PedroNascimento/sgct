@@ -105,7 +105,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
   const logout = mode === "platform" || role === "super_admin" ? superAdminSignOutAction : signOutAction.bind(null, stakeSlug!);
 
   return (
-    <div className="workspace-chrome" data-collapsed={collapsed} data-variant={mode === "member" ? "member" : "console"}>
+    <div className="workspace-chrome" data-collapsed={collapsed}>
       {mobileOpen && <div className="workspace-overlay" onClick={() => setMobileOpen(false)} aria-hidden="true" />}
       <aside ref={sidebar} id="workspace-navigation" className="workspace-sidebar" data-open={mobileOpen} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined} aria-label="Menu de navegação">
         <div className="workspace-brand">

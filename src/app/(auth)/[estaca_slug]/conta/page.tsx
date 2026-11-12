@@ -22,7 +22,7 @@ export default async function ContaPage({ params }: Props) {
   if (!profile) redirect(`/${estaca_slug}/auth/login`);
 
   return (
-    <div className="sgct-page">
+    <div className="sgct-page workspace-page">
       <PublicHeader stakeSlug={estaca_slug} />
     <main id="conteudo-principal" className="py-8 sm:py-12">
       <div className="sgct-narrow max-w-xl">

@@ -403,12 +403,12 @@ body:has(.workspace-chrome[data-collapsed="true"]) { --sidebar-width: 88px; }
 .workspace-account-trigger { min-height: 44px; padding: 4px 8px 4px 4px; }
 .workspace-avatar { width: 34px; height: 34px; font-size: 14px; border-width: 2px; }
 .workspace-content { padding: 24px; }
-.workspace-chrome[data-variant="console"] ~ .workspace-content .sgct-card,
-.sgct-page:has(> .workspace-chrome[data-variant="console"]) .sgct-panel,
-.sgct-page:has(> .workspace-chrome[data-variant="console"]) .sgct-card { border-radius: 14px; transition: box-shadow 200ms, transform 200ms; }
-.sgct-page:has(> .workspace-chrome[data-variant="console"]) .sgct-panel:hover,
-.sgct-page:has(> .workspace-chrome[data-variant="console"]) .sgct-card:hover { box-shadow: 0 4px 8px rgb(13 15 16 / 4%), 0 14px 36px rgb(13 15 16 / 8%); }
-.sgct-page:has(> .workspace-chrome[data-variant="console"]) .sgct-eyebrow { letter-spacing: .08em; }
+.workspace-chrome ~ .workspace-content .sgct-card,
+.sgct-page:has(> .workspace-chrome) .sgct-panel,
+.sgct-page:has(> .workspace-chrome) .sgct-card { border-radius: 14px; transition: box-shadow 200ms, transform 200ms; }
+.sgct-page:has(> .workspace-chrome) .sgct-panel:hover,
+.sgct-page:has(> .workspace-chrome) .sgct-card:hover { box-shadow: 0 4px 8px rgb(13 15 16 / 4%), 0 14px 36px rgb(13 15 16 / 8%); }
+.sgct-page:has(> .workspace-chrome) .sgct-eyebrow { letter-spacing: .08em; }
 @media (min-width: 1024px) {
   .workspace-topbar { padding: 0 24px 0 16px; }
   .workspace-content { padding: 32px; }
