@@ -37,3 +37,21 @@ it("salva a preferência de recolhimento e fecha a gaveta com Escape", () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(document.body.style.overflow).toBe("");
 });
+
+it("exibe link Financeiro na sidebar para admin_estaca e admin_ala", () => {
+  const { rerender } = render(
+    <WorkspaceChrome stakeSlug="natal" name="Líder" role="admin_estaca" mode="admin" />
+  );
+  expect(screen.getByRole("link", { name: "Financeiro" })).toHaveAttribute(
+    "href",
+    "/natal/estaca/relatorios"
+  );
+
+  rerender(
+    <WorkspaceChrome stakeSlug="natal" name="Bispo" role="admin_ala" mode="admin" />
+  );
+  expect(screen.getByRole("link", { name: "Financeiro" })).toHaveAttribute(
+    "href",
+    "/natal/ala/relatorios"
+  );
+});

@@ -6,6 +6,8 @@
 import type {
   WardFinancialSummary,
   StakeFinancialSummary,
+  StakeFinancialPanelData,
+  WardFinancialPanelData,
 } from "@/domain/types/report";
 
 export interface FinancialReportRepository {
@@ -18,4 +20,15 @@ export interface FinancialReportRepository {
     stakeId: string,
     caravanId?: string
   ): Promise<StakeFinancialSummary>;
+
+  getStakeFinancialPanelData(
+    stakeId: string,
+    caravanId?: string
+  ): Promise<StakeFinancialPanelData>;
+
+  getWardFinancialPanelData(
+    stakeId: string,
+    wardId: string,
+    caravanId?: string
+  ): Promise<WardFinancialPanelData>;
 }
