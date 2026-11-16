@@ -458,9 +458,9 @@ export function CalendarioAdminClient({
             }
           }}
         >
-          <div className="relative w-full max-w-4xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl border border-[#e0e2e2] my-auto max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-4xl rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#e0e2e2] my-auto max-h-[92vh] overflow-y-auto overflow-x-hidden">
             {/* Header do Modal */}
-            <div className="flex items-start justify-between border-b border-[#e0e2e2] pb-4 mb-6">
+            <div className="flex items-start justify-between border-b border-[#e0e2e2] pb-3 mb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-200">
                   <Pencil className="h-5 w-5" />
@@ -492,10 +492,10 @@ export function CalendarioAdminClient({
               </div>
             )}
 
-            <form action={editAction} className="space-y-6">
+            <form action={editAction} className="space-y-4 [&_.sgct-input]:min-h-11 [&_.sgct-input]:py-2 [&_.sgct-input]:text-sm [&_.sgct-select]:min-h-11 [&_.sgct-select]:w-full [&_.sgct-select]:text-sm [&_.sgct-label]:mb-1 [&_.sgct-label]:text-xs">
               <input type="hidden" name="caravanId" value={editingCaravan.id} />
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 [&>div]:min-w-0">
                 <div className="sm:col-span-2 lg:col-span-4">
                   <label className="sgct-label">Título da Caravana</label>
                   <input
@@ -531,7 +531,6 @@ export function CalendarioAdminClient({
                     className="sgct-input"
                   />
                 </div>
-                <CaravanPricingFields key={editingCaravan.id} defaultOvernight={editingCaravan.overnight ?? true} defaultTicket={editingCaravan.price_ticket} defaultLodging={editingCaravan.price_lodging} />
 
                 <div>
                   <label className="sgct-label">Limite de Assentos *</label>
@@ -555,6 +554,13 @@ export function CalendarioAdminClient({
                     className="sgct-input"
                   />
                 </div>
+
+                <CaravanPricingFields
+                  key={editingCaravan.id}
+                  defaultOvernight={editingCaravan.overnight ?? true}
+                  defaultTicket={editingCaravan.price_ticket}
+                  defaultLodging={editingCaravan.price_lodging}
+                />
 
                 <div>
                   <label className="sgct-label">Prazo de Inscrição *</label>
@@ -597,17 +603,17 @@ export function CalendarioAdminClient({
                     defaultValue={editingCaravan.status}
                     className="sgct-select"
                   >
-                    <option value="registered">Cadastrada (registered)</option>
-                    <option value="open">Inscrições abertas (open)</option>
-                    <option value="quorum_pending">Aguardando quórum (quorum_pending)</option>
-                    <option value="confirmed">Confirmada (confirmed)</option>
-                    <option value="completed">Realizada (completed)</option>
-                    <option value="cancelled">Cancelada (cancelled)</option>
+                    <option value="registered">Cadastrada</option>
+                    <option value="open">Inscrições abertas</option>
+                    <option value="quorum_pending">Aguardando quórum</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="completed">Realizada</option>
+                    <option value="cancelled">Cancelada</option>
                   </select>
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-[#e0e2e2]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-[#e0e2e2]">
                 <button
                   type="button"
                   onClick={() => setEditingCaravan(null)}

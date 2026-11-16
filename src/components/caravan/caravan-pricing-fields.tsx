@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Bus, BedDouble } from "lucide-react";
 import {
   SUGGESTED_PRICING,
   calculateCaravanPrices,
@@ -14,8 +15,9 @@ interface Props {
 }
 
 /**
- * Campos de precificação da caravana (D33): tipo (com/sem pernoite),
- * valor da passagem e valor do alojamento, com pré-visualização do valor final.
+ * Bloco de precificação da caravana (D33): tipo (com/sem pernoite),
+ * valor da passagem e do alojamento, com pré-visualização do valor final.
+ * Ocupa a linha inteira do grid pai (col-span-full).
  * Envia no formulário: overnight, priceTicket, priceLodging.
  */
 export function CaravanPricingFields({
@@ -44,39 +46,52 @@ export function CaravanPricingFields({
     priceLodging: Number(lodging) || 0,
   });
 
+  const options = [
+    { value: false, label: "Sem pernoite", hint: "Ida e volta no mesmo dia", Icon: Bus },
+    { value: true, label: "Com pernoite", hint: "Inclui alojamento", Icon: BedDouble },
+  ];
+
   return (
-    <div className="md:col-span-2 space-y-4">
-      <fieldset>
-        <legend className="sgct-label">Tipo de Caravana *</legend>
-        <input type="hidden" name="overnight" value={String(overnight)} />
-        <div className="mt-1 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Tipo de caravana">
-          {[
-            { value: false, label: "Sem pernoite", hint: "Ida e volta no mesmo dia" },
-            { value: true, label: "Com pernoite", hint: "Inclui alojamento" },
-          ].map((opt) => (
+    <fieldset className="col-span-full min-w-0 space-y-3 rounded-xl border border-[#e0e2e2] bg-[#fbfcfc] p-3">
+      <legend className="px-1 text-sm font-semibold text-[#212225]">
+        Tipo de caravana e valores *
+      </legend>
+
+      <input type="hidden" name="overnight" value={String(overnight)} />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de caravana">
+        {options.map(({ value, label, hint, Icon }) => {
+          const selected = overnight === value;
+          return (
             <button
-              key={String(opt.value)}
+              key={String(value)}
               type="button"
               role="radio"
-              aria-checked={overnight === opt.value}
-              onClick={() => changeType(opt.value)}
-              className={`rounded-lg border px-4 py-3 text-left transition ${
-                overnight === opt.value
-                  ? "border-[#006184] bg-[#e8f4f8] ring-2 ring-[#006184]/30"
+              aria-checked={selected}
+              onClick={() => changeType(value)}
+              className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
+                selected
+                  ? "border-[#006184] bg-[#e8f4f8] ring-2 ring-[#006184]/25"
                   : "border-[#d5d8db] bg-white hover:bg-[#f6f7f8]"
               }`}
             >
-              <span className="block text-sm font-semibold text-[#212225]">{opt.label}</span>
-              <span className="block text-xs text-[#707478]">{opt.hint}</span>
+              <Icon
+                className={`h-5 w-5 shrink-0 ${selected ? "text-[#006184]" : "text-[#707478]"}`}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[#212225]">{label}</span>
+                <span className="block text-xs text-[#707478]">{hint}</span>
+              </span>
             </button>
-          ))}
-        </div>
-      </fieldset>
+          );
+        })}
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>div]:min-w-0">
         <div>
           <label className="sgct-label" htmlFor="priceTicket">
-            Valor da Passagem / Ônibus (R$) *
+            Passagem / Ônibus (R$) *
           </label>
           <input
             id="priceTicket"
@@ -93,7 +108,7 @@ export function CaravanPricingFields({
 
         <div>
           <label className="sgct-label" htmlFor="priceLodging">
-            Valor do Alojamento (R$) {overnight ? "*" : ""}
+            Alojamento (R$){overnight ? " *" : ""}
           </label>
           <input
             id="priceLodging"
@@ -107,23 +122,31 @@ export function CaravanPricingFields({
             required={overnight}
             className="sgct-input disabled:cursor-not-allowed disabled:bg-[#f0f1f2]"
           />
-          {!overnight && (
-            <p className="mt-1 text-xs text-[#707478]">Caravana sem pernoite não tem alojamento.</p>
-          )}
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#d5d8db] bg-[#f6f7f8] px-4 py-3 text-sm text-[#3a3d40]">
-        <p>
-          <strong>Valor final — Padrão (Adulto / Jovem):</strong> {formatCurrency(prices.priceStandard)}
+      {!overnight && (
+        <p className="-mt-2 text-xs text-[#707478]">
+          Caravana sem pernoite não tem alojamento.
         </p>
-        <p>
-          <strong>Valor final — Oficiante:</strong> {formatCurrency(prices.priceOfficiant)}
-          {overnight && prices.priceLodging > 0 && (
-            <span className="text-[#707478]"> (50% de desconto somente no alojamento)</span>
-          )}
+      )}
+
+      <dl className="grid grid-cols-1 gap-2 rounded-lg border border-[#d5d8db] bg-white px-3 py-2 text-sm sm:grid-cols-2 sm:gap-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-[#53575b]">Padrão (Adulto / Jovem)</dt>
+          <dd className="font-bold text-[#212225]">{formatCurrency(prices.priceStandard)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-[#53575b]">Oficiante</dt>
+          <dd className="font-bold text-[#212225]">{formatCurrency(prices.priceOfficiant)}</dd>
+        </div>
+      </dl>
+
+      {overnight && prices.priceLodging > 0 && (
+        <p className="-mt-2 text-xs text-[#707478]">
+          Oficiante tem 50% de desconto somente no alojamento; a passagem é integral.
         </p>
-      </div>
-    </div>
+      )}
+    </fieldset>
   );
 }
