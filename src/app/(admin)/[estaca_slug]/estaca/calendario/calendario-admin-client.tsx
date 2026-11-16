@@ -913,37 +913,37 @@ export function CalendarioAdminClient({
 
           {/* Visualização Desktop (Tabela) */}
           <div className="max-md:hidden overflow-x-auto">
-            <table className="min-w-[900px] w-full divide-y divide-[#e0e2e2] text-sm">
+            <table className="w-full divide-y divide-[#e0e2e2] text-xs sm:text-sm">
               <thead className="bg-[#f7f8f8] text-[#3a3d40] text-xs font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Saída / Retorno</th>
-                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Preços (Padrão / Oficiante)</th>
-                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Capacidade</th>
-                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Prazos</th>
-                  <th className="px-5 py-3.5 text-left whitespace-nowrap">Status</th>
-                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Ações</th>
+                  <th className="px-3.5 py-3 text-left whitespace-nowrap">Caravana / Saída</th>
+                  <th className="px-3 py-3 text-left whitespace-nowrap">Valores</th>
+                  <th className="px-3 py-3 text-left whitespace-nowrap">Capacidade</th>
+                  <th className="px-3 py-3 text-left whitespace-nowrap">Prazos</th>
+                  <th className="px-3 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="px-3.5 py-3 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e0e2e2] bg-white">
                 {initialCaravans.map((caravan) => (
                   <tr key={caravan.id} className="hover:bg-brand-50/40 transition-colors">
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <div className="flex items-start gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 border border-brand-100 text-brand-800">
+                    <td className="px-3.5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-50 border border-brand-100 text-brand-800">
                           <CalendarClock className="h-4 w-4" aria-hidden="true" />
                         </div>
-                        <div>
-                          <div className="font-bold text-[#212225]">
+                        <div className="min-w-0 max-w-[200px] lg:max-w-[260px]">
+                          <div className="font-bold text-[#212225] text-sm truncate" title={caravan.title || formatDate(caravan.departure_date)}>
                             {caravan.title || formatDate(caravan.departure_date)}
                           </div>
-                          <div className="text-xs text-[#53575b] mt-0.5">
+                          <div className="text-xs text-[#53575b] mt-0.5 whitespace-nowrap">
                             Saída: {formatDate(caravan.departure_date)} · Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <div className="font-bold text-brand-900">
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <div className="font-bold text-brand-900 text-sm">
                         {formatCurrency(caravan.price_standard)}
                       </div>
                       <div className="text-xs text-[#53575b] mt-0.5 flex items-center gap-1">
@@ -952,18 +952,18 @@ export function CalendarioAdminClient({
                       </div>
                       <div className="text-xs text-[#707478] mt-0.5">{caravan.overnight ? "Com pernoite" : "Sem pernoite"}</div>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 font-semibold text-[#212225]">
-                        <UsersRound className="h-4 w-4 text-[#707478]" aria-hidden="true" />
+                        <UsersRound className="h-3.5 w-3.5 text-[#707478]" aria-hidden="true" />
                         <span>{caravan.seat_limit} assentos</span>
                       </div>
                       <div className="text-xs text-[#53575b] mt-0.5">
                         Espera: <span className="font-medium">{caravan.waitlist_limit} vagas</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 whitespace-nowrap">
                       <div className="text-xs text-[#212225]">
-                        <span className="text-[#707478]">Inscrição até:</span>{" "}
+                        <span className="text-[#707478]">Inscrição:</span>{" "}
                         <span className="font-medium">{formatDate(caravan.registration_deadline)}</span>
                       </div>
                       <div className="text-xs text-[#53575b] mt-0.5">
@@ -971,21 +971,21 @@ export function CalendarioAdminClient({
                         <span className="font-medium">{formatDate(caravan.quorum_check_date)}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 whitespace-nowrap">
                       <span
-                        className={`sgct-chip whitespace-nowrap shrink-0 ${
+                        className={`sgct-chip whitespace-nowrap shrink-0 text-xs py-0.5 px-2.5 ${
                           statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"
                         }`}
                       >
                         {statusLabels[caravan.status]?.label ?? caravan.status}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                    <td className="px-3.5 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => setEditingCaravan(caravan)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-900 hover:bg-brand-100 transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 hover:bg-brand-100 transition-colors shadow-2xs"
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>Editar</span>
@@ -996,7 +996,7 @@ export function CalendarioAdminClient({
                             type="button"
                             disabled={isUpdatePending}
                             onClick={() => handleCancelCaravan(caravan)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-danger-200 bg-danger-50 px-3 py-1.5 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50 shadow-2xs cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-danger-200 bg-danger-50 px-2.5 py-1 text-xs font-bold text-danger-700 hover:bg-danger-100 transition-colors disabled:opacity-50 shadow-2xs cursor-pointer"
                           >
                             <Ban className="h-3.5 w-3.5" aria-hidden="true" />
                             <span>Cancelar</span>
