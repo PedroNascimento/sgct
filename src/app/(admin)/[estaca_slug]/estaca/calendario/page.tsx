@@ -29,27 +29,19 @@ export default async function AdminCalendarioPage({ params }: Props) {
 
   const caravans = await caravanRepo.findByStakeId(stake.id);
 
-  // Busca todas as reservas da Estaca para o Dashboard de Inscritos
-  const { data: reservations } = await supabase
-    .from("reservations")
-    .select("id, caravan_id, seat_number, status, payment_amount, category, created_at, profiles!inner(full_name, cpf, phone), wards!inner(name)")
-    .eq("stake_id", stake.id)
-    .order("seat_number", { ascending: true, nullsFirst: false });
-
   return (
     <div className="space-y-6">
       <div>
         <p className="sgct-eyebrow">Painel da Estaca</p>
-        <h1 className="sgct-title mt-2">Gestão de Caravanas & Dashboard</h1>
+        <h1 className="sgct-title mt-2">Gestão de Caravanas</h1>
         <p className="sgct-subtitle">
-          Cadastre novas viagens, edite caravanas ativas e acompanhe todos os inscritos por Ala e pagamento.
+          Cadastre novas viagens e edite as caravanas existentes. Para acompanhar inscrições e pagamentos, use o Dashboard.
         </p>
       </div>
 
       <CalendarioAdminClient
         stakeSlug={estaca_slug}
         initialCaravans={caravans}
-        initialReservations={(reservations as any) ?? []}
       />
     </div>
   );

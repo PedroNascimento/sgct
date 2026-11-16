@@ -9,47 +9,14 @@ import {
   editCaravanAction,
   type AdminActionState,
 } from "../../actions";
-import dynamic from "next/dynamic";
 import { formatCurrency, formatDate } from "@/components/ui/format";
-
-const ReservationsChart = dynamic(
-  () => import("@/components/ui/reservations-chart").then((m) => m.ReservationsChart),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="sgct-card p-6 text-center text-sm text-[#53575b]">
-        Carregando panorama das reservas...
-      </div>
-    ),
-  }
-);
-import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards, X } from "lucide-react";
-import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
+import { Ban, CalendarClock, Pencil, UsersRound, WalletCards, X } from "lucide-react";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";
 import { CaravanPricingFields } from "@/components/caravan/caravan-pricing-fields";
-
-export interface ReservationDetail {
-  id: string;
-  caravan_id: string;
-  seat_number: number | null;
-  status: string;
-  payment_amount: number;
-  category: string;
-  created_at: string;
-  profiles: {
-    full_name: string;
-    cpf: string | null;
-    phone: string | null;
-  };
-  wards: {
-    name: string;
-  };
-}
 
 interface Props {
   stakeSlug: string;
   initialCaravans: Caravan[];
-  initialReservations: ReservationDetail[];
 }
 
 const initialState: AdminActionState = {
@@ -66,7 +33,6 @@ const emptySubscribe = () => () => {};
 export function CalendarioAdminClient({
   stakeSlug: _stakeSlug,
   initialCaravans,
-  initialReservations,
 }: Props) {
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
@@ -142,14 +108,6 @@ export function CalendarioAdminClient({
     };
   }, [editingCaravan]);
 
-  // Caravana selecionada para o Dashboard de inscritos
-  const [selectedCaravanId, setSelectedCaravanId] = useState<string>(
-    initialCaravans[0]?.id || ""
-  );
-
-  const selectedCaravan =
-    initialCaravans.find((c) => c.id === selectedCaravanId) || initialCaravans[0];
-
   const [boardingPoints, setBoardingPoints] = useState<BoardingPointDraft[]>([
     { name: "Capela Principal", boardingTime: "" },
   ]);
@@ -184,47 +142,6 @@ export function CalendarioAdminClient({
     completed: { label: "Realizada", color: "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]" },
   };
 
-  // Filtrar reservas pela caravana selecionada
-  const caravanReservations = initialReservations.filter(
-    (r) => r.caravan_id === selectedCaravanId
-  );
-
-  const [revealedCpfIds, setRevealedCpfIds] = useState<Set<string>>(new Set());
-
-  const isAllCpfsRevealed =
-    caravanReservations.length > 0 &&
-    caravanReservations.every((r) => revealedCpfIds.has(r.id));
-
-  const toggleCpfVisibility = (id: string) => {
-    setRevealedCpfIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const toggleAllCpfsVisibility = () => {
-    if (isAllCpfsRevealed) {
-      setRevealedCpfIds(new Set());
-    } else {
-      setRevealedCpfIds(new Set(caravanReservations.map((r) => r.id)));
-    }
-  };
-
-  // Métricas do Dashboard da Estaca
-  const pagos = caravanReservations.filter(
-    (r) => r.status === "confirmado" || r.status === "pago_ala"
-  );
-  const pendentes = caravanReservations.filter((r) => r.status === "pendente");
-  const waitlist = caravanReservations.filter(
-    (r) => r.status === "lista_espera" || r.status === "waitlist" || r.status === "aguardando_vaga"
-  );
-  const totalInscritos = caravanReservations.length;
-
   return (
     <div className="space-y-10">
       {/* Mensagens de feedback */}
@@ -237,241 +154,6 @@ export function CalendarioAdminClient({
         <div role="status" className="sgct-alert-success">
           {createState?.message || updateState?.message || editState?.message}
         </div>
-      )}
-
-      {/* DASHBOARD DE INSCRITOS NA CARAVANA */}
-      {initialCaravans.length > 0 && (
-        <section className="space-y-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white p-5 rounded-2xl border border-[#e0e2e2] shadow-xs">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-800 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-md">
-                  Dashboard de Inscrições
-                </span>
-                {selectedCaravan && (
-                  <span
-                    className={`sgct-chip text-xs py-0.5 px-2.5 ${
-                      statusLabels[selectedCaravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"
-                    }`}
-                  >
-                    {statusLabels[selectedCaravan.status]?.label ?? selectedCaravan.status}
-                  </span>
-                )}
-              </div>
-              <h2 className="text-xl font-bold text-[#212225] mt-1.5">
-                Status dos Passageiros por Viagem
-              </h2>
-              <p className="text-xs text-[#53575b] mt-0.5">
-                Acompanhe em tempo real a ocupação dos assentos, quórum e pagamentos da caravana selecionada.
-              </p>
-            </div>
-
-            {/* Seletor de Caravana */}
-            <div className="w-full lg:w-auto min-w-[280px] max-w-md shrink-0">
-              <label htmlFor="dashboard-caravan-select" className="block text-xs font-semibold text-[#53575b] mb-1">
-                Selecione a Caravana para Visualizar:
-              </label>
-              <div className="relative">
-                <select
-                  id="dashboard-caravan-select"
-                  value={selectedCaravanId}
-                  onChange={(e) => setSelectedCaravanId(e.target.value)}
-                  className="sgct-select w-full font-bold text-brand-900 bg-brand-50/50 border-brand-300 py-2.5 pl-3.5 pr-10 text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 cursor-pointer shadow-2xs"
-                >
-                  {initialCaravans.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title ? `${c.title} (${formatDate(c.departure_date)})` : `Caravana de ${formatDate(c.departure_date)}`}
-                      {c.overnight ? " · Com pernoite" : " · Sem pernoite"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Cards de Métricas */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-2xl border border-[#e0e2e2] bg-white p-5 shadow-xs">
-              <span className="text-sm font-bold uppercase tracking-wider text-[#53575b]">
-                Total de Inscritos
-              </span>
-              <p className="mt-2 text-3xl font-black text-[#212225]">{totalInscritos}</p>
-              <p className="mt-1 text-sm text-[#707478]">Passageiros na viagem</p>
-            </div>
-
-            <div className="rounded-2xl border border-success-200 bg-success-50/50 p-5 shadow-xs">
-              <span className="text-sm font-bold uppercase tracking-wider text-success-700">
-                Já Pagou
-              </span>
-              <p className="mt-2 text-3xl font-black text-success-700">{pagos.length}</p>
-              <p className="mt-1 text-sm text-success-700">Confirmados ou repassados pela Ala</p>
-            </div>
-
-            <div className="rounded-2xl border border-warning-200 bg-warning-50/50 p-5 shadow-xs">
-              <span className="text-sm font-bold uppercase tracking-wider text-warning-700">
-                Falta Pagar
-              </span>
-              <p className="mt-2 text-3xl font-black text-warning-700">{pendentes.length}</p>
-              <p className="mt-1 text-sm text-warning-700">Aguardando comprovação na Ala</p>
-            </div>
-
-            <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 shadow-xs">
-              <span className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                Fila de Espera
-              </span>
-              <p className="mt-2 text-3xl font-black text-brand-900">{waitlist.length}</p>
-              <p className="mt-1 text-sm text-brand-700">Aguardando vaga excedente</p>
-            </div>
-          </div>
-
-          <ReservationsChart reservations={caravanReservations} />
-
-          {/* Tabela de Inscritos na Caravana */}
-          <div className="sgct-card overflow-hidden">
-            <div className="border-b border-[#e0e2e2] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-[#212225]">
-                  Passageiros Inscritos ({caravanReservations.length})
-                </h3>
-                <p className="text-sm text-[#53575b]">
-                  Listagem organizada por poltrona/ordem de inscrição.
-                </p>
-              </div>
-              {caravanReservations.length > 0 && (
-                <CpfVisibilityToggle
-                  allRevealed={isAllCpfsRevealed}
-                  onToggleAll={toggleAllCpfsVisibility}
-                />
-              )}
-            </div>
-
-            {caravanReservations.length === 0 ? (
-              <div className="p-10 text-center text-sm text-[#53575b] bg-[#fafafa]">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 mb-3">
-                  <UsersRound className="h-6 w-6" aria-hidden="true" />
-                </div>
-                <h4 className="text-base font-bold text-[#212225]">
-                  Nenhum membro inscrito nesta caravana ainda
-                </h4>
-                <p className="mt-1 text-xs text-[#707478] max-w-md mx-auto">
-                  Assim que os membros da Estaca ou líderes de Ala realizarem as reservas e escolherem seus assentos, a lista de passageiros e os dados de confirmação aparecerão aqui automaticamente.
-                </p>
-              </div>
-            ) : (
-              <>
-              <div className="divide-y divide-[#e0e2e2] md:hidden">
-                {caravanReservations.map((res, idx) => (
-                  <article key={res.id} className="space-y-4 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="break-words text-lg font-bold text-[#212225]">{res.profiles?.full_name}</p>
-                        <div className="mt-0.5">
-                          <MaskedCpf
-                            cpf={res.profiles?.cpf}
-                            isRevealed={revealedCpfIds.has(res.id)}
-                            onToggle={() => toggleCpfVisibility(res.id)}
-                            memberName={res.profiles?.full_name}
-                          />
-                        </div>
-                        <p className="mt-1 flex items-center gap-2 text-sm text-[#53575b]"><MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />{res.wards?.name}</p>
-                      </div>
-                      {res.seat_number ? <span className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 px-2 font-bold text-brand-900" aria-label={`Assento ${res.seat_number}`}>{res.seat_number}</span> : <span className="sgct-chip shrink-0 border-brand-200 bg-brand-50 text-brand-700">Fila #{idx + 1}</span>}
-                    </div>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-[#f7f8f8] p-4">
-                      <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><Phone className="h-4 w-4" aria-hidden="true" />Contato</dt><dd className="mt-1 break-all font-semibold">{res.profiles?.phone || "Não informado"}</dd></div>
-                      <div><dt className="flex items-center gap-1.5 text-sm text-[#53575b]"><WalletCards className="h-4 w-4" aria-hidden="true" />Valor</dt><dd className="mt-1 font-semibold text-brand-900">{formatCurrency(Number(res.payment_amount))}</dd><dd className="text-sm text-[#53575b]">{res.category === "officiant" ? "Oficiante" : "Padrão"}</dd></div>
-                    </dl>
-                    <div>
-                      {res.status === "confirmado" && <span className="sgct-chip border-success-200 bg-success-50 font-semibold text-success-700">Confirmado</span>}
-                      {res.status === "pago_ala" && <span className="sgct-chip border-brand-200 bg-brand-50 font-semibold text-brand-800">Pago na Ala — validar</span>}
-                      {res.status === "pendente" && <span className="sgct-chip border-warning-200 bg-warning-50 font-semibold text-warning-700">Falta pagar</span>}
-                      {["lista_espera", "waitlist", "aguardando_vaga"].includes(res.status) && <span className="sgct-chip border-brand-200 bg-brand-50 font-semibold text-brand-800">Lista de espera</span>}
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <div className="max-md:hidden overflow-x-auto">
-                <table className="min-w-full divide-y divide-[#e0e2e2] text-sm">
-                  <thead className="bg-[#f7f8f8] text-[#3a3d40]">
-                    <tr>
-                      <th className="px-5 py-3 text-left font-medium">Assento</th>
-                      <th className="px-5 py-3 text-left font-medium">Passageiro</th>
-                      <th className="px-5 py-3 text-left font-medium">Ala</th>
-                      <th className="px-5 py-3 text-left font-medium">Contato</th>
-                      <th className="px-5 py-3 text-left font-medium">Valor / Categoria</th>
-                      <th className="px-5 py-3 text-left font-medium">Status Pagamento</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e0e2e2] bg-white">
-                    {caravanReservations.map((res, idx) => (
-                      <tr key={res.id} className="hover:bg-brand-50/40">
-                        <td className="px-5 py-3.5">
-                          {res.seat_number ? (
-                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-100 font-bold text-brand-900 text-sm">
-                              {res.seat_number}
-                            </span>
-                          ) : (
-                            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-700">
-                              Fila #{idx + 1}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <p className="font-bold text-[#212225]">{res.profiles?.full_name}</p>
-                          <div className="mt-0.5">
-                            <MaskedCpf
-                              cpf={res.profiles?.cpf}
-                              isRevealed={revealedCpfIds.has(res.id)}
-                              onToggle={() => toggleCpfVisibility(res.id)}
-                              memberName={res.profiles?.full_name}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-[#3a3d40]">
-                          {res.wards?.name}
-                        </td>
-                        <td className="px-5 py-3.5 text-sm text-[#53575b]">
-                          {res.profiles?.phone || "Não informado"}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="font-bold text-brand-900">
-                            {formatCurrency(Number(res.payment_amount))}
-                          </span>
-                          <span className="block text-[11px] text-[#707478]">
-                            {res.category === "officiant" ? "Oficiante" : "Padrão"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          {res.status === "confirmado" && (
-                            <span className="sgct-chip border-success-200 bg-success-50 text-success-700 font-semibold">
-                               Confirmado
-                            </span>
-                          )}
-                          {res.status === "pago_ala" && (
-                            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
-                               Pago na Ala (Validar)
-                            </span>
-                          )}
-                          {res.status === "pendente" && (
-                            <span className="sgct-chip border-warning-200 bg-warning-50 text-warning-700 font-semibold">
-                               Falta Pagar
-                            </span>
-                          )}
-                          {(["lista_espera", "waitlist", "aguardando_vaga"].includes(res.status)) && (
-                            <span className="sgct-chip border-brand-200 bg-brand-50 text-brand-800 font-semibold">
-                              Lista de espera
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              </>
-            )}
-          </div>
-        </section>
       )}
 
       {/* MODAL DE EDIÇÃO DE CARAVANA */}

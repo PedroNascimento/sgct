@@ -1,5 +1,5 @@
 import type { LucideIcon, LucideProps } from "lucide-react";
-import { ArrowLeft, ArrowRight, CalendarDays, Clock, MapPin, UserRound, Check, Info, TriangleAlert, BusFront, Building2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Clock, MapPin, UserRound, Check, Info, TriangleAlert, BusFront, Building2, LayoutDashboard } from "lucide-react";
 
 // Keep a single visual contract for icons across the application.
 function icon(Component: LucideIcon) {
@@ -19,6 +19,7 @@ export const InfoIcon = icon(Info);
 export const AlertIcon = icon(TriangleAlert);
 export const BusIcon = icon(BusFront);
 export const BuildingIcon = icon(Building2);
+export const DashboardIcon = icon(LayoutDashboard);
 
 export function SidebarCollapseIcon(props: LucideProps) {
   return (
