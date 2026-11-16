@@ -147,6 +147,9 @@ export function CalendarioAdminClient({
     initialCaravans[0]?.id || ""
   );
 
+  const selectedCaravan =
+    initialCaravans.find((c) => c.id === selectedCaravanId) || initialCaravans[0];
+
   const [boardingPoints, setBoardingPoints] = useState<BoardingPointDraft[]>([
     { name: "Capela Principal", boardingTime: "" },
   ]);
@@ -239,32 +242,50 @@ export function CalendarioAdminClient({
       {/* DASHBOARD DE INSCRITOS NA CARAVANA */}
       {initialCaravans.length > 0 && (
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-[#e0e2e2] shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white p-5 rounded-2xl border border-[#e0e2e2] shadow-xs">
             <div>
-              <p className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                Dashboard de Inscrições
-              </p>
-              <h2 className="text-xl font-bold text-[#212225] mt-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-800 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-md">
+                  Dashboard de Inscrições
+                </span>
+                {selectedCaravan && (
+                  <span
+                    className={`sgct-chip text-xs py-0.5 px-2.5 ${
+                      statusLabels[selectedCaravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"
+                    }`}
+                  >
+                    {statusLabels[selectedCaravan.status]?.label ?? selectedCaravan.status}
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl font-bold text-[#212225] mt-1.5">
                 Status dos Passageiros por Viagem
               </h2>
+              <p className="text-xs text-[#53575b] mt-0.5">
+                Acompanhe em tempo real a ocupação dos assentos, quórum e pagamentos da caravana selecionada.
+              </p>
             </div>
 
             {/* Seletor de Caravana */}
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {initialCaravans.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setSelectedCaravanId(c.id)}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap ${
-                    selectedCaravanId === c.id
-                      ? "bg-brand-900 text-white shadow-sm"
-                      : "bg-[#eff0f0] text-[#3a3d40] hover:bg-brand-50"
-                  }`}
+            <div className="w-full lg:w-auto min-w-[280px] max-w-md shrink-0">
+              <label htmlFor="dashboard-caravan-select" className="block text-xs font-semibold text-[#53575b] mb-1">
+                Selecione a Caravana para Visualizar:
+              </label>
+              <div className="relative">
+                <select
+                  id="dashboard-caravan-select"
+                  value={selectedCaravanId}
+                  onChange={(e) => setSelectedCaravanId(e.target.value)}
+                  className="sgct-select w-full font-bold text-brand-900 bg-brand-50/50 border-brand-300 py-2.5 pl-3.5 pr-10 text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 cursor-pointer shadow-2xs"
                 >
-                  {c.title ? `${c.title} (${formatDate(c.departure_date)})` : formatDate(c.departure_date)}
-                </button>
-              ))}
+                  {initialCaravans.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title ? `${c.title} (${formatDate(c.departure_date)})` : `Caravana de ${formatDate(c.departure_date)}`}
+                      {c.overnight ? " · Com pernoite" : " · Sem pernoite"}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -325,8 +346,16 @@ export function CalendarioAdminClient({
             </div>
 
             {caravanReservations.length === 0 ? (
-              <div className="p-10 text-center text-sm text-[#53575b]">
-                Nenhum membro inscrito nesta caravana ainda.
+              <div className="p-10 text-center text-sm text-[#53575b] bg-[#fafafa]">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 mb-3">
+                  <UsersRound className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <h4 className="text-base font-bold text-[#212225]">
+                  Nenhum membro inscrito nesta caravana ainda
+                </h4>
+                <p className="mt-1 text-xs text-[#707478] max-w-md mx-auto">
+                  Assim que os membros da Estaca ou líderes de Ala realizarem as reservas e escolherem seus assentos, a lista de passageiros e os dados de confirmação aparecerão aqui automaticamente.
+                </p>
               </div>
             ) : (
               <>
