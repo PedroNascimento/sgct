@@ -29,14 +29,23 @@ export default async function AdminDashboardPage({ params }: Props) {
   }
 
   const caravans = await caravanRepo.findByStakeId(stake.id);
+  // Regra: o Dashboard acompanha somente caravanas com inscrições abertas
+  const openCaravans = caravans.filter((c) => c.status === "open");
+  const openCaravanIds = openCaravans.map((c) => c.id);
 
-  const { data: reservations } = await supabase
-    .from("reservations")
-    .select(
-      "id, caravan_id, seat_number, status, payment_amount, category, created_at, profiles!inner(full_name, cpf, phone), wards!inner(name)"
-    )
-    .eq("stake_id", stake.id)
-    .order("seat_number", { ascending: true, nullsFirst: false });
+  let reservations: ReservationDetail[] = [];
+  if (openCaravanIds.length > 0) {
+    const { data } = await supabase
+      .from("reservations")
+      .select(
+        "id, caravan_id, seat_number, status, payment_amount, category, created_at, profiles!inner(full_name, cpf, phone), wards!inner(name)"
+      )
+      .eq("stake_id", stake.id)
+      .in("caravan_id", openCaravanIds)
+      .order("seat_number", { ascending: true, nullsFirst: false });
+
+    reservations = (data as unknown as ReservationDetail[]) ?? [];
+  }
 
   return (
     <div className="space-y-6">
@@ -44,13 +53,13 @@ export default async function AdminDashboardPage({ params }: Props) {
         <p className="sgct-eyebrow">Painel da Estaca</p>
         <h1 className="sgct-title mt-2">Dashboard de Inscrições</h1>
         <p className="sgct-subtitle">
-          Acompanhe ocupação, pagamentos, quórum e passageiros de cada caravana.
+          Acompanhe ocupação, pagamentos, quórum e passageiros de caravanas com inscrições abertas.
         </p>
       </div>
 
       <CaravanDashboardClient
-        initialCaravans={caravans}
-        initialReservations={(reservations as unknown as ReservationDetail[]) ?? []}
+        initialCaravans={openCaravans}
+        initialReservations={reservations}
       />
     </div>
   );

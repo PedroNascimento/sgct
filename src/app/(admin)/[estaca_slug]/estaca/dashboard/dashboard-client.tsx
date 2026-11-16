@@ -201,9 +201,9 @@ export function CaravanDashboardClient({ initialCaravans, initialReservations }:
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
           <CalendarClock className="h-6 w-6" aria-hidden="true" />
         </div>
-        <h2 className="text-base font-bold text-[#212225]">Nenhuma caravana cadastrada</h2>
+        <h2 className="text-base font-bold text-[#212225]">Nenhuma caravana com inscrições abertas</h2>
         <p className="mt-1 text-sm text-[#53575b]">
-          Cadastre a primeira caravana em <strong>Caravanas</strong> para acompanhar as inscrições aqui.
+          O Dashboard exibe apenas viagens ativas com status <strong>Inscrições abertas</strong>. Acesse a tela de <strong>Caravanas</strong> para abrir as inscrições da viagem desejada.
         </p>
       </div>
     );
