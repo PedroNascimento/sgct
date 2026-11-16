@@ -73,13 +73,13 @@ src/app/
     [estaca_slug]/
       ala/                         # requer role=admin_ala E stake_id do JWT == stake do slug
         pagamentos/
-        relatorios/
+        relatorios/               # painel financeiro detalhado da Ala (repasses, inscritos, créditos, CSV/PDF)
         formularios-menor/
       estaca/                     # requer role=admin_estaca E stake_id do JWT == stake do slug
         validacao-semanal/
         quorum/
         permutas/
-        relatorios/
+        relatorios/               # painel financeiro consolidado da Estaca (repasses por Ala, inscritos, créditos, CSV/PDF)
         calendario/
       caravana/[id]/lider/
         check-in-scanner/

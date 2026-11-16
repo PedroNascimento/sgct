@@ -132,9 +132,9 @@ Implementado via Supabase Custom Claims e RLS:
 #### 6.7. Notificações por E-mail
 Via Resend (free tier). Eventos: confirmação de reserva + QR Code, alerta de validação pendente, promoção de fila de espera, confirmação de `PAGO_ALA`/`CONFIRMADO`, cancelamento de reserva ou de caravana inteira (quórum não atingido), expiração de crédito, aprovação/reprovação de formulário de menor, atribuição de quarto/alojamento.
 
-#### 6.8. Relatórios Financeiros 🔄
-* **Admin Ala:** gera e exporta (CSV/PDF) relatório financeiro **escopado à própria Ala** — valores arrecadados, repassados e pendentes por caravana.
-* **Admin Estaca:** gera e exporta relatório financeiro **consolidado de todas as Alas**, com filtro por caravana/período, para prestação de contas.
+#### 6.8. Relatórios Financeiros e Controle de Repasses 🔄
+* **Admin Ala:** possui painel financeiro detalhado **escopado à própria Ala** — controle de quanto a Ala deve transferir à Estaca, quanto já foi pago na Ala (`pago_ala`), quanto já foi transferido e confirmado pela Estaca (`confirmado`), saldo pendente, lista detalhada de inscritos (data de inscrição, nome, forma de pagamento, valor devido), consulta de créditos da Ala em caso de cancelamento e exportação CSV/PDF.
+* **Admin Estaca:** possui painel financeiro **consolidado da Estaca** (substituindo o controle manual em planilhas do Google) com controle de repasses por Ala (quanto deve transferir, quanto já foi transferido, quanto ainda falta), registro financeiro detalhado por caravana agrupado por Ala (e seção separada `Outra Estaca` para convidados), consulta de créditos em caso de cancelamento em toda a Estaca e exportação CSV/PDF. Os números são atualizados conforme as Alas confirmam o pagamento do membro e o Admin Estaca confirma o recebimento da transferência.
 
 #### 6.9. Dados de Menores e LGPD
 * **0-5 anos (colo):** vinculados à reserva do responsável, sem conta própria, sem pagamento, presentes apenas no manifesto.
