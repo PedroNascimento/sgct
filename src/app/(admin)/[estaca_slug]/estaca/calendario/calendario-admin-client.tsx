@@ -26,6 +26,7 @@ const ReservationsChart = dynamic(
 import { Ban, CalendarClock, MapPin, Pencil, Phone, UsersRound, WalletCards, X } from "lucide-react";
 import { MaskedCpf, CpfVisibilityToggle } from "@/components/admin/masked-cpf";
 import { useFeedbackModal } from "@/components/ui/feedback-modal";
+import { CaravanPricingFields } from "@/components/caravan/caravan-pricing-fields";
 
 export interface ReservationDetail {
   id: string;
@@ -530,30 +531,7 @@ export function CalendarioAdminClient({
                     className="sgct-input"
                   />
                 </div>
-
-                <div>
-                  <label className="sgct-label">Preço Padrão (R$) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="priceStandard"
-                    defaultValue={editingCaravan.price_standard}
-                    required
-                    className="sgct-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="sgct-label">Preço Oficiante (R$) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="priceOfficiant"
-                    defaultValue={editingCaravan.price_officiant}
-                    required
-                    className="sgct-input"
-                  />
-                </div>
+                <CaravanPricingFields key={editingCaravan.id} defaultOvernight={editingCaravan.overnight ?? true} defaultTicket={editingCaravan.price_ticket} defaultLodging={editingCaravan.price_lodging} />
 
                 <div>
                   <label className="sgct-label">Limite de Assentos *</label>
@@ -711,34 +689,7 @@ export function CalendarioAdminClient({
                 className="sgct-input"
               />
             </div>
-
-            <div>
-              <label className="sgct-label">
-                Valor Categoria Padrão (Adulto / Jovem) *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="priceStandard"
-                defaultValue="130.00"
-                required
-                className="sgct-input"
-              />
-            </div>
-
-            <div>
-              <label className="sgct-label">
-                Valor Oficiante do Templo *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="priceOfficiant"
-                defaultValue="117.00"
-                required
-                className="sgct-input"
-              />
-            </div>
+            <CaravanPricingFields />
 
             <div>
               <label className="sgct-label">
@@ -907,6 +858,7 @@ export function CalendarioAdminClient({
                     </dt>
                     <dd className="mt-1 font-bold text-brand-900">{formatCurrency(caravan.price_standard)}</dd>
                     <dd className="text-[#53575b]">Oficiante: {formatCurrency(caravan.price_officiant)}</dd>
+                <dd className="text-xs text-[#707478]">{caravan.overnight ? "Com pernoite" : "Sem pernoite"}</dd>
                   </div>
                   <div>
                     <dt className="flex items-center gap-1.5 text-[#53575b] font-medium">
@@ -992,6 +944,7 @@ export function CalendarioAdminClient({
                         <span>Oficiante:</span>
                         <span className="font-semibold text-[#3a3d40]">{formatCurrency(caravan.price_officiant)}</span>
                       </div>
+                      <div className="text-xs text-[#707478] mt-0.5">{caravan.overnight ? "Com pernoite" : "Sem pernoite"}</div>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 font-semibold text-[#212225]">

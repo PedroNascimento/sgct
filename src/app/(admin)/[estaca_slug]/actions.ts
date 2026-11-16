@@ -17,6 +17,7 @@ import {
 } from "@/infrastructure/supabase/server";
 import { SupabaseProfileRepository } from "@/infrastructure/supabase/supabase-profile-repository";
 import { SupabaseCaravanRepository } from "@/infrastructure/supabase/supabase-caravan-repository";
+import { calculateCaravanPrices } from "@/domain/pricing/caravan-pricing";
 import { createCaravan } from "@/use-cases/caravan/create-caravan";
 import { updateCaravanStatus } from "@/use-cases/caravan/update-caravan-status";
 import { confirmWardPayment } from "@/use-cases/payment/confirm-ward-payment";
@@ -225,8 +226,13 @@ export async function createCaravanAction(
     const title = (formData.get("title") as string)?.trim() || undefined;
     const departureDate = formData.get("departureDate") as string;
     const returnDate = (formData.get("returnDate") as string) || undefined;
-    const priceStandard = Number(formData.get("priceStandard"));
-    const priceOfficiant = Number(formData.get("priceOfficiant"));
+    const overnightRaw = formData.get("overnight");
+    if (overnightRaw !== "true" && overnightRaw !== "false") {
+      throw new Error("Informe se a caravana é com ou sem pernoite.");
+    }
+    const overnight = overnightRaw === "true";
+    const priceTicket = Number(formData.get("priceTicket"));
+    const priceLodging = overnight ? Number(formData.get("priceLodging") || 0) : 0;
     const seatLimit = formData.get("seatLimit") ? Number(formData.get("seatLimit")) : 50;
     const waitlistLimit = formData.get("waitlistLimit") ? Number(formData.get("waitlistLimit")) : 5;
     const registrationDeadline = formData.get("registrationDeadline") as string;
@@ -257,8 +263,9 @@ export async function createCaravanAction(
         title,
         departureDate,
         returnDate,
-        priceStandard,
-        priceOfficiant,
+        overnight,
+        priceTicket,
+        priceLodging,
         seatLimit,
         waitlistLimit,
         registrationDeadline,
@@ -296,8 +303,9 @@ const editCaravanInputSchema = z.object({
   title: z.string().trim().max(100, "Título não pode exceder 100 caracteres.").optional().nullable(),
   departureDate: z.string().min(1, "Data de saída é obrigatória").optional().nullable(),
   returnDate: z.string().nullable().optional(),
-  priceStandard: z.number().nonnegative().optional(),
-  priceOfficiant: z.number().nonnegative().optional(),
+  overnight: z.boolean().optional(),
+  priceTicket: z.number().nonnegative().optional(),
+  priceLodging: z.number().nonnegative().optional(),
   seatLimit: z.number().positive().optional(),
   waitlistLimit: z.number().nonnegative().optional(),
   registrationDeadline: z.string().optional().nullable(),
@@ -512,8 +520,9 @@ export async function editCaravanAction(
       title: formData.get("title") !== null ? (formData.get("title") as string) : undefined,
       departureDate: formData.get("departureDate") || undefined,
       returnDate: (formData.get("returnDate") as string) || null,
-      priceStandard: formData.get("priceStandard") ? Number(formData.get("priceStandard")) : undefined,
-      priceOfficiant: formData.get("priceOfficiant") ? Number(formData.get("priceOfficiant")) : undefined,
+      overnight: formData.get("overnight") ? formData.get("overnight") === "true" : undefined,
+      priceTicket: formData.get("priceTicket") ? Number(formData.get("priceTicket")) : undefined,
+      priceLodging: formData.get("priceLodging") ? Number(formData.get("priceLodging")) : undefined,
       seatLimit: formData.get("seatLimit") ? Number(formData.get("seatLimit")) : undefined,
       waitlistLimit: formData.get("waitlistLimit") ? Number(formData.get("waitlistLimit")) : undefined,
       registrationDeadline: formData.get("registrationDeadline") || undefined,
@@ -539,8 +548,19 @@ export async function editCaravanAction(
     if (validated.title !== undefined) updatePayload.title = validated.title ? validated.title.trim() : null;
     if (validated.departureDate !== undefined) updatePayload.departure_date = validated.departureDate;
     if (validated.returnDate !== undefined) updatePayload.return_date = validated.returnDate;
-    if (validated.priceStandard !== undefined) updatePayload.price_standard = validated.priceStandard;
-    if (validated.priceOfficiant !== undefined) updatePayload.price_officiant = validated.priceOfficiant;
+    if (validated.overnight !== undefined && validated.priceTicket !== undefined) {
+      // D33: valores finais derivados (o trigger do banco recalcula de forma idêntica)
+      const prices = calculateCaravanPrices({
+        overnight: validated.overnight,
+        priceTicket: validated.priceTicket,
+        priceLodging: validated.priceLodging ?? 0,
+      });
+      updatePayload.overnight = validated.overnight;
+      updatePayload.price_ticket = prices.priceTicket;
+      updatePayload.price_lodging = prices.priceLodging;
+      updatePayload.price_standard = prices.priceStandard;
+      updatePayload.price_officiant = prices.priceOfficiant;
+    }
     if (validated.seatLimit !== undefined) updatePayload.seat_limit = validated.seatLimit;
     if (validated.waitlistLimit !== undefined) updatePayload.waitlist_limit = validated.waitlistLimit;
     if (validated.registrationDeadline !== undefined) updatePayload.registration_deadline = validated.registrationDeadline;

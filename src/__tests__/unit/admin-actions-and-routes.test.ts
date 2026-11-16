@@ -342,8 +342,9 @@ describe("Server Actions Administrativas e de Acesso", () => {
       const formData = new FormData();
       formData.append("caravanId", "caravan-123");
       formData.append("departureDate", "2026-11-20");
-      formData.append("priceStandard", "150.00");
-      formData.append("priceOfficiant", "135.00");
+      formData.append("overnight", "true");
+      formData.append("priceTicket", "109");
+      formData.append("priceLodging", "26");
       formData.append("seatLimit", "48");
       formData.append("status", "open");
 
@@ -434,8 +435,9 @@ describe("Server Actions Administrativas e de Acesso", () => {
       const formData = new FormData();
       formData.append("departureDate", "2026-10-16");
       formData.append("returnDate", "2026-10-17");
-      formData.append("priceStandard", "130");
-      formData.append("priceOfficiant", "122");
+      formData.append("overnight", "true");
+      formData.append("priceTicket", "109");
+      formData.append("priceLodging", "26");
       formData.append("seatLimit", "50");
       formData.append("waitlistLimit", "5");
       formData.append("registrationDeadline", "2026-10-11");
@@ -468,8 +470,9 @@ describe("Server Actions Administrativas e de Acesso", () => {
     it("lê e processa pontos de embarque enviados via campo 'boardingPointsJson'", async () => {
       const formData = new FormData();
       formData.append("departureDate", "2026-10-16");
-      formData.append("priceStandard", "130");
-      formData.append("priceOfficiant", "122");
+      formData.append("overnight", "true");
+      formData.append("priceTicket", "109");
+      formData.append("priceLodging", "26");
       formData.append("registrationDeadline", "2026-10-11");
       formData.append("quorumCheckDate", "2026-10-13");
       formData.append(

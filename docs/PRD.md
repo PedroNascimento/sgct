@@ -69,12 +69,13 @@ Implementado via Supabase Custom Claims e RLS:
 #### 6.2. Sistema de Reservas e Concorrência
 * 🔄 **Mapa de assentos fiel ao layout real do ônibus:** 50 assentos numerados em fileiras duplas (ex: 49/50, 45/46 ... 1/2), com corredor central, banheiro e posição do motorista representados visualmente.
 * 🔄 **Múltiplos pontos de embarque por caravana** (ex: "Sede da Estaca" às 18:30, "Cidade Nova" às 19:30) — cada reserva deve indicar o ponto de embarque escolhido.
-* 🔄 **Tabela de preços por categoria:**
-  | Categoria | Valor (referência) |
-  |---|---|
-  | Padrão | R$ 130,00 |
-  | Oficiante do Templo | R$ 117,00 |
-  | Criança de Colo (até 5 anos) | Gratuito |
+* 🔄 **Precificação por tipo de caravana (D33):** o Admin da Estaca informa, no cadastro, se a caravana é **COM** ou **SEM pernoite**, o **valor da passagem** e o **valor do alojamento** (ambos editáveis ao longo do tempo).
+  | Tipo | Passagem (ref.) | Alojamento (ref.) | Total Padrão | Total Oficiante |
+  |---|---|---|---|---|
+  | Sem pernoite | R$ 100,00 | — | R$ 100,00 | R$ 100,00 |
+  | Com pernoite | R$ 109,00 | R$ 26,00 | R$ 135,00 | R$ 122,00 |
+  * **Oficiante do Templo:** 50% de desconto **somente no alojamento**; a passagem permanece integral (ex.: 109 + 13 = R$ 122,00).
+  * **Criança de Colo (até 5 anos):** gratuito.
   * 🔄 **Decisão fechada:** a categoria "Oficiante do Templo" é **autodeclarada pelo próprio membro** no momento da reserva (sem etapa de validação administrativa prévia).
 * Status inicial da reserva: `PENDENTE`.
 * Suporte a inscrição de dependentes:

@@ -12,7 +12,7 @@ Antes de qualquer reserva existir, um `admin_estaca` precisa cadastrar a caravan
 ### Dentro do escopo
 - CRUD de `caravans` por `admin_estaca` — sempre escopado à própria `stake_id` (nunca escolhida manualmente, sempre a do próprio admin).
 - Múltiplos pontos de embarque por caravana (`boarding_points`), cada um com nome e horário.
-- Tabela de preços por categoria (Padrão, Oficiante, Criança de Colo gratuita).
+- Precificação por tipo de caravana (D33): COM/SEM pernoite, valor da passagem e do alojamento; Oficiante com 50% de desconto só no alojamento; Criança de Colo gratuita.
 - Prazos: fechamento de inscrição (domingo anterior), verificação de quórum (terça anterior).
 - Página pública de calendário em `/[estaca_slug]/calendario`, com status agregado (Disponíveis/Confirmadas/Em Validação/Espera).
 - Campo de preferência de agrupamento familiar no formulário de inscrição (só coleta o dado — atribuição de quarto em si é fora do escopo digital, D18).
@@ -29,7 +29,9 @@ Como Admin Estaca, quero cadastrar uma nova caravana com datas, valores e pontos
 
 **Critérios de Aceite (EARS):**
 - WHEN um `admin_estaca` cria uma `caravan`, THE SYSTEM SHALL gravar `stake_id` igual ao da própria sessão do admin (nunca um campo escolhível no formulário).
-- THE SYSTEM SHALL exigir `departure_date`, `price_standard`, `price_officiant`, `registration_deadline` (domingo anterior) e `quorum_check_date` (terça anterior).
+- THE SYSTEM SHALL exigir `departure_date`, `overnight` (com/sem pernoite), `price_ticket`, `price_lodging` (0 se sem pernoite), `registration_deadline` (domingo anterior) e `quorum_check_date` (terça anterior).
+- THE SYSTEM SHALL calcular (trigger `compute_caravan_prices`, D33) `price_standard = price_ticket + price_lodging` e `price_officiant = price_ticket + 50% de price_lodging`; em caravana sem pernoite `price_lodging = 0` e ambos os valores são iguais à passagem.
+- WHEN o Admin Estaca altera passagem/alojamento/tipo, THE SYSTEM SHALL recalcular os valores finais da caravana sem reprecificar reservas já existentes.
 - THE SYSTEM SHALL permitir cadastro de um ou mais `boarding_points`, cada um com nome e horário.
 
 ### US-002.2: Consultar calendário público

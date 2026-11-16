@@ -10,6 +10,10 @@ export interface CreateCaravanData {
   title?: string | null;
   departure_date: string;
   return_date?: string | null;
+  overnight: boolean;
+  price_ticket: number;
+  price_lodging: number;
+  /** Derivados (D33); o banco recalcula via trigger, mantidos aqui por consistência. */
   price_standard: number;
   price_officiant: number;
   seat_limit?: number;

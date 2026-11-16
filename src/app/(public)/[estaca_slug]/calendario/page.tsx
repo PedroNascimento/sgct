@@ -178,6 +178,10 @@ export default async function PublicCalendarioPage({ params }: Props) {
                     <h3 className="text-base font-bold text-[#212225]">Contribuição da viagem</h3>
                     <ul className="mt-3 divide-y divide-[#e0e2e2] text-sm text-[#53575b]">
                       <li className="flex justify-between gap-3 py-2.5">
+                        <span>Tipo de caravana</span>
+                        <strong className="text-[#212225]">{caravan.overnight ? "Com pernoite" : "Sem pernoite"}</strong>
+                      </li>
+                      <li className="flex justify-between gap-3 py-2.5">
                         <span>Adulto ou jovem</span>
                         <strong className="text-[#212225]">{formatCurrency(caravan.price_standard)}</strong>
                       </li>

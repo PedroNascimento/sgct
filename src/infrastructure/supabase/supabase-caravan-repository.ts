@@ -37,6 +37,8 @@ export class SupabaseCaravanRepository implements CaravanRepository {
     return {
       ...caravan,
       price_standard: Number(caravan.price_standard),
+      price_ticket: Number(caravan.price_ticket),
+      price_lodging: Number(caravan.price_lodging),
       price_officiant: Number(caravan.price_officiant),
       boarding_points: boardingPoints,
     };
@@ -58,6 +60,8 @@ export class SupabaseCaravanRepository implements CaravanRepository {
     return data.map((c) => ({
       ...c,
       price_standard: Number(c.price_standard),
+      price_ticket: Number(c.price_ticket),
+      price_lodging: Number(c.price_lodging),
       price_officiant: Number(c.price_officiant),
     }));
   }
@@ -70,6 +74,9 @@ export class SupabaseCaravanRepository implements CaravanRepository {
         title: data.title ?? null,
         departure_date: data.departure_date,
         return_date: data.return_date ?? null,
+        overnight: data.overnight,
+        price_ticket: data.price_ticket,
+        price_lodging: data.price_lodging,
         price_standard: data.price_standard,
         price_officiant: data.price_officiant,
         seat_limit: data.seat_limit ?? 50,
@@ -91,6 +98,8 @@ export class SupabaseCaravanRepository implements CaravanRepository {
     return {
       ...created,
       price_standard: Number(created.price_standard),
+      price_ticket: Number(created.price_ticket),
+      price_lodging: Number(created.price_lodging),
       price_officiant: Number(created.price_officiant),
     };
   }
@@ -110,6 +119,8 @@ export class SupabaseCaravanRepository implements CaravanRepository {
     return {
       ...updated,
       price_standard: Number(updated.price_standard),
+      price_ticket: Number(updated.price_ticket),
+      price_lodging: Number(updated.price_lodging),
       price_officiant: Number(updated.price_officiant),
     };
   }
@@ -198,7 +209,10 @@ export class SupabaseCaravanRepository implements CaravanRepository {
         title: caravan.title ?? null,
         departure_date: caravan.departure_date,
         return_date: caravan.return_date,
+        overnight: caravan.overnight,
         price_standard: Number(caravan.price_standard),
+        price_ticket: Number(caravan.price_ticket),
+        price_lodging: Number(caravan.price_lodging),
         price_officiant: Number(caravan.price_officiant),
         status: caravan.status,
         seat_limit: caravan.seat_limit,

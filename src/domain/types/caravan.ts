@@ -26,7 +26,15 @@ export interface Caravan {
   title?: string | null;
   departure_date: string;
   return_date: string | null;
+  /** TRUE = com pernoite (inclui alojamento). */
+  overnight: boolean;
+  /** Passagem/ônibus — igual para todas as categorias. */
+  price_ticket: number;
+  /** Alojamento — 0 quando sem pernoite. Oficiante paga 50%. */
+  price_lodging: number;
+  /** Valor final padrão (derivado: passagem + alojamento). */
   price_standard: number;
+  /** Valor final oficiante (derivado: passagem + 50% do alojamento). */
   price_officiant: number;
   seat_limit: number;
   waitlist_limit: number;
@@ -46,6 +54,9 @@ export interface CaravanPublicSummary {
   title?: string | null;
   departure_date: string;
   return_date: string | null;
+  overnight: boolean;
+  price_ticket: number;
+  price_lodging: number;
   price_standard: number;
   price_officiant: number;
   status: CaravanStatus;

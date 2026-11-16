@@ -12,6 +12,7 @@
  */
 
 import { createCaravanSchema, type CreateCaravanInput } from "@/domain/schemas/caravan";
+import { calculateCaravanPrices } from "@/domain/pricing/caravan-pricing";
 import type { Caravan } from "@/domain/types/caravan";
 import type { CaravanRepository } from "@/domain/interfaces/caravan-repository";
 import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
@@ -36,8 +37,9 @@ export async function createCaravan(
     title,
     departureDate,
     returnDate,
-    priceStandard,
-    priceOfficiant,
+    overnight,
+    priceTicket,
+    priceLodging,
     seatLimit,
     waitlistLimit,
     registrationDeadline,
@@ -58,14 +60,20 @@ export async function createCaravan(
     throw new Error("Apenas administradores de Estaca podem criar caravanas.");
   }
 
+  // 2b. Precificação (D33): sem pernoite = passagem; oficiante com 50% off só no alojamento
+  const prices = calculateCaravanPrices({ overnight, priceTicket, priceLodging });
+
   // 3. Criar a Caravana garantindo isolamento de Estaca (Artigo II.c)
   const caravan = await deps.caravanRepository.create({
     stake_id: actingAdmin.stake_id,
     title: title ? title.trim() : null,
     departure_date: departureDate,
     return_date: returnDate ?? null,
-    price_standard: priceStandard,
-    price_officiant: priceOfficiant,
+    overnight,
+    price_ticket: prices.priceTicket,
+    price_lodging: prices.priceLodging,
+    price_standard: prices.priceStandard,
+    price_officiant: prices.priceOfficiant,
     seat_limit: seatLimit,
     waitlist_limit: waitlistLimit,
     registration_deadline: registrationDeadline,

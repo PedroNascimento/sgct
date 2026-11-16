@@ -39,7 +39,7 @@ Como membro autenticado, quero escolher um assento específico no mapa do ônibu
 Como membro que serve no Templo, quero indicar minha categoria de Oficiante no momento da reserva, para pagar o valor correto.
 
 **Critérios de Aceite (EARS):**
-- WHEN um membro seleciona a categoria "Oficiante" na reserva, THE SYSTEM SHALL aplicar `price_officiant` sem exigir validação administrativa prévia (D12).
+- WHEN um membro seleciona a categoria "Oficiante" na reserva, THE SYSTEM SHALL aplicar `price_officiant` (passagem integral + 50% do alojamento, D33) sem exigir validação administrativa prévia (D12) e gravar o valor final em `payment_amount`.
 
 ### US-003.3: Criança de colo no manifesto
 Como responsável de uma criança de até 5 anos, quero registrá-la na minha reserva, para que ela conste no manifesto de passageiros sem ocupar assento nem gerar cobrança.

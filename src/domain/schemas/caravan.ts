@@ -25,8 +25,9 @@ export const createCaravanSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de retorno deve estar no formato YYYY-MM-DD.")
     .optional()
     .nullable(),
-  priceStandard: z.number().min(0, "Preço padrão não pode ser negativo."),
-  priceOfficiant: z.number().min(0, "Preço para oficiante não pode ser negativo."),
+  overnight: z.boolean({ required_error: "Informe se a caravana é com ou sem pernoite." }),
+  priceTicket: z.number().min(0, "Valor da passagem não pode ser negativo."),
+  priceLodging: z.number().min(0, "Valor do alojamento não pode ser negativo.").default(0),
   seatLimit: z.number().int().min(1).default(50),
   waitlistLimit: z.number().int().min(0).default(5),
   registrationDeadline: z

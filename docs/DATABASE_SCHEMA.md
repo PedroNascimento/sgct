@@ -75,8 +75,12 @@ create table caravans (
   stake_id uuid not null references stakes(id),    -- 🔄 NOVO
   departure_date date not null,
   return_date date,
-  price_standard numeric(10,2) not null,
-  price_officiant numeric(10,2) not null,
+  title text,                                       -- opcional
+  overnight boolean not null default true,          -- D33: true = com pernoite
+  price_ticket numeric(10,2) not null,              -- D33: passagem/ônibus (igual p/ todas as categorias)
+  price_lodging numeric(10,2) not null default 0,   -- D33: alojamento (0 se sem pernoite)
+  price_standard numeric(10,2) not null,            -- DERIVADO por trigger: ticket + lodging
+  price_officiant numeric(10,2) not null,           -- DERIVADO por trigger: ticket + 50% lodging
   seat_limit int not null default 50,
   waitlist_limit int not null default 5,
   registration_deadline date not null,              -- domingo anterior ao embarque
