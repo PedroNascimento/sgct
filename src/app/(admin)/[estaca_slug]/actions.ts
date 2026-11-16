@@ -222,6 +222,7 @@ export async function createCaravanAction(
       throw new Error("Acesso negado: requer perfil de Admin da Estaca.");
     }
 
+    const title = (formData.get("title") as string)?.trim() || undefined;
     const departureDate = formData.get("departureDate") as string;
     const returnDate = (formData.get("returnDate") as string) || undefined;
     const priceStandard = Number(formData.get("priceStandard"));
@@ -253,6 +254,7 @@ export async function createCaravanAction(
 
     const created = await createCaravan(
       {
+        title,
         departureDate,
         returnDate,
         priceStandard,
@@ -291,6 +293,7 @@ const updateCaravanStatusSchema = z.object({
 
 const editCaravanInputSchema = z.object({
   caravanId: z.string().min(1, "ID de caravana inválido"),
+  title: z.string().trim().max(100, "Título não pode exceder 100 caracteres.").optional().nullable(),
   departureDate: z.string().min(1, "Data de saída é obrigatória").optional().nullable(),
   returnDate: z.string().nullable().optional(),
   priceStandard: z.number().nonnegative().optional(),
@@ -506,6 +509,7 @@ export async function editCaravanAction(
 
     const validated = editCaravanInputSchema.parse({
       caravanId: formData.get("caravanId"),
+      title: formData.get("title") !== null ? (formData.get("title") as string) : undefined,
       departureDate: formData.get("departureDate") || undefined,
       returnDate: (formData.get("returnDate") as string) || null,
       priceStandard: formData.get("priceStandard") ? Number(formData.get("priceStandard")) : undefined,
@@ -532,6 +536,7 @@ export async function editCaravanAction(
     }
 
     const updatePayload: Record<string, unknown> = {};
+    if (validated.title !== undefined) updatePayload.title = validated.title ? validated.title.trim() : null;
     if (validated.departureDate !== undefined) updatePayload.departure_date = validated.departureDate;
     if (validated.returnDate !== undefined) updatePayload.return_date = validated.returnDate;
     if (validated.priceStandard !== undefined) updatePayload.price_standard = validated.priceStandard;

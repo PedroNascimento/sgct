@@ -140,9 +140,11 @@ export default async function PublicCalendarioPage({ params }: Props) {
                       <BusIcon className="h-6 w-6" />
                     </span>
                     <div>
-                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-200">Viagem ao templo</p>
+                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-brand-200">
+                        {caravan.title ? `Viagem ao templo · ${formatDate(caravan.departure_date)}` : "Viagem ao templo"}
+                      </p>
                       <h2 className="mt-1 text-2xl font-bold tracking-[-0.02em] sm:text-3xl">
-                        {formatDate(caravan.departure_date)}
+                        {caravan.title || formatDate(caravan.departure_date)}
                       </h2>
                       {caravan.return_date && (
                         <p className="mt-1 text-sm text-brand-100">Retorno em {formatDate(caravan.return_date)}</p>

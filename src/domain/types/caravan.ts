@@ -23,6 +23,7 @@ export interface BoardingPoint {
 export interface Caravan {
   id: string;
   stake_id: string;
+  title?: string | null;
   departure_date: string;
   return_date: string | null;
   price_standard: number;
@@ -42,6 +43,7 @@ export interface Caravan {
 export interface CaravanPublicSummary {
   id: string;
   stake_id: string;
+  title?: string | null;
   departure_date: string;
   return_date: string | null;
   price_standard: number;

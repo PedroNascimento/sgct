@@ -11,6 +11,12 @@ export const boardingPointInputSchema = z.object({
 });
 
 export const createCaravanSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .max(100, "Título não pode exceder 100 caracteres.")
+    .optional()
+    .nullable(),
   departureDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de saída deve estar no formato YYYY-MM-DD."),

@@ -67,6 +67,7 @@ export class SupabaseCaravanRepository implements CaravanRepository {
       .from("caravans")
       .insert({
         stake_id: data.stake_id,
+        title: data.title ?? null,
         departure_date: data.departure_date,
         return_date: data.return_date ?? null,
         price_standard: data.price_standard,
@@ -194,6 +195,7 @@ export class SupabaseCaravanRepository implements CaravanRepository {
       summaries.push({
         id: caravan.id,
         stake_id: caravan.stake_id,
+        title: caravan.title ?? null,
         departure_date: caravan.departure_date,
         return_date: caravan.return_date,
         price_standard: Number(caravan.price_standard),

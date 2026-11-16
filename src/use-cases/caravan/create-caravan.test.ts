@@ -133,6 +133,46 @@ describe("createCaravan (T002.1)", () => {
     );
   });
 
+  it("permite definir um título personalizado para a caravana", async () => {
+    mockProfileRepository.findById.mockResolvedValueOnce(adminEstacaProfile);
+
+    const payloadWithTitle: CreateCaravanInput = {
+      ...validPayload,
+      title: "Caravana de Jovens Dezembro/2026",
+    };
+
+    mockCaravanRepository.create.mockResolvedValueOnce({
+      id: "caravan-uuid-2",
+      stake_id: STAKE_NATAL_ID,
+      title: "Caravana de Jovens Dezembro/2026",
+      departure_date: payloadWithTitle.departureDate,
+      return_date: payloadWithTitle.returnDate ?? null,
+      price_standard: payloadWithTitle.priceStandard,
+      price_officiant: payloadWithTitle.priceOfficiant,
+      seat_limit: payloadWithTitle.seatLimit,
+      waitlist_limit: payloadWithTitle.waitlistLimit,
+      registration_deadline: payloadWithTitle.registrationDeadline,
+      min_quorum: payloadWithTitle.minQuorum,
+      quorum_check_date: payloadWithTitle.quorumCheckDate,
+      status: "open" as const,
+      caravan_leader_id: null,
+      created_by: ADMIN_ID,
+      created_at: new Date().toISOString(),
+    });
+
+    const result = await createCaravan(payloadWithTitle, ADMIN_ID, {
+      caravanRepository: mockCaravanRepository,
+      profileRepository: mockProfileRepository,
+    });
+
+    expect(result.title).toBe("Caravana de Jovens Dezembro/2026");
+    expect(mockCaravanRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Caravana de Jovens Dezembro/2026",
+      })
+    );
+  });
+
   it("rejeita criação se o usuário executor não for admin_estaca", async () => {
     mockProfileRepository.findById.mockResolvedValueOnce({
       ...adminEstacaProfile,

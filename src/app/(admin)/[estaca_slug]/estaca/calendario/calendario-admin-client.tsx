@@ -255,13 +255,13 @@ export function CalendarioAdminClient({
                   key={c.id}
                   type="button"
                   onClick={() => setSelectedCaravanId(c.id)}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+                  className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap ${
                     selectedCaravanId === c.id
                       ? "bg-brand-900 text-white shadow-sm"
                       : "bg-[#eff0f0] text-[#3a3d40] hover:bg-brand-50"
                   }`}
                 >
-                  {formatDate(c.departure_date)}
+                  {c.title ? `${c.title} (${formatDate(c.departure_date)})` : formatDate(c.departure_date)}
                 </button>
               ))}
             </div>
@@ -469,7 +469,7 @@ export function CalendarioAdminClient({
                     Edição de Viagem
                   </span>
                   <h3 id="modal-edit-caravan-title" className="text-xl font-bold text-[#212225]">
-                    Editar Caravana de {formatDate(editingCaravan.departure_date)}
+                    Editar {editingCaravan.title || `Caravana de ${formatDate(editingCaravan.departure_date)}`}
                   </h3>
                 </div>
               </div>
@@ -495,6 +495,21 @@ export function CalendarioAdminClient({
               <input type="hidden" name="caravanId" value={editingCaravan.id} />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="sm:col-span-2 lg:col-span-4">
+                  <label className="sgct-label">Título da Caravana</label>
+                  <input
+                    type="text"
+                    name="title"
+                    defaultValue={editingCaravan.title || ""}
+                    placeholder="Ex: Caravana de Jovens (opcional)"
+                    maxLength={100}
+                    className="sgct-input"
+                  />
+                  <p className="mt-1 text-xs text-[#707478]">
+                    Opcional. Se não for preenchido, a viagem será identificada como &ldquo;Caravana de {formatDate(editingCaravan.departure_date)}&rdquo;.
+                  </p>
+                </div>
+
                 <div>
                   <label className="sgct-label">Data de Saída *</label>
                   <input
@@ -658,6 +673,22 @@ export function CalendarioAdminClient({
           />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="sgct-label">
+                Título da Caravana
+              </label>
+              <input
+                type="text"
+                name="title"
+                placeholder="Ex: Caravana de Jovens (opcional)"
+                maxLength={100}
+                className="sgct-input"
+              />
+              <p className="mt-1 text-xs text-[#707478]">
+                Opcional. Se não for informado, a viagem será identificada como &ldquo;Caravana de [data]&rdquo;.
+              </p>
+            </div>
+
             <div>
               <label className="sgct-label">
                 Data de Saída / Embarque *
@@ -857,9 +888,11 @@ export function CalendarioAdminClient({
                       <CalendarClock className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-brand-800">Saída</p>
-                      <h3 className="text-lg font-bold text-[#212225]">{formatDate(caravan.departure_date)}</h3>
-                      <p className="text-xs text-[#53575b]">Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-brand-800">
+                        {caravan.title ? "Viagem" : "Saída"}
+                      </p>
+                      <h3 className="text-lg font-bold text-[#212225]">{caravan.title || formatDate(caravan.departure_date)}</h3>
+                      <p className="text-xs text-[#53575b]">Saída: {formatDate(caravan.departure_date)} · Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}</p>
                     </div>
                   </div>
                   <span className={`sgct-chip shrink-0 ${statusLabels[caravan.status]?.color ?? "border-[#d0d3d3] bg-[#eff0f0] text-[#3a3d40]"}`}>
@@ -943,10 +976,10 @@ export function CalendarioAdminClient({
                         </div>
                         <div>
                           <div className="font-bold text-[#212225]">
-                            {formatDate(caravan.departure_date)}
+                            {caravan.title || formatDate(caravan.departure_date)}
                           </div>
                           <div className="text-xs text-[#53575b] mt-0.5">
-                            Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
+                            Saída: {formatDate(caravan.departure_date)} · Retorno: {caravan.return_date ? formatDate(caravan.return_date) : "mesmo dia"}
                           </div>
                         </div>
                       </div>

@@ -7,6 +7,7 @@ import type { Caravan, BoardingPoint, CaravanStatus, CaravanPublicSummary } from
 
 export interface CreateCaravanData {
   stake_id: string;
+  title?: string | null;
   departure_date: string;
   return_date?: string | null;
   price_standard: number;

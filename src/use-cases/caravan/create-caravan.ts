@@ -33,6 +33,7 @@ export async function createCaravan(
   }
 
   const {
+    title,
     departureDate,
     returnDate,
     priceStandard,
@@ -60,6 +61,7 @@ export async function createCaravan(
   // 3. Criar a Caravana garantindo isolamento de Estaca (Artigo II.c)
   const caravan = await deps.caravanRepository.create({
     stake_id: actingAdmin.stake_id,
+    title: title ? title.trim() : null,
     departure_date: departureDate,
     return_date: returnDate ?? null,
     price_standard: priceStandard,
