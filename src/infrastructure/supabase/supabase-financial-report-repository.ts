@@ -406,7 +406,7 @@ export class SupabaseFinancialReportRepository
         expires_at,
         used_at,
         created_at,
-        profiles!inner ( full_name ),
+        profiles!user_id ( full_name ),
         wards ( name )
       `
       )
@@ -540,7 +540,7 @@ export class SupabaseFinancialReportRepository
         expires_at,
         used_at,
         created_at,
-        profiles!inner ( full_name )
+        profiles!user_id ( full_name )
       `
       )
       .eq("stake_id", stakeId)
