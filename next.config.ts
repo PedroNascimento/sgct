@@ -3,6 +3,10 @@ const nextConfig = {
   // Strict mode ativo para detectar problemas cedo
   reactStrictMode: true,
 
+  experimental: {
+    agentUpgrade: "security",
+  },
+
   async headers() {
     return [
       {
