@@ -9,7 +9,7 @@ beforeEach(() => localStorage.clear());
 it("permite retornar à administração a partir da visão de membro", () => {
   render(<WorkspaceChrome stakeSlug="test" name="Maria" role="admin_estaca" mode="member" />);
   fireEvent.click(screen.getByRole("button", { name: /Abrir opções de perfil/ }));
-  expect(screen.getByRole("link", { name: "Voltar à administração" })).toHaveAttribute("href", "/test/estaca/calendario");
+  expect(screen.getByRole("link", { name: "Voltar à administração" })).toHaveAttribute("href", "/test/estaca/dashboard");
   expect(screen.getByRole("link", { name: "Meus dados de perfil" })).toHaveAttribute("href", "/test/conta");
   expect(screen.getByRole("button", { name: "Encerrar sessão" })).toBeInTheDocument();
 });
@@ -36,4 +36,22 @@ it("salva a preferência de recolhimento e fecha a gaveta com Escape", () => {
   fireEvent.keyDown(document, { key: "Escape" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(document.body.style.overflow).toBe("");
+});
+
+it("exibe link Financeiro na sidebar para admin_estaca e admin_ala", () => {
+  const { rerender } = render(
+    <WorkspaceChrome stakeSlug="natal" name="Líder" role="admin_estaca" mode="admin" />
+  );
+  expect(screen.getByRole("link", { name: "Financeiro" })).toHaveAttribute(
+    "href",
+    "/natal/estaca/relatorios"
+  );
+
+  rerender(
+    <WorkspaceChrome stakeSlug="natal" name="Bispo" role="admin_ala" mode="admin" />
+  );
+  expect(screen.getByRole("link", { name: "Financeiro" })).toHaveAttribute(
+    "href",
+    "/natal/ala/relatorios"
+  );
 });

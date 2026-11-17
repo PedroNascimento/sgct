@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X, ChevronDown, ChevronRight, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronRight, LogOut, Wallet } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BusIcon, CalendarIcon, DashboardIcon, CheckIcon, UserIcon, BuildingIcon, SidebarCollapseIcon, SidebarExpandIcon } from "./icons";
@@ -36,7 +36,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
   const account = useRef<HTMLDivElement>(null);
   const prefix = `/${stakeSlug}`;
   const canAdmin = Boolean(stakeSlug) && (role === "admin_estaca" || role === "admin_ala");
-  const adminHref = role === "admin_estaca" ? `${prefix}/estaca/calendario` : `${prefix}/ala/reservas`;
+  const adminHref = role === "admin_estaca" ? `${prefix}/estaca/dashboard` : `${prefix}/ala/reservas`;
   const modeLabel = mode === "platform" ? "Administração da plataforma" : mode === "admin" ? (role === "admin_estaca" ? "Administração da Estaca" : "Administração da Ala") : "Área do membro";
   const links = mode === "platform" ? [
     { href: "/estacas", label: "Estacas", icon: CalendarIcon },
@@ -45,10 +45,12 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
     { href: `${prefix}/estaca/dashboard`, label: "Dashboard", icon: DashboardIcon },
     { href: `${prefix}/estaca/calendario`, label: "Caravanas", icon: CalendarIcon },
     { href: `${prefix}/estaca/validacao-semanal`, label: "Validação semanal", icon: CheckIcon },
+    { href: `${prefix}/estaca/relatorios`, label: "Financeiro", icon: Wallet },
     { href: `${prefix}/estaca/alas`, label: "Alas", icon: BuildingIcon },
     { href: `${prefix}/estaca/equipe`, label: "Perfis e Usuários", icon: UserIcon },
   ] : [
     { href: `${prefix}/ala/reservas`, label: "Reservas da Ala", icon: BusIcon },
+    { href: `${prefix}/ala/relatorios`, label: "Financeiro", icon: Wallet },
   ] : [
     { href: prefix, label: "Início", icon: BusIcon },
     { href: `${prefix}/calendario`, label: "Próximas caravanas", icon: CalendarIcon },
