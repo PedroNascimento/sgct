@@ -9,7 +9,7 @@ beforeEach(() => localStorage.clear());
 it("permite retornar à administração a partir da visão de membro", () => {
   render(<WorkspaceChrome stakeSlug="test" name="Maria" role="admin_estaca" mode="member" />);
   fireEvent.click(screen.getByRole("button", { name: /Abrir opções de perfil/ }));
-  expect(screen.getByRole("link", { name: "Voltar à administração" })).toHaveAttribute("href", "/test/estaca/calendario");
+  expect(screen.getByRole("link", { name: "Voltar à administração" })).toHaveAttribute("href", "/test/estaca/dashboard");
   expect(screen.getByRole("link", { name: "Meus dados de perfil" })).toHaveAttribute("href", "/test/conta");
   expect(screen.getByRole("button", { name: "Encerrar sessão" })).toBeInTheDocument();
 });

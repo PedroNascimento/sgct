@@ -83,7 +83,7 @@ describe("signInAction (Spec 010 / T010.2)", () => {
     const result = await signInAction(formData);
 
     expect(result.success).toBe(true);
-    expect(result.redirectUrl).toBe("/natal/estaca/calendario");
+    expect(result.redirectUrl).toBe("/natal/estaca/dashboard");
     expect(mockSignInWithPassword).toHaveBeenCalledWith({
       email: "admin@estaca.com",
       password: "senhaForte123!",

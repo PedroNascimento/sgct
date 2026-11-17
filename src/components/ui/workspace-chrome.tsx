@@ -36,7 +36,7 @@ export function WorkspaceChrome({ stakeSlug, context, name, role, mode }: Props)
   const account = useRef<HTMLDivElement>(null);
   const prefix = `/${stakeSlug}`;
   const canAdmin = Boolean(stakeSlug) && (role === "admin_estaca" || role === "admin_ala");
-  const adminHref = role === "admin_estaca" ? `${prefix}/estaca/calendario` : `${prefix}/ala/reservas`;
+  const adminHref = role === "admin_estaca" ? `${prefix}/estaca/dashboard` : `${prefix}/ala/reservas`;
   const modeLabel = mode === "platform" ? "Administração da plataforma" : mode === "admin" ? (role === "admin_estaca" ? "Administração da Estaca" : "Administração da Ala") : "Área do membro";
   const links = mode === "platform" ? [
     { href: "/estacas", label: "Estacas", icon: CalendarIcon },

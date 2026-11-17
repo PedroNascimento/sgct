@@ -95,7 +95,7 @@ export async function signInAction(formData: FormData): Promise<SignInActionResu
   if (role === "super_admin") {
     redirectUrl = "/estacas";
   } else if (role === "admin_estaca" && stakeSlug) {
-    redirectUrl = `/${stakeSlug}/estaca/calendario`;
+    redirectUrl = `/${stakeSlug}/estaca/dashboard`;
   } else if (role === "admin_ala" && stakeSlug) {
     redirectUrl = `/${stakeSlug}/ala/reservas`;
   }
