@@ -28,5 +28,8 @@ export async function listPublicCaravans(
     throw new Error(parsed.error.errors[0]?.message ?? "ID da Estaca inválido.");
   }
 
-  return deps.caravanRepository.findPublicSummariesByStakeId(parsed.data);
+  const summaries = await deps.caravanRepository.findPublicSummariesByStakeId(
+    parsed.data
+  );
+  return summaries.filter((caravan) => caravan.status === "open");
 }

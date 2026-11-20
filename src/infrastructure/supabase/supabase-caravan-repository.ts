@@ -164,7 +164,7 @@ export class SupabaseCaravanRepository implements CaravanRepository {
       .from("caravans")
       .select("*")
       .eq("stake_id", stakeId)
-      .neq("status", "cancelled")
+      .eq("status", "open")
       .order("departure_date", { ascending: true });
 
     if (caravanError) {

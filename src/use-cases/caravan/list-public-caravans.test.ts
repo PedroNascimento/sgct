@@ -77,6 +77,28 @@ describe("listPublicCaravans (T002.6)", () => {
     );
   });
 
+  it("filtra e retorna apenas caravanas com status open (Inscrições abertas)", async () => {
+    const mixedCaravans: CaravanPublicSummary[] = [
+      { ...publicSummariesMock[0], id: "caravan-open", status: "open" },
+      { ...publicSummariesMock[0], id: "caravan-quorum", status: "quorum_pending" },
+      { ...publicSummariesMock[0], id: "caravan-confirmed", status: "confirmed" },
+      { ...publicSummariesMock[0], id: "caravan-completed", status: "completed" },
+      { ...publicSummariesMock[0], id: "caravan-cancelled", status: "cancelled" },
+    ];
+
+    mockCaravanRepository.findPublicSummariesByStakeId.mockResolvedValueOnce(
+      mixedCaravans
+    );
+
+    const result = await listPublicCaravans(STAKE_NATAL_ID, {
+      caravanRepository: mockCaravanRepository,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("caravan-open");
+    expect(result[0].status).toBe("open");
+  });
+
   it("rejeita chamada se o stake_id for inválido", async () => {
     await expect(
       listPublicCaravans("stake-invalida", {
