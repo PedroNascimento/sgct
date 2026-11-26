@@ -108,6 +108,10 @@ describe("ReservationForm - Fluxo de Autorização de Menores/Jovens (US-006.3)"
       />
     );
 
+    fireEvent.click(screen.getByRole("button", { name: /próxima etapa: escolher poltrona/i }));
+    fireEvent.click(screen.getByTestId("seat-5"));
+    fireEvent.click(screen.getByRole("button", { name: /próxima etapa: viagem e custeio/i }));
+
     const participantSelect = screen.getByLabelText(/Tipo de Participação/i);
     fireEvent.change(participantSelect, { target: { value: "jovem" } });
 
@@ -139,9 +143,10 @@ describe("ReservationForm - Fluxo de Autorização de Menores/Jovens (US-006.3)"
       />
     );
 
-    // 1. Seleciona assento
-    const seatBtn = screen.getByTestId("seat-5");
-    fireEvent.click(seatBtn);
+    // 1. Avança para poltrona e seleciona assento 5
+    fireEvent.click(screen.getByRole("button", { name: /próxima etapa: escolher poltrona/i }));
+    fireEvent.click(screen.getByTestId("seat-5"));
+    fireEvent.click(screen.getByRole("button", { name: /próxima etapa: viagem e custeio/i }));
 
     // 2. Muda para Jovem
     const participantSelect = screen.getByLabelText(/Tipo de Participação/i);
@@ -156,7 +161,8 @@ describe("ReservationForm - Fluxo de Autorização de Menores/Jovens (US-006.3)"
 
     expect(screen.getByText(/autorizacao_pais\.pdf/i)).toBeInTheDocument();
 
-    // 4. Confirma a reserva
+    // 4. Avança para etapa 4 e confirma a reserva
+    fireEvent.click(screen.getByRole("button", { name: /próxima etapa: logística e confirmação/i }));
     const submitBtn = screen.getByRole("button", { name: /Confirmar Minha Reserva/i });
     fireEvent.click(submitBtn);
 

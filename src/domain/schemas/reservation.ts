@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { isPreferentialSeatNumber } from "@/domain/types/reservation";
 
 export const createReservationSchema = z.object({
   caravanId: z.string().uuid("ID da caravana inválido."),
@@ -49,8 +50,21 @@ export const createReservationSchema = z.object({
   isPreferentialSeating: z.boolean().default(false),
   familyGroupMemberNames: z.string().optional().nullable(),
   familyGroupLabel: z.string().optional().nullable(),
+  familyGroupSize: z
+    .number()
+    .int("Quantidade de pessoas deve ser um número inteiro.")
+    .min(1, "Quantidade mínima do grupo familiar é 1.")
+    .max(50, "Quantidade máxima é 50.")
+    .optional()
+    .nullable(),
   companionForEndowmentName: z.string().optional().nullable(),
-});
+}).refine(
+  (data) => !data.isPreferentialSeating || isPreferentialSeatNumber(data.seatNumber),
+  {
+    message: "Assentos preferenciais são exclusivamente as poltronas 01, 02, 03 e 04.",
+    path: ["seatNumber"],
+  }
+);
 
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;
 

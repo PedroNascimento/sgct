@@ -34,6 +34,12 @@ export type FundingSource =
   | "auxilio_estaca_fundo_reserva"
   | "convidado_transferencia_interestaca";
 
+export const PREFERENTIAL_SEAT_NUMBERS = [1, 2, 3, 4] as const;
+
+export function isPreferentialSeatNumber(seatNumber: number): boolean {
+  return (PREFERENTIAL_SEAT_NUMBERS as readonly number[]).includes(seatNumber);
+}
+
 export interface Reservation {
   id: string;
   stake_id: string;
@@ -48,6 +54,7 @@ export interface Reservation {
   is_preferential_seating: boolean;
   family_group_member_names: string | null;
   family_group_label: string | null;
+  family_group_size?: number | null;
   companion_for_endowment_name: string | null;
   status: ReservationStatus;
   payment_amount: number;

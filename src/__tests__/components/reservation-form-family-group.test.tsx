@@ -93,6 +93,13 @@ const DEFAULT_PROPS = {
 };
 
 // Helpers
+function advanceToStep4(seatNumber = 5) {
+  fireEvent.click(screen.getByRole("button", { name: /próxima etapa: escolher poltrona/i }));
+  fireEvent.click(screen.getByTestId(`seat-${seatNumber}`));
+  fireEvent.click(screen.getByRole("button", { name: /próxima etapa: viagem e custeio/i }));
+  fireEvent.click(screen.getByRole("button", { name: /próxima etapa: logística e confirmação/i }));
+}
+
 function getFamilyGroupCheckbox() {
   return screen.getByRole("checkbox", { name: /viajando com grupo familiar/i });
 }
@@ -102,8 +109,12 @@ function getFamilyGroupLabelInput() {
   return screen.getByLabelText(/nome do grupo familiar/i);
 }
 
+function getFamilyGroupSizeInput() {
+  return screen.getByLabelText(/quantas pessoas irão com você/i);
+}
+
 function getFamilyGroupMembersInput() {
-  return screen.getByLabelText(/outros membros da fam/i);
+  return screen.getByLabelText(/primeiro nome e sobrenome dos familiares/i);
 }
 
 // --- Testes ---
@@ -115,6 +126,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
 
   it("nao exibe o campo de rotulo familiar por padrao (checkbox desmarcado)", () => {
     render(<ReservationForm {...DEFAULT_PROPS} />);
+    advanceToStep4();
 
     expect(getFamilyGroupCheckbox()).not.toBeChecked();
     expect(
@@ -124,14 +136,17 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
 
   it("exibe o campo de rotulo do grupo familiar quando o checkbox e marcado", () => {
     render(<ReservationForm {...DEFAULT_PROPS} />);
+    advanceToStep4();
 
     fireEvent.click(getFamilyGroupCheckbox());
 
     expect(getFamilyGroupLabelInput()).toBeInTheDocument();
+    expect(getFamilyGroupSizeInput()).toBeInTheDocument();
   });
 
   it("exibe o campo de nomes dos familiares quando o checkbox e marcado", () => {
     render(<ReservationForm {...DEFAULT_PROPS} />);
+    advanceToStep4();
 
     fireEvent.click(getFamilyGroupCheckbox());
 
@@ -140,6 +155,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
 
   it("esconde os campos quando o checkbox e desmarcado apos ser marcado", () => {
     render(<ReservationForm {...DEFAULT_PROPS} />);
+    advanceToStep4();
 
     const checkbox = getFamilyGroupCheckbox();
     fireEvent.click(checkbox); // marca
@@ -153,6 +169,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
 
   it("nao pre-preenche o rotulo — campo comeca vazio (label e livre, nao automatico)", () => {
     render(<ReservationForm {...DEFAULT_PROPS} />);
+    advanceToStep4();
 
     fireEvent.click(getFamilyGroupCheckbox());
 
@@ -161,7 +178,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
     expect(labelInput.value).toBe("");
   });
 
-  it("envia family_group_label com o valor digitado pelo membro ao submeter (US-002.3)", async () => {
+  it("envia family_group_label e familyGroupSize com os valores digitados ao submeter (US-002.3)", async () => {
     mockCreateReservationAction.mockResolvedValueOnce({
       success: true,
       data: { id: "reservation-test-id" },
@@ -169,14 +186,15 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
     mockAddManifestEntryAction.mockResolvedValueOnce({ success: true });
 
     render(<ReservationForm {...DEFAULT_PROPS} />);
-
-    // Seleciona assento
-    fireEvent.click(screen.getByTestId("seat-5"));
+    advanceToStep4(5);
 
     // Preenche grupo familiar
     fireEvent.click(getFamilyGroupCheckbox());
     fireEvent.change(getFamilyGroupLabelInput(), {
       target: { value: "Família Nascimento" },
+    });
+    fireEvent.change(getFamilyGroupSizeInput(), {
+      target: { value: "3" },
     });
     fireEvent.change(getFamilyGroupMembersInput(), {
       target: { value: "Esposa Carla e filho Lucas" },
@@ -188,6 +206,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
       expect(mockCreateReservationAction).toHaveBeenCalledWith(
         expect.objectContaining({
           familyGroupLabel: "Família Nascimento",
+          familyGroupSize: 3,
           familyGroupMemberNames: "Esposa Carla e filho Lucas",
         })
       );
@@ -201,9 +220,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
     });
 
     render(<ReservationForm {...DEFAULT_PROPS} />);
-
-    // Seleciona assento sem marcar grupo familiar
-    fireEvent.click(screen.getByTestId("seat-7"));
+    advanceToStep4(7);
 
     fireEvent.click(screen.getByRole("button", { name: /confirmar minha reserva/i }));
 
@@ -211,6 +228,7 @@ describe("ReservationForm — Campo Agrupamento Familiar (T002.10 / US-002.3)", 
       expect(mockCreateReservationAction).toHaveBeenCalledWith(
         expect.objectContaining({
           familyGroupLabel: null,
+          familyGroupSize: null,
           familyGroupMemberNames: null,
         })
       );

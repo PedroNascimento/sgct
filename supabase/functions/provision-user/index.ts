@@ -81,6 +81,18 @@ Deno.serve(async (req) => {
     if (!/^\d{10,11}$/.test(phone)) {
       throw new Error("WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD.");
     }
+    const documentType =
+      typeof payload.documentType === "string" && payload.documentType.trim()
+        ? payload.documentType.trim().slice(0, 40)
+        : null;
+    const documentNumber =
+      typeof payload.documentNumber === "string" && payload.documentNumber.trim()
+        ? payload.documentNumber.trim().slice(0, 40)
+        : null;
+    const documentIssuer =
+      typeof payload.documentIssuer === "string" && payload.documentIssuer.trim()
+        ? payload.documentIssuer.trim().slice(0, 40)
+        : null;
 
     if (operation === "register_member" || operation === "register_minor") {
       wardId = requiredString(payload, "wardId");
@@ -165,6 +177,9 @@ Deno.serve(async (req) => {
         birth_date: common.birthDate,
         sexo: common.sexo,
         cpf,
+        document_type: documentType,
+        document_number: documentNumber,
+        document_issuer: documentIssuer,
         phone,
         role,
         home_stake_name: homeStakeName,

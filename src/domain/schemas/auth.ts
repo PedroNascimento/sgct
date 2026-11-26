@@ -5,11 +5,18 @@
 
 import { z } from "zod";
 
+const optionalDocumentFields = {
+  documentType: z.string().trim().max(40).optional().nullable(),
+  documentNumber: z.string().trim().max(40).optional().nullable(),
+  documentIssuer: z.string().trim().max(40).optional().nullable(),
+};
+
 export const signUpMemberSchema = z.object({
   email: z.string().email("E-mail inválido."),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  ...optionalDocumentFields,
   phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
@@ -27,6 +34,7 @@ export const signUpMinorSchema = z.object({
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  ...optionalDocumentFields,
   phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
@@ -63,6 +71,7 @@ export const signUpGuestSchema = z.object({
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
   fullName: z.string().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  ...optionalDocumentFields,
   phone: z.string().regex(/^\d{10,11}$/, "WhatsApp deve conter 10 ou 11 dígitos, incluindo o DDD."),
   birthDate: z
     .string()
@@ -77,6 +86,7 @@ export type SignUpGuestInput = z.infer<typeof signUpGuestSchema>;
 export const updateOwnProfileSchema = z.object({
   fullName: z.string().trim().min(3, "Nome completo deve ter no mínimo 3 caracteres."),
   cpf: z.string().trim().regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos."),
+  ...optionalDocumentFields,
   phone: z.string().trim().regex(/^\d{10,11}$/, "Telefone deve conter 10 ou 11 dígitos."),
   sexo: z.enum(["masculino", "feminino"]),
 });

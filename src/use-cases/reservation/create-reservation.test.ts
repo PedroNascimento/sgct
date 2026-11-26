@@ -449,5 +449,62 @@ describe("createReservation (T003.2, T003.3, T003.4)", () => {
       // O use-case nunca deve ter substituído null por algo inventado
       expect(createCall?.family_group_label).toBeNull();
     });
+
+    it("bloqueia assento preferencial fora das poltronas 01 a 04 (Spec 016 / D35)", async () => {
+      mockProfileRepository.findById.mockResolvedValueOnce(memberProfile);
+
+      await expect(
+        createReservation(
+          { ...baseInput, seatNumber: 5, isPreferentialSeating: true },
+          USER_ID,
+          {
+            reservationRepository: mockReservationRepository,
+            caravanRepository: mockCaravanRepository,
+            profileRepository: mockProfileRepository,
+          }
+        )
+      ).rejects.toThrow("Assentos preferenciais são exclusivamente as poltronas 01, 02, 03 e 04.");
+      expect(mockReservationRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("permite assento preferencial nas poltronas 01 a 04 e persiste family_group_size", async () => {
+      mockProfileRepository.findById.mockResolvedValueOnce(memberProfile);
+      mockCaravanRepository.findById.mockResolvedValueOnce(openCaravan);
+      mockReservationRepository.create.mockImplementationOnce(async (data) => ({
+        id: "res-pref-02",
+        stake_id: STAKE_NATAL_ID,
+        ward_id: WARD_TIROL_ID,
+        confirmed_at: null,
+        confirmation_rank: null,
+        qr_token: null,
+        qr_token_expires_at: null,
+        created_at: new Date().toISOString(),
+        boarding_point_id: null,
+        companion_for_endowment_name: null,
+        ...data,
+      }));
+
+      await createReservation(
+        {
+          ...baseInput,
+          seatNumber: 2,
+          isPreferentialSeating: true,
+          familyGroupLabel: "Família Silva",
+          familyGroupSize: 4,
+          familyGroupMemberNames: "Maria, João, Pedro",
+        },
+        USER_ID,
+        {
+          reservationRepository: mockReservationRepository,
+          caravanRepository: mockCaravanRepository,
+          profileRepository: mockProfileRepository,
+        }
+      );
+
+      const createCall = mockReservationRepository.create.mock.calls[0]?.[0];
+      expect(createCall?.seat_number).toBe(2);
+      expect(createCall?.is_preferential_seating).toBe(true);
+      expect(createCall?.family_group_size).toBe(4);
+    });
   });
 });

@@ -28,5 +28,8 @@ export async function updateOwnProfile(
     cpf: parsed.data.cpf,
     phone: parsed.data.phone,
     sexo: parsed.data.sexo,
+    document_type: parsed.data.documentType?.trim() || null,
+    document_number: parsed.data.documentNumber?.trim() || null,
+    document_issuer: parsed.data.documentIssuer?.trim() || null,
   });
 }

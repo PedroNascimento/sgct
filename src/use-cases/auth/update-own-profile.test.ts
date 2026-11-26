@@ -57,6 +57,9 @@ describe("updateOwnProfile", () => {
       cpf: "12345678900",
       phone: "84999999999",
       sexo: "masculino",
+      document_type: null,
+      document_number: null,
+      document_issuer: null,
     });
     expect(result.cpf).toBe("12345678900");
   });

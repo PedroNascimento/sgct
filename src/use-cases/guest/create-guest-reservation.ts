@@ -14,7 +14,12 @@ import type { ReservationRepository } from "@/domain/interfaces/reservation-repo
 import type { CaravanRepository } from "@/domain/interfaces/caravan-repository";
 import type { ProfileRepository } from "@/domain/interfaces/profile-repository";
 import type { GuestRepository } from "@/domain/interfaces/guest-repository";
-import type { Reservation, ReservationCategory, ParticipantType } from "@/domain/types/reservation";
+import {
+  isPreferentialSeatNumber,
+  type Reservation,
+  type ReservationCategory,
+  type ParticipantType,
+} from "@/domain/types/reservation";
 import type { GuestTransferConfirmation } from "@/domain/types/guest";
 
 export const CreateGuestReservationSchema = z.object({
@@ -29,7 +34,18 @@ export const CreateGuestReservationSchema = z.object({
     .optional()
     .default("adulto"),
   boardingPointId: z.string().uuid().nullable().optional(),
-});
+  isPreferentialSeating: z.boolean().optional().default(false),
+  familyGroupMemberNames: z.string().optional().nullable(),
+  familyGroupLabel: z.string().optional().nullable(),
+  familyGroupSize: z.number().int().min(1).max(50).optional().nullable(),
+  companionForEndowmentName: z.string().optional().nullable(),
+}).refine(
+  (data) => !data.isPreferentialSeating || isPreferentialSeatNumber(data.seatNumber),
+  {
+    message: "Assentos preferenciais são exclusivamente as poltronas 01, 02, 03 e 04.",
+    path: ["seatNumber"],
+  }
+);
 
 export type CreateGuestReservationInput = z.infer<typeof CreateGuestReservationSchema>;
 
@@ -83,7 +99,11 @@ export async function createGuestReservation(
     category: validated.category as ReservationCategory,
     participant_type: validated.participantType as ParticipantType,
     funding_source: "convidado_transferencia_interestaca",
-    is_preferential_seating: false,
+    is_preferential_seating: validated.isPreferentialSeating,
+    family_group_member_names: validated.familyGroupMemberNames ?? null,
+    family_group_label: validated.familyGroupLabel ?? null,
+    family_group_size: validated.familyGroupSize ?? null,
+    companion_for_endowment_name: validated.companionForEndowmentName ?? null,
     status: "aguardando_transferencia_interestaca",
     payment_amount: paymentAmount,
   });

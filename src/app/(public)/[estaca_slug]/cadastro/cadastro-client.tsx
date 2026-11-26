@@ -71,6 +71,40 @@ function PhoneField({ id }: { id: string }) {
   );
 }
 
+function OptionalDocumentFields({ prefix }: { prefix: string }) {
+  return (
+    <div className="rounded-xl border border-[#e0e2e2] bg-[#f8f9fa] p-4 space-y-3">
+      <div>
+        <p className="text-sm font-bold text-[#212225]">Documento Alternativo (Opcional)</p>
+        <p className="text-xs text-[#53575b]">
+          RG, CNH ou Certidão de Nascimento com órgão expedidor (para manifesto da viagem).
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <label htmlFor={`${prefix}-docType`} className="sgct-label">Tipo</label>
+          <select id={`${prefix}-docType`} name="documentType" defaultValue="" className="sgct-input">
+            <option value="">Nenhum</option>
+            <option value="RG">RG</option>
+            <option value="CNH">CNH</option>
+            <option value="Certidão de Nascimento">Certidão de Nascimento</option>
+            <option value="Passaporte">Passaporte</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor={`${prefix}-docNumber`} className="sgct-label">Número</label>
+          <input id={`${prefix}-docNumber`} name="documentNumber" placeholder="Ex: 001234567" className="sgct-input" />
+        </div>
+        <div>
+          <label htmlFor={`${prefix}-docIssuer`} className="sgct-label">Órgão Expedidor</label>
+          <input id={`${prefix}-docIssuer`} name="documentIssuer" placeholder="Ex: SSP/RN" className="sgct-input" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
   const [tab, setTab] = useState<"member" | "minor" | "guest" | null>(null);
 
@@ -182,6 +216,7 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="member-cpf" />
+          <OptionalDocumentFields prefix="member" />
 
           <PhoneField id="member-phone" />
 
@@ -300,6 +335,7 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="minor-cpf" />
+          <OptionalDocumentFields prefix="minor" />
 
           <PhoneField id="minor-phone" />
 
@@ -434,6 +470,7 @@ export function CadastroClient({ stakeSlug, stakeName, wards }: Props) {
           </div>
 
           <CpfField id="guest-cpf" />
+          <OptionalDocumentFields prefix="guest" />
 
           <PhoneField id="guest-phone" />
 

@@ -22,6 +22,9 @@ export interface Profile {
   stake_id: string | null; // null apenas para super_admin (Artigo II.f)
   full_name: string;
   cpf: string | null;
+  document_type?: string | null;
+  document_number?: string | null;
+  document_issuer?: string | null;
   birth_date: string;
   phone: string | null;
   sexo: "masculino" | "feminino" | null;

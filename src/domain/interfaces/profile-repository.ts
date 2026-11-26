@@ -11,7 +11,16 @@ export interface ProfileRepository {
   updateRole(id: string, role: Profile["role"]): Promise<Profile>;
   updateOwnContact?(
     id: string,
-    data: Pick<Profile, "full_name" | "cpf" | "phone" | "sexo">
+    data: Pick<
+      Profile,
+      | "full_name"
+      | "cpf"
+      | "phone"
+      | "sexo"
+      | "document_type"
+      | "document_number"
+      | "document_issuer"
+    >
   ): Promise<Profile>;
   deactivateInactive(cutoffDate: Date): Promise<{ deactivatedCount: number }>;
 }

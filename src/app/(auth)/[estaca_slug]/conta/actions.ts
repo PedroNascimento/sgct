@@ -22,6 +22,9 @@ export async function updateOwnProfileAction(formData: FormData): Promise<void> 
       cpf: String(formData.get("cpf") ?? "").replace(/\D/g, ""),
       phone: String(formData.get("phone") ?? "").replace(/\D/g, ""),
       sexo: String(formData.get("sexo") ?? "") as "masculino" | "feminino",
+      documentType: String(formData.get("documentType") ?? "").trim() || null,
+      documentNumber: String(formData.get("documentNumber") ?? "").trim() || null,
+      documentIssuer: String(formData.get("documentIssuer") ?? "").trim() || null,
     },
     user.id,
     repository

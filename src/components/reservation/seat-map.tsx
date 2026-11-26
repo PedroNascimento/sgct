@@ -2,6 +2,7 @@
 
 import React from "react";
 import { BusIcon } from "@/components/ui/icons";
+import { isPreferentialSeatNumber } from "@/domain/types/reservation";
 
 export interface SeatMapProps {
   totalSeats?: number;
@@ -9,6 +10,7 @@ export interface SeatMapProps {
   selectedSeat: number | null;
   onSelectSeat: (seatNumber: number) => void;
   disabled?: boolean;
+  preferentialOnly?: boolean;
 }
 
 export function SeatMap({
@@ -17,6 +19,7 @@ export function SeatMap({
   selectedSeat,
   onSelectSeat,
   disabled = false,
+  preferentialOnly = false,
 }: SeatMapProps) {
   // Gera a distribuição das 13 fileiras para 50 assentos
   // Fileiras 1-12: 4 assentos cada (48). Fileira 13: 2 assentos (49, 50) + WC
@@ -45,27 +48,49 @@ export function SeatMap({
   const renderSeat = (seatNum: number) => {
     const isOccupied = occupiedSeats.includes(seatNum);
     const isSelected = selectedSeat === seatNum;
+    const isPrefSeat = isPreferentialSeatNumber(seatNum);
+    const isLockedByPreferential = preferentialOnly && !isPrefSeat;
+    const isDisabled = isOccupied || disabled || isLockedByPreferential;
 
     return (
       <button
         key={seatNum}
         type="button"
         data-testid={`seat-${seatNum}`}
-        aria-label={`Poltrona ${seatNum}: ${
-          isOccupied ? "Ocupada" : isSelected ? "Selecionada" : "Disponível"
+        aria-label={`Poltrona ${seatNum}${isPrefSeat ? " (Preferencial)" : ""}: ${
+          isOccupied
+            ? "Ocupada"
+            : isLockedByPreferential
+            ? "Bloqueada para seleção preferencial"
+            : isSelected
+            ? "Selecionada"
+            : "Disponível"
         }`}
         aria-pressed={isSelected}
-        disabled={isOccupied || disabled}
-        onClick={() => !isOccupied && !disabled && onSelectSeat(seatNum)}
-        className={`flex h-11 w-11 items-center justify-center rounded-md text-sm font-bold transition sm:h-12 sm:w-12 ${
+        disabled={isDisabled}
+        onClick={() => !isDisabled && onSelectSeat(seatNum)}
+        className={`relative flex h-11 w-11 items-center justify-center rounded-md text-sm font-bold transition sm:h-12 sm:w-12 ${
           isOccupied
             ? "cursor-not-allowed border border-[#d0d3d3] bg-[#e0e2e2] text-[#676b6e] line-through"
+            : isLockedByPreferential
+            ? "cursor-not-allowed border border-[#e0e2e2] bg-[#f4f6f6] text-[#b0b4b6] opacity-55"
             : isSelected
             ? "border-2 border-brand-900 bg-brand-600 text-white shadow-sm ring-2 ring-brand-200"
+            : isPrefSeat
+            ? "cursor-pointer border-2 border-amber-500 bg-amber-50 text-amber-900 shadow-sm hover:bg-amber-100"
             : "cursor-pointer border border-[#9da1a1] bg-white text-[#212225] shadow-sm hover:border-brand-600 hover:bg-brand-50 active:bg-brand-100"
         }`}
       >
         {seatNum}
+        {isPrefSeat && !isOccupied && !isSelected && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white"
+            title="Poltrona preferencial"
+          >
+            P
+          </span>
+        )}
       </button>
     );
   };
@@ -84,10 +109,14 @@ export function SeatMap({
       </div>
 
       {/* Legenda Informativa */}
-      <div className="mb-5 grid grid-cols-3 gap-2 rounded-xl border border-[#e0e2e2] bg-white p-3 text-center text-xs font-semibold text-[#53575b] shadow-sm">
+      <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-[#e0e2e2] bg-white p-3 text-center text-xs font-semibold text-[#53575b] shadow-sm sm:grid-cols-4">
         <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-center">
           <span className="inline-block h-4 w-4 rounded border border-[#9da1a1] bg-white" />
           <span>Disponível</span>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 text-amber-800 sm:flex-row sm:justify-center">
+          <span className="inline-block h-4 w-4 rounded border-2 border-amber-500 bg-amber-50" />
+          <span>Preferencial (01–04)</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 text-brand-700 sm:flex-row sm:justify-center">
           <span className="inline-block h-4 w-4 rounded border border-brand-900 bg-brand-600" />

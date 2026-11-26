@@ -68,6 +68,54 @@ export default async function ContaPage({ params }: Props) {
               <option value="feminino">Feminino</option>
             </select>
           </div>
+
+          <div className="rounded-xl border border-[#e0e2e2] bg-[#f8f9fa] p-4 space-y-4">
+            <div>
+              <p className="text-sm font-bold text-[#212225]">Documento Alternativo (Opcional)</p>
+              <p className="text-xs text-[#53575b]">
+                RG, CNH ou Certidão de Nascimento com órgão expedidor para o manifesto da viagem.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <label htmlFor="documentType" className="sgct-label">Tipo</label>
+                <select
+                  id="documentType"
+                  name="documentType"
+                  defaultValue={profile.document_type ?? ""}
+                  className="sgct-input"
+                >
+                  <option value="">Nenhum</option>
+                  <option value="RG">RG</option>
+                  <option value="CNH">CNH</option>
+                  <option value="Certidão de Nascimento">Certidão de Nascimento</option>
+                  <option value="Passaporte">Passaporte</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="documentNumber" className="sgct-label">Número</label>
+                <input
+                  id="documentNumber"
+                  name="documentNumber"
+                  defaultValue={profile.document_number ?? ""}
+                  placeholder="Ex: 001234567"
+                  className="sgct-input"
+                />
+              </div>
+              <div>
+                <label htmlFor="documentIssuer" className="sgct-label">Órgão Expedidor</label>
+                <input
+                  id="documentIssuer"
+                  name="documentIssuer"
+                  defaultValue={profile.document_issuer ?? ""}
+                  placeholder="Ex: SSP/RN"
+                  className="sgct-input"
+                />
+              </div>
+            </div>
+          </div>
+
           <button type="submit" className="sgct-button-primary w-full">
             Salvar meus dados
           </button>

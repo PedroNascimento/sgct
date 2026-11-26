@@ -26,6 +26,7 @@ export interface CreateReservationData {
   is_preferential_seating: boolean;
   family_group_member_names?: string | null;
   family_group_label?: string | null;
+  family_group_size?: number | null;
   companion_for_endowment_name?: string | null;
   status: ReservationStatus;
   payment_amount: number;

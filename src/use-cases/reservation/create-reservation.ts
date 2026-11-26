@@ -53,6 +53,7 @@ export async function createReservation(
     isPreferentialSeating,
     familyGroupMemberNames,
     familyGroupLabel,
+    familyGroupSize,
     companionForEndowmentName,
   } = parsed.data;
 
@@ -115,6 +116,7 @@ export async function createReservation(
       is_preferential_seating: isPreferentialSeating,
       family_group_member_names: familyGroupMemberNames ?? null,
       family_group_label: familyGroupLabel ?? null,
+      family_group_size: familyGroupSize ?? null,
       companion_for_endowment_name: companionForEndowmentName ?? null,
       status: initialStatus,
       payment_amount: paymentAmount,

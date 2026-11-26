@@ -86,6 +86,11 @@ export interface CreateGuestReservationActionInput {
   category?: "standard" | "officiant";
   participantType?: "adulto" | "jovem" | "crianca" | "oficiante" | "investidura" | "selamento" | "missionario_servico";
   boardingPointId?: string | null;
+  isPreferentialSeating?: boolean;
+  familyGroupMemberNames?: string | null;
+  familyGroupLabel?: string | null;
+  familyGroupSize?: number | null;
+  companionForEndowmentName?: string | null;
 }
 
 export async function createGuestReservationAction(
@@ -133,6 +138,11 @@ export async function createGuestReservationAction(
         category: input.category ?? "standard",
         participantType: input.participantType ?? "adulto",
         boardingPointId: input.boardingPointId,
+        isPreferentialSeating: input.isPreferentialSeating ?? false,
+        familyGroupMemberNames: input.familyGroupMemberNames ?? null,
+        familyGroupLabel: input.familyGroupLabel ?? null,
+        familyGroupSize: input.familyGroupSize ?? null,
+        companionForEndowmentName: input.companionForEndowmentName ?? null,
       },
       {
         reservationRepository,

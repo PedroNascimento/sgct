@@ -71,7 +71,16 @@ export class SupabaseProfileRepository implements ProfileRepository {
 
   async updateOwnContact(
     id: string,
-    data: Pick<Profile, "full_name" | "cpf" | "phone" | "sexo">
+    data: Pick<
+      Profile,
+      | "full_name"
+      | "cpf"
+      | "phone"
+      | "sexo"
+      | "document_type"
+      | "document_number"
+      | "document_issuer"
+    >
   ): Promise<Profile> {
     const { data: updated, error } = await this.supabase
       .from("profiles")
